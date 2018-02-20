@@ -1,0 +1,40 @@
+SELECT 
+id.DOB, id.LocationID, id.CheckNumber, id.ItemName, id.GrossPrice,
+cd.lastname, cd.firstname, cd.TrueNetSales, id.POSkey
+FROM
+SRG_live.Check_Detail_Full_Live_dev cd
+LEFT JOIN
+SRG_items.ItemDetail_2017_dev id
+ON id.POSkey = cd.POSkey
+WHERE
+cd.DOB > '2017-01-01';
+
+
+
+##############################################
+this isnt 100% but good start pt
+########################################
+
+SELECT id.*, cd.* 
+INTO OUTFILE '/home/srg/db_files/cd.id.leftjoin.csv' 
+FIELDS TERMINATED BY ',' 
+LINES TERMINATED BY '\n' 
+FROM SRG_Live.Check_Detail_Full_live_dev
+LEFT JOIN
+SRG_items.ItemDetail_2017_dev id
+WHERE cd.DOB > '2016-12-31'
+
+
+
+UPDATE myTable SET myColumn = REPLACE(myColumn, '?', ' ')
+
+SELECT 
+CDL.POSkey, CDL.Comps, CDL.Promos, CDL.CashTenders, CDL.NonCashTenders, 
+TDL.TenderName, TDL.Amount,
+CDL.GrossSalesCoDefined
+FROM `CheckDetail_Live` CDL
+INNER JOIN TenderDetail_Live TDL 
+ON CDL.POSkey = TDL.POSkey
+WHERE CDL.DOB = '2016-10-01'
+ORDER BY CDL.POSkey
+
