@@ -9,8 +9,7 @@ set -e
 
 
 ######### UBER JOIN LIVE CHECK DETAIL WITH LIVE SQUASHED CARD ACTIVITY
-
-#### Double check UNION !!!!!!!!!!!!!!!!
+#### UNION LEFT AND RIGHT JOINS (equivelant to full join)
 
 mysql  --login-path=local -uroot -N -e "INSERT INTO SRG_uber.Master_test SELECT CD.*, CA.* FROM SRG_checks.CheckDetail_Live AS CD LEFT JOIN SRG_px.CardActivity_squashed_test AS CA ON CD.POSkey = CA.POSkey UNION SELECT CD.*, CA.* FROM SRG_checks.CheckDetail_Live as CD RIGHT JOIN SRG_px.CardActivity_squashed_test AS CA ON CD.POSkey = CA.POSkey"
 # echo 'UBER JOIN COMPLETED, /outfiles/joined.cd.ca.csv CREATED'
