@@ -8,6 +8,8 @@ exec 1> >(logger -s -t $(basename $0)) 2>&1
 set -e
 
 
+#### THIS IS THE LAST VER OF THE OUTFILE UBER JOIN
+
 ######### UBER JOIN LIVE CHECK DETAIL WITH LIVE SQUASHED CARD ACTIVITY
 mysql  --login-path=local -uroot -N -e "SELECT CD.*, CA.* INTO OUTFILE '/home/ubuntu/db_files/outfiles/joined.cd.ca.csv' FIELDS TERMINATED BY ','  ENCLOSED BY '\"' LINES TERMINATED BY '\n' FROM SRG_checks.CheckDetail_Live AS CD RIGHT JOIN SRG_px.CardActivity_squashed_test AS CA ON CD.POSkey = CA.POSkey"
 echo 'UBER JOIN COMPLETED, /outfiles/joined.cd.ca.csv CREATED'
