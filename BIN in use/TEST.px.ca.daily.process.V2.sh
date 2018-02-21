@@ -26,8 +26,13 @@ do
 done
 echo 'INCOMING DATA FILES CLEANED AND MERGED, ARCHIVING ORIGINAL FILES'
 
+
+
 # ARCHIVE THE DOWNLOADED PAYTRONIX FILES
+### copy them for now until archive set up
 mv /home/ubuntu/db_files/incoming/px/*.csv /home/ubuntu/db_files/archive/
+### archive trials
+# tar -
 echo 'ORIGINAL FILES ARCHIVED, DROPPING -OLD- TEMP TABLE'
 
 # Delete Temp table if it exists

@@ -1,0 +1,38 @@
+path = /home/ubuntu/db_files
+bin = /home/ubuntu/bin
+
+1:01am (crontab is UTC 6:01) Cron.frequency.V2.sh
+	Runs frequency calcs on Squashed CA data 
+
+
+7:01am (crontab is UTC 12:01) CRON.sftp.px.daily.get.sh	
+	copies *.csv from paytronix to ../incoming/px
+		CardActivity_{date}.csv
+		GuestDemographic_{date}.csv
+		MediaExchanges_{date}.csv
+
+
+7:10am (crontab is UTC 12:10) CRON.ft.mv.daily.put.sh
+	copies ../incoming/px onto Serenitee Bertha ftp
+	copies ../incoming/px onto marketing vitals ftp
+
+##:## READY.px.ca.daily.process.V2.sh
+	Clean, merge ../incoming/px/*.csv move originals to ../archive
+	Drop and recreate CardActivity_Temp table
+	Load px data to table
+	Drop merged data file
+	Modify temp table to match CardActity_Live schema
+		Create LocationID, POSkey
+	Delete non relevant transaction types (check list?)
+	Insert into Live
+		update checknumbers from px missing leading 100 (faster way?)
+	Drop & Recreate Squashed table (leave behind non-matched in live table, do incremental squash?)
+		
+
+
+	
+	
+
+
+##:## Maintence - decompress archive directory - add new px_files - recompress
+
