@@ -1,0 +1,2 @@
+Card Activity script FIXES check number to account for 'missing' (preceding) '100' in Card_Activity_Live
+	process takes about 

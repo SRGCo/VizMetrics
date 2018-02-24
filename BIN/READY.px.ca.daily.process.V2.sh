@@ -9,10 +9,10 @@
 
 
 
-exec 1> >(logger -s -t $(basename $0)) 2>&1
+# exec 1> >(logger -s -t $(basename $0)) 2>&1
 
 #UNCOMMENT NEXT FOR VERBOSE
-# set -x
+set -x
 ##### HALT AND CATCH FIRE IF ANY COMMANd FAILS
 set -e
 
@@ -148,7 +148,7 @@ echo 'SQUASHED TABLE DROPPED, CREATING SQUASHED TABLE FROM STRUCTURE'
 
 # Create a empty copy of CardActivity table from CardActivityStructure table
 mysql  --login-path=local --silent -DSRG_px -N -e "CREATE TABLE CardActivity_squashed AS (SELECT * FROM CardActivity_Structure WHERE 1=0)"
-echo 'SQUASHED TABLE CREATED, SQUASHING AND LOADING DATA FILE TO SQUAHED TABLE'
+echo 'SQUASHED TABLE CREATED, SQUASHING AND LOADING DATA FILE TO SQUASHED TABLE'
 
 ############## SQUASH AND INSERT DATA FROM LIVE CardActivity ###############
 mysql  --login-path=local --silent -DSRG_px -N -e "INSERT INTO SRG_px.CardActivity_squashed
@@ -204,7 +204,8 @@ SUM(GreenWALAppAccrued),SUM(GreenWALAppRedeemed),MAX(GreenWALAppBalance),
 SUM(CompbucksAccrued),SUM(CompbucksRedeemed),MAX(CompbucksBalance),
 SUM(SereniteeGiftCardAccrued),SUM(SereniteeGiftCardRedeemed),MAX(SereniteeGiftCardBalance),
 SUM(NewsletterAccrued),SUM(NewsletterRedeemed),MAX(NewsletterBalance),
-SUM(SVDiscountTrackingAccrued),SUM(SVDiscountTrackingRedeemed),MAX(SVDiscountTrackingBalance)
+SUM(SVDiscountTrackingAccrued),SUM(SVDiscountTrackingRedeemed),MAX(SVDiscountTrackingBalance),
+,,,,,,,
 
 FROM CardActivity_Live
 
