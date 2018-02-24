@@ -1,2 +1,17 @@
+Card Activity script
+	"DELETE FROM CardActivity_Temp WHERE CardTemplate != 'Serenitee Loyalty'" 
+	"DELETE FROM CardActivity_Temp WHERE TransactionType = 'Check-In'"
+	"DELETE FROM CardActivity_Temp WHERE TransactionType = 'Campaign Adjustment'"
+	"DELETE FROM CardActivity_Temp WHERE TransactionType = 'Balance Inquiry'"
+	"DELETE FROM CardActivity_Temp WHERE TransactionType = 'Campaign Expiration'"
+	"DELETE FROM CardActivity_Temp WHERE TransactionType IS NULL"	
+	"DELETE FROM CardActivity_Temp WHERE CardNumber = '0'"
+
+
 Card Activity script FIXES check number to account for 'missing' (preceding) '100' in Card_Activity_Live
-	process takes about 
+		process takes about 10 mins
+	
+
+CRON.frequency.V2.sh does the frequency calculations on a daily basis
+
+

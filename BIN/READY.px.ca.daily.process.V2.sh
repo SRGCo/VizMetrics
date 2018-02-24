@@ -126,7 +126,7 @@ mysql  --login-path=local --silent -DSRG_px -N -e "INSERT INTO CardActivity_Live
 echo 'DATA INSERTED INTO LIVE TABLE, CORRELATING/FIXING PX CHECKNUMBERS MISSING 100'
 
 
-
+#### !!!!!!!! 	WE COULD HAVE THE SELECT QUERY ONLY GO BACK x# OF DAYS   !!!!!! ####
 ############ ************** CAN WE SPEED THIS UP ******************** ##############
 ##################### ITERATE UPDATE TO CA CheckNumbers MISSING LEADIN "100"
 mysql  --login-path=local --silent -DSRG_checks -N -e "SELECT RIGHT(CheckNumber, 4), DOB, LocationID FROM CheckDetail_Live WHERE CheckDetail_Live.CheckNumber like '100%'" | while read -r CheckNumber DOB LocationID;
@@ -147,10 +147,11 @@ mysql  --login-path=local --silent -DSRG_px -N -e "DROP TABLE CardActivity_squas
 echo 'SQUASHED TABLE DROPPED, CREATING SQUASHED TABLE FROM STRUCTURE'
 
 # Create a empty copy of CardActivity table from CardActivityStructure table
-mysql  --login-path=local --silent -DSRG_px -N -e "CREATE TABLE CardActivity_squashed AS (SELECT * FROM CardActivity_Structure WHERE 1=0)"
+mysql  --login-path=local --silent -DSRG_px -N -e "CREATE TABLE CardActivity_squashed AS (SELECT * FROM CardActivity_squashed_structure WHERE 1=0)"
 echo 'SQUASHED TABLE CREATED, SQUASHING AND LOADING DATA FILE TO SQUASHED TABLE'
 
 ############## SQUASH AND INSERT DATA FROM LIVE CardActivity ###############
+####### should we do the FY and luna inserts here
 mysql  --login-path=local --silent -DSRG_px -N -e "INSERT INTO SRG_px.CardActivity_squashed
 SELECT
 DISTINCT(POSKey), LocationID, CardNumber, CardTemplate, TransactionDate,
@@ -205,7 +206,7 @@ SUM(CompbucksAccrued),SUM(CompbucksRedeemed),MAX(CompbucksBalance),
 SUM(SereniteeGiftCardAccrued),SUM(SereniteeGiftCardRedeemed),MAX(SereniteeGiftCardBalance),
 SUM(NewsletterAccrued),SUM(NewsletterRedeemed),MAX(NewsletterBalance),
 SUM(SVDiscountTrackingAccrued),SUM(SVDiscountTrackingRedeemed),MAX(SVDiscountTrackingBalance),
-,,,,,,,
+'0','0','0','0','0','0','0'
 
 FROM CardActivity_Live
 
