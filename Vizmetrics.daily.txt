@@ -1,8 +1,8 @@
 path = /home/ubuntu/db_files
 bin = /home/ubuntu/bin
 
-1:01am (crontab is UTC 6:01) Cron.frequency.V2.sh
-	Runs frequency calcs on Squashed CA data 
+1:01am (crontab is UTC 6:01) CRON.frequency.V2.sh
+	Runs frequency calcs on CardActivity_squashed
 
 
 7:01am (crontab is UTC 12:01) CRON.sftp.px.daily.get.sh	
