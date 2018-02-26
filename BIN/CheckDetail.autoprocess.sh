@@ -2,10 +2,13 @@
 #! /bin/bash
 
 # UNCOMMENT TO LOG IT TO SYSLOG
-exec 1> >(logger -s -t $(basename $0)) 2>&1
+# exec 1> >(logger -s -t $(basename $0)) 2>&1
 
-# Next line turns echo on
+# UNCOMMENT NEXT FOR VERBOSE
 set -x
+
+##### HALT AND CATCH FIRE AT SINGLE ITERATION LEVEL
+# set -e
 
 ####### USES CTUIT EXPORTS #########
 ## 1 ## TableTurn [all company by date][TableTurns.raw.csv]
@@ -81,10 +84,10 @@ USE SRG_checks;
 
 #### BACKUPS NOW DONE VIA MYSQLDUMP #######
 #### EMPTY CURRENT BACKUP TABLE
-#	TRUNCATE TABLE TableTurns_Live_bu;
+	TRUNCATE TABLE TableTurns_Live_bu;
 
-#### CREATE NEW BACKUP OF EMPLOYEES TABLE
-#	INSERT INTO TableTurns_Live_bu SELECT * FROM TableTurns_Live;
+#### CREATE NEW BACKUP OF TABLE TURNS TABLE
+	INSERT INTO TableTurns_Live_bu SELECT * FROM TableTurns_Live;
 
 
 
@@ -132,10 +135,10 @@ USE SRG_checks;
 ######################################## EMPLOYEES ######################################################################
 
 #### DELETE OLD EMPLOYEE BACKUP TABLE
-#	TRUNCATE TABLE Employees_Live_bu;
+	TRUNCATE TABLE Employees_Live_bu;
 
 #### CREATE NEW BACKUP OF EMPLOYEES TABLE
-#	INSERT INTO Employees_Live_bu SELECT * FROM Employees_Live;
+	INSERT INTO Employees_Live_bu SELECT * FROM Employees_Live;
 
 #### EMPTY EMPLOYEE TABLE
 	TRUNCATE TABLE Employees_Live;
@@ -146,7 +149,7 @@ USE SRG_checks;
 ######################################## CHECK DETAIL #########################################################################
 
 #### EMPTY CURRENT BACKUP TABLE
-#TRUNCATE TABLE CheckDetail_Live_bu;
+# TRUNCATE TABLE CheckDetail_Live_bu;
 
 #### CREATE NEW BACKUP OF CHECKDETAIL TABLE
 # THIS BACKUP TAKES FOREVER
@@ -237,12 +240,12 @@ USE SRG_checks;
 # QUIT MYSQL
 EOFMYSQL
 
-### GIVE MYSQL A CHANCE To CATCH UP
-SLEEP 1m
+
+#### NEED to dump CheckDetail_Live.out.csv before doing the following
 
 ##### PROCESS THE FILE
 #### PREPEND HEADERS
-cat /home/ubuntu/db_files/headers/checkdetail.headers.csv /home/ubuntu/db_files/outfiles/CheckDetail_Live.out.csv > /home/ubuntu/db_files/outfiles/CheckDetail_Live.csv
+#### cat /home/ubuntu/db_files/headers/checkdetail.headers.csv /home/ubuntu/db_files/outfiles/CheckDetail_Live.out.csv > /home/ubuntu/db_files/outfiles/CheckDetail_Live.csv
 
 ##### CheckDetail_Live.csv
 
