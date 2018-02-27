@@ -7,7 +7,7 @@
 set -x
 
 ##### HALT AND CATCH FIRE AT SINGLE ITERATION LEVEL
-# set -e
+set -e
 
 ####### USES CTUIT EXPORTS #########
 ## 1 ## TableTurn [all company by date][TableTurns.raw.csv]
@@ -81,19 +81,10 @@ mysqldump  --login-path=local -uroot SRG_checks > /home/ubuntu/db_files/SRG_chec
 
 #### BACKUPS NOW DONE VIA MYSQLDUMP #######
 #### EMPTY CURRENT BACKUP TABLE
-<<<<<<< HEAD
 mysql  --login-path=local --silent -DSRG_checks -N -e "TRUNCATE TABLE TableTurns_Live_bu"
 
 #### CREATE NEW BACKUP OF EMPLOYEES TABLE
 mysql  --login-path=local --silent -DSRG_checks -N -e "INSERT INTO TableTurns_Live_bu SELECT * FROM TableTurns_Live"
-=======
-	TRUNCATE TABLE TableTurns_Live_bu;
-
-#### CREATE NEW BACKUP OF TABLE TURNS TABLE
-	INSERT INTO TableTurns_Live_bu SELECT * FROM TableTurns_Live;
-
->>>>>>> 30e88bf9ed6abb93223587a8b93572ff94d2f11e
-
 
 ### MAKE SURE THE TEMP TABLE HAS BEEN DUMPED
 mysql  --login-path=local --silent -DSRG_checks -N -e "DROP TABLE IF EXISTS TableTurns_Temp"
@@ -139,17 +130,10 @@ mysql  --login-path=local --silent -DSRG_checks -N -e "INSERT INTO TableTurns_Li
 ######################################## EMPLOYEES ######################################################################
 
 #### DELETE OLD EMPLOYEE BACKUP TABLE
-<<<<<<< HEAD
 mysql  --login-path=local --silent -DSRG_checks -N -e "TRUNCATE TABLE Employees_Live_bu"
 
 #### CREATE NEW BACKUP OF EMPLOYEES TABLE
 mysql  --login-path=local --silent -DSRG_checks -N -e "INSERT INTO Employees_Live_bu SELECT * FROM Employees_Live"
-=======
-	TRUNCATE TABLE Employees_Live_bu;
-
-#### CREATE NEW BACKUP OF EMPLOYEES TABLE
-	INSERT INTO Employees_Live_bu SELECT * FROM Employees_Live;
->>>>>>> 30e88bf9ed6abb93223587a8b93572ff94d2f11e
 
 #### EMPTY EMPLOYEE TABLE
 mysql  --login-path=local --silent -DSRG_checks -N -e "TRUNCATE TABLE Employees_Live"
@@ -160,11 +144,7 @@ mysql  --login-path=local --silent -DSRG_checks -N -e "Load data local infile '/
 ######################################## CHECK DETAIL #########################################################################
 
 #### EMPTY CURRENT BACKUP TABLE
-<<<<<<< HEAD
 mysql  --login-path=local --silent -DSRG_checks -N -e "TRUNCATE TABLE CheckDetail_Live_bu"
-=======
-# TRUNCATE TABLE CheckDetail_Live_bu;
->>>>>>> 30e88bf9ed6abb93223587a8b93572ff94d2f11e
 
 #### CREATE NEW BACKUP OF CHECKDETAIL TABLE
 # THIS BACKUP TAKES FOREVER
@@ -253,19 +233,11 @@ mysql  --login-path=local --silent -DSRG_checks -N -e "UPDATE CheckDetail_Live C
 mysql  --login-path=local --silent -DSRG_checks -N -e "SELECT CheckDetail_Live.* INTO OUTFILE '/home/ubuntu/db_files/outfiles/CheckDetail_Live.out.csv' FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n' FROM CheckDetail_Live" 
 
 
-<<<<<<< HEAD
-
-##### PROCESS THE FILE
-#### PREPEND HEADERS
-# cat /home/ubuntu/db_files/headers/checkdetail.headers.csv /home/ubuntu/db_files/outfiles/CheckDetail_Live.out.csv > /home/ubuntu/db_files/outfiles/CheckDetail_Live.csv
-=======
-
 #### NEED to dump CheckDetail_Live.out.csv before doing the following
-
 ##### PROCESS THE FILE
 #### PREPEND HEADERS
-#### cat /home/ubuntu/db_files/headers/checkdetail.headers.csv /home/ubuntu/db_files/outfiles/CheckDetail_Live.out.csv > /home/ubuntu/db_files/outfiles/CheckDetail_Live.csv
->>>>>>> 30e88bf9ed6abb93223587a8b93572ff94d2f11e
+
+# cat /home/ubuntu/db_files/headers/checkdetail.headers.csv /home/ubuntu/db_files/outfiles/CheckDetail_Live.out.csv > /home/ubuntu/db_files/outfiles/CheckDetail_Live.csv
 
 ##### CheckDetail_Live.csv
 
