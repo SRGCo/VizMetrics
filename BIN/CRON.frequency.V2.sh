@@ -1,5 +1,6 @@
 #! //bin/bash
-# LOG IT TO SYSLOG
+# HAVE OUTPUT SO CRON EMAILS RESULTS
+set -x
 
 
 
