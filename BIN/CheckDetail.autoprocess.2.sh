@@ -1,7 +1,7 @@
 #! /bin/bash
 
 # UNCOMMENT TO LOG IT TO SYSLOG
-exec 1> >(logger -s -t $(basename $0)) 2>&1
+# exec 1> >(logger -s -t $(basename $0)) 2>&1
 
 # Next line turns echo on
 set -x
