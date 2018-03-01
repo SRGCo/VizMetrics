@@ -8,7 +8,7 @@ exec 1> >(logger -s -t $(basename $0)) 2>&1
 set -e
 
 ######### UBER JOIN LIVE CHECK DETAIL WITH LIVE SQUASHED CARD ACTIVITY
-mysql  --login-path=local -uroot -N -e "SELECT * INTO OUTFILE '/home/ubuntu/db_files/outfiles/joined.cd.ca.csv'FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n' FROM SRG_uber.Master_test"
+mysql  --login-path=local -uroot -N -e "SELECT * INTO OUTFILE '/home/ubuntu/db_files/outfiles/joined.cd.ca.csv' FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n' FROM SRG_uber.Master_test"
 echo 'UBER JOIN COMPLETED, /outfiles/joined.cd.ca.csv CREATED'
 
 
@@ -22,6 +22,11 @@ echo 'HEADERS ADDED, /outfiles/uber.join.wheaders.csv CREATED, joined.cd.ca.csv 
 sed 's#\\N##g' /home/ubuntu/db_files/outfiles/uber.join.wheaders.csv > /home/ubuntu/db_files/outfiles/uber.join.clean.wheaders.csv && rm /home/ubuntu/db_files/outfiles/uber.join.wheaders.csv
 echo 'NEWLINE CHARACTERS STRIPPED, /outfiles/uber.join.clean.wheaders.csv CREATED, uber.join.wheaders DELETED'
 echo '/home/ubuntu/db_files/outfiles/uber.join.clean.wheaders.csv READY.'
+
+####
+head -300 uber.join.clean.wheaders.csv > small.uber.csv
+echo small uber created
+
 
 
 
