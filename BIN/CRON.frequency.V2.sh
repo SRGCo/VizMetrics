@@ -1,6 +1,6 @@
 #! //bin/bash
 # HAVE OUTPUT SO CRON EMAILS RESULTS
-set -x
+# set -x
 
 
 
@@ -12,8 +12,6 @@ set -x
 
 #exec 1> >(logger -s -t $(basename $0)) 2>&1
 
-#UNCOMMENT NEXT FOR VERBOSE
-# set -x
 ##### HALT AND CATCH FIRE AT SINGLE ITERATION LEVEL
 set -e
 
@@ -61,5 +59,5 @@ do
 		fi
 done
 
-
+echo Frequencies Updated
 
