@@ -15,11 +15,13 @@
 ##### HALT AND CATCH FIRE AT SINGLE ITERATION LEVEL
 set -e
 
-#1.      Current Frequency (Current_freq): Today-Last visit date
-#2.      Recent Frequency (Recent_freq): Last Visit Date-Previous visit date (2 visits back)
-#3.      Previous Frequency: Previous visit date (2 visits back)- 3 visits back
-#4.      12 Month Frequency (Year_freq): Count Visits over the previous 12 months
-#5.      Lifetime Frequency (Life_freq): Count Visits since Enrollment date
+#1.	 Historical Current Frequency (Hist_current_freq): Transaction Date (DOB) - Last visit date
+#2.      Current Frequency (Current_freq): Today-Last visit date
+#3.      Recent Frequency (Recent_freq): Last Visit Date-Previous visit date (2 visits back)
+#4.      Previous Frequency: Previous visit date (2 visits back)- 3 visits back
+#5.      12 Month Frequency (Year_freq): Count Visits over the previous 12 months
+#6.      Lifetime Frequency (Life_freq): Count Visits since Enrollment date
+
 
 ##################### ITERATE ON CardNumber TO CALCULATE VISIT FREQUENCIES
 ###### -N is the No Headers in Output option
@@ -37,19 +39,27 @@ do
 	MaxDate=$(mysql  --login-path=local -DSRG_px -N -e "SELECT MAX(TransactionDate) from CardActivity_squashed WHERE CardNumber = '$CardNumber'")
 		##### GET 2ND TO MAX TRANSACTIONDATE
 		SecondMax=$(mysql  --login-path=local -DSRG_px -N -e "SELECT DISTINCT(TransactionDate) from CardActivity_squashed WHERE CardNumber = '$CardNumber' AND VisitsAccrued = '1.0000' ORDER BY TransactionDate DESC limit 1,1") 
+		##### IF SECONDMAX IS NULL / EMPTY
+		##### IF WE ARE ONLY GRABBING WHERE THERE IS MORE THAN ONE ENTRY **WHY** ARE ANY SECONDMAX's NULL ?!?!?!
 		if [ -z "$SecondMax" ]
 		then
+
 			##### UPDATE ONLY FIRST FREQUENCIES
 			mysql  --login-path=local -DSRG_px -N -e "UPDATE CardActivity_squashed SET Current_freq = DATEDIFF(NOW(), '$MaxDate'), Year_freq = '$PrevYear', Life_freq = '$Lifetime'  WHERE CardNumber = '$CardNumber'"
 			# echo $MaxDate $PrevYear, $Lifetime, Current updated $CardNumber
+		
+		##### IF SECONDMAX HAS A VALUE
 		else
 			##### GET 3RD TO MAX TRANSACTIONDATE
 			ThirdMax=$(mysql  --login-path=local -DSRG_px -N -e "SELECT DISTINCT(transactiondate) from CardActivity_squashed WHERE CardNumber = '$CardNumber' AND VisitsAccrued = '1.0000' ORDER BY TransactionDate DESC limit 2,1") 
+			##### IF THIRDMAX IS NULL / EMPTY
 			if [ -z "$ThirdMax" ]
 			then
 				##### UPDATE ONLY FIRST AND SECOND FREQUENCIES
 				mysql  --login-path=local -DSRG_px -N -e "UPDATE CardActivity_squashed SET Current_freq = DATEDIFF(NOW(), '$MaxDate'), Recent_freq = DATEDIFF('$MaxDate', '$SecondMax'), Year_freq = '$PrevYear', Life_freq = '$Lifetime'  WHERE CardNumber = '$CardNumber'"
 				# echo $MaxDate, $SecondMax $PrevYear, $Lifetime, Current, Recent updated $CardNumber
+
+			##### IF THIRDMAX HAS A VALUE
 			else
 				##### UPDATE ALL FREQUENCIES
 				mysql  --login-path=local -DSRG_px -N -e "UPDATE CardActivity_squashed SET Current_freq = DATEDIFF(NOW(), '$MaxDate'), Recent_freq = DATEDIFF('$MaxDate', '$SecondMax'), Previous_freq = DATEDIFF('$SecondMax', '$ThirdMax'), Year_freq = '$PrevYear', Life_freq = '$Lifetime'   WHERE CardNumber = '$CardNumber'"
