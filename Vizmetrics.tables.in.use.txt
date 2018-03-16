@@ -1,0 +1,29 @@
+READY.px.ca.daily.process.V2.sh
+	{CardActivity_temp} (as temp)
+	CardActivity_Structure
+	CardActivity_Live
+	CheckDetail_Live
+	{CardActivity_squashed} (created during script left existing)
+CheckDetail.autoprocess.2.sh
+	SRG_checks
+	TableTurns_Live
+	TableTurns_Live_bu (backup table)
+	TableTurns_Temp (as temp)
+	Employees_Live
+	Employees_Live_bu (backup table)
+	CheckDetail_Live
+	CheckDetail_Live_bu (backup table)
+	CheckDetail_temp (as temp)
+TEST.uber.join.full.totable.sh
+	Master_test
+		CheckDetail_Live (read from)
+	CardActivity_squashed_test
+CRON.frequency.V2.sh
+		CardActivity_squashed (updated)
+CRON.frequency.V3.test.sh
+		CardActivity_squashed (updated)
+
+	
+
+
+	

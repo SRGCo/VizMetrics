@@ -67,7 +67,17 @@ do
 				# echo $MaxDate, $SecondMax, $ThirdMax, $PrevYear, $Lifetime, Current, Recent, previous updated $CardNumber
 			fi
 		fi
+	##### HISTORICAL CURRENT DOB - Last Visit
 done
+
+##################### ITERATE ON POSKEY TO HISTORICAL CURRENT FREQUENCIES
+###### -N is the No Headers in Output option
+###### -e is the 'read statement and quit'
+mysql  --login-path=local -DSRG_px -N -e "SELECT POSkey FROM CardActivity_squashed WHERE LocationID != '0'  GROUP BY CardNumber HAVING COUNT(*) > 1 ORDER BY CardNumber ASC" | while read -r CardNumber;
+do
+
+
+
 
 echo Frequencies Updated
 
