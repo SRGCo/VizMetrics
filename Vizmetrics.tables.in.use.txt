@@ -7,12 +7,9 @@ READY.px.ca.daily.process.V2.sh
 CheckDetail.autoprocess.2.sh
 	SRG_checks
 	TableTurns_Live
-	TableTurns_Live_bu (backup table)
 	TableTurns_Temp (as temp)
 	Employees_Live
-	Employees_Live_bu (backup table)
 	CheckDetail_Live
-	CheckDetail_Live_bu (backup table)
 	CheckDetail_temp (as temp)
 TEST.uber.join.full.totable.sh
 	Master_test

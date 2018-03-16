@@ -26,57 +26,58 @@ set -e
 ##################### ITERATE ON CardNumber TO CALCULATE VISIT FREQUENCIES
 ###### -N is the No Headers in Output option
 ###### -e is the 'read statement and quit'
-mysql  --login-path=local -DSRG_px -N -e "SELECT CardNumber FROM CardActivity_squashed GROUP BY CardNumber HAVING COUNT(*) > 1 ORDER BY CardNumber ASC" | while read -r CardNumber;
+mysql  --login-path=local -DSRG_Dev -N -e "SELECT CardNumber FROM Master GROUP BY CardNumber HAVING COUNT(*) > 1 ORDER BY CardNumber ASC" | while read -r CardNumber;
 do
 	######## COUNT VISITS OVER PREVIOUS 12 MONTHS AND LIFETIME
-	PrevYear=$(mysql  --login-path=local -DSRG_px -N -e "SELECT COUNT(DISTINCT(TransactionDate)) from CardActivity_squashed WHERE CardNumber = '$CardNumber' 
+	PrevYear=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT COUNT(DISTINCT(TransactionDate)) from Master WHERE CardNumber = '$CardNumber' 
 								AND VisitsAccrued = '1.0000' AND TransactionDate >= DATE_SUB(NOW(),INTERVAL 1 YEAR)")
 
 	######## COUNT VISITS OVER PREVIOUS 12 MONTHS AND LIFETIME
-	Lifetime=$(mysql  --login-path=local -DSRG_px -N -e "SELECT COUNT(DISTINCT(TransactionDate)) from CardActivity_squashed WHERE CardNumber = '$CardNumber' 
+	Lifetime=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT COUNT(DISTINCT(TransactionDate)) from Master WHERE CardNumber = '$CardNumber' 
 								AND VisitsAccrued = '1.0000'")
 	##### GET MAX  TRANSACTIONDATE
-	MaxDate=$(mysql  --login-path=local -DSRG_px -N -e "SELECT MAX(TransactionDate) from CardActivity_squashed WHERE CardNumber = '$CardNumber'")
+	MaxDate=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT MAX(TransactionDate) from Master WHERE CardNumber = '$CardNumber'")
 		##### GET 2ND TO MAX TRANSACTIONDATE
-		SecondMax=$(mysql  --login-path=local -DSRG_px -N -e "SELECT DISTINCT(TransactionDate) from CardActivity_squashed WHERE CardNumber = '$CardNumber' AND VisitsAccrued = '1.0000' ORDER BY TransactionDate DESC limit 1,1") 
+		SecondMax=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(TransactionDate) from Master WHERE CardNumber = '$CardNumber' AND VisitsAccrued = '1.0000' ORDER BY TransactionDate DESC limit 1,1") 
 		##### IF SECONDMAX IS NULL / EMPTY
 		##### IF WE ARE ONLY GRABBING WHERE THERE IS MORE THAN ONE ENTRY **WHY** ARE ANY SECONDMAX's NULL ?!?!?!
 		if [ -z "$SecondMax" ]
 		then
 
 			##### UPDATE ONLY FIRST FREQUENCIES
-			mysql  --login-path=local -DSRG_px -N -e "UPDATE CardActivity_squashed SET Current_freq = DATEDIFF(NOW(), '$MaxDate'), Year_freq = '$PrevYear', Life_freq = '$Lifetime'  WHERE CardNumber = '$CardNumber'"
+			mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET Current_freq = DATEDIFF(NOW(), '$MaxDate'), Year_freq = '$PrevYear', Life_freq = '$Lifetime'  WHERE CardNumber = '$CardNumber'"
 			# echo $MaxDate $PrevYear, $Lifetime, Current updated $CardNumber
 		
 		##### IF SECONDMAX HAS A VALUE
 		else
 			##### GET 3RD TO MAX TRANSACTIONDATE
-			ThirdMax=$(mysql  --login-path=local -DSRG_px -N -e "SELECT DISTINCT(transactiondate) from CardActivity_squashed WHERE CardNumber = '$CardNumber' AND VisitsAccrued = '1.0000' ORDER BY TransactionDate DESC limit 2,1") 
+			ThirdMax=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(transactiondate) from Master WHERE CardNumber = '$CardNumber' AND VisitsAccrued = '1.0000' ORDER BY TransactionDate DESC limit 2,1") 
 			##### IF THIRDMAX IS NULL / EMPTY
 			if [ -z "$ThirdMax" ]
 			then
 				##### UPDATE ONLY FIRST AND SECOND FREQUENCIES
-				mysql  --login-path=local -DSRG_px -N -e "UPDATE CardActivity_squashed SET Current_freq = DATEDIFF(NOW(), '$MaxDate'), Recent_freq = DATEDIFF('$MaxDate', '$SecondMax'), Year_freq = '$PrevYear', Life_freq = '$Lifetime'  WHERE CardNumber = '$CardNumber'"
+				mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET Current_freq = DATEDIFF(NOW(), '$MaxDate'), Recent_freq = DATEDIFF('$MaxDate', '$SecondMax'), Year_freq = '$PrevYear', Life_freq = '$Lifetime'  WHERE CardNumber = '$CardNumber'"
 				# echo $MaxDate, $SecondMax $PrevYear, $Lifetime, Current, Recent updated $CardNumber
 
 			##### IF THIRDMAX HAS A VALUE
 			else
 				##### UPDATE ALL FREQUENCIES
-				mysql  --login-path=local -DSRG_px -N -e "UPDATE CardActivity_squashed SET Current_freq = DATEDIFF(NOW(), '$MaxDate'), Recent_freq = DATEDIFF('$MaxDate', '$SecondMax'), Previous_freq = DATEDIFF('$SecondMax', '$ThirdMax'), Year_freq = '$PrevYear', Life_freq = '$Lifetime'   WHERE CardNumber = '$CardNumber'"
+				mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET Current_freq = DATEDIFF(NOW(), '$MaxDate'), Recent_freq = DATEDIFF('$MaxDate', '$SecondMax'), Previous_freq = DATEDIFF('$SecondMax', '$ThirdMax'), Year_freq = '$PrevYear', Life_freq = '$Lifetime'   WHERE CardNumber = '$CardNumber'"
 
 				# echo $MaxDate, $SecondMax, $ThirdMax, $PrevYear, $Lifetime, Current, Recent, previous updated $CardNumber
 			fi
 		fi
-	##### HISTORICAL CURRENT DOB - Last Visit
+	##################### ITERATE ON RECORDID FOR HISTORICAL CURRENT FREQUENCIES
+	###### -N is the No Headers in Output option
+	###### -e is the 'read statement and quit'
+	mysql  --login-path=local -DSRG_Dev -N -e "SELECT record_id, transactiondate FROM Master ORDER BY record_id ASC" | while read -r recordid, transactiondate ;
+	do
+		##### UPDATE HISTORICAL CURRENT FREQUENCIES
+		mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET Hist_current_freq = ('$transactiondate' - '$MaxDate') WHERE recordid = '$recordid'"
+		echo $transactiondate $MaxDate $recordid UPDATED
+	done
+
 done
-
-##################### ITERATE ON POSKEY TO HISTORICAL CURRENT FREQUENCIES
-###### -N is the No Headers in Output option
-###### -e is the 'read statement and quit'
-mysql  --login-path=local -DSRG_px -N -e "SELECT POSkey FROM CardActivity_squashed WHERE LocationID != '0'  GROUP BY CardNumber HAVING COUNT(*) > 1 ORDER BY CardNumber ASC" | while read -r CardNumber;
-do
-
-
 
 
 echo Frequencies Updated

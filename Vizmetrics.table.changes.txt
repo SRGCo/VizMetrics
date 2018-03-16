@@ -1,0 +1,5 @@
+
+3-16 Removed record_id from CheckDetail_Live (and checkdetail process script)
+3-16 Removed "old" record ID from Master
+3-16 Added "record_id" autoincrement index field at end of master table
+

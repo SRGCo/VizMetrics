@@ -79,10 +79,9 @@ mysqldump  --login-path=local -uroot SRG_checks > /home/ubuntu/db_files/SRG_chec
 
 #### BACKUPS NOW DONE VIA MYSQLDUMP #######
 #### EMPTY CURRENT BACKUP TABLE
-mysql  --login-path=local --silent -DSRG_checks -N -e "TRUNCATE TABLE TableTurns_Live_bu"
-
+# mysql  --login-path=local --silent -DSRG_checks -N -e "TRUNCATE TABLE TableTurns_Live_bu"
 #### CREATE NEW BACKUP OF EMPLOYEES TABLE
-mysql  --login-path=local --silent -DSRG_checks -N -e "INSERT INTO TableTurns_Live_bu SELECT * FROM TableTurns_Live"
+#mysql  --login-path=local --silent -DSRG_checks -N -e "INSERT INTO TableTurns_Live_bu SELECT * FROM TableTurns_Live"
 
 
 ### MAKE SURE THE TEMP TABLE HAS BEEN DUMPED
@@ -127,12 +126,11 @@ mysql  --login-path=local --silent -DSRG_checks -N -e "ALTER TABLE TableTurns_Te
 mysql  --login-path=local --silent -DSRG_checks -N -e "INSERT INTO TableTurns_Live SELECT * FROM TableTurns_Temp"
 
 ######################################## EMPLOYEES ######################################################################
-
+#### BACKUPS NOW DONE VIA MYSQLDUMP #######
 #### DELETE OLD EMPLOYEE BACKUP TABLE
-mysql  --login-path=local --silent -DSRG_checks -N -e "TRUNCATE TABLE Employees_Live_bu"
-
+# mysql  --login-path=local --silent -DSRG_checks -N -e "TRUNCATE TABLE Employees_Live_bu"
 #### CREATE NEW BACKUP OF EMPLOYEES TABLE
-mysql  --login-path=local --silent -DSRG_checks -N -e "INSERT INTO Employees_Live_bu SELECT * FROM Employees_Live"
+# mysql  --login-path=local --silent -DSRG_checks -N -e "INSERT INTO Employees_Live_bu SELECT * FROM Employees_Live"
 
 #### EMPTY EMPLOYEE TABLE
 mysql  --login-path=local --silent -DSRG_checks -N -e "TRUNCATE TABLE Employees_Live"
@@ -141,15 +139,13 @@ mysql  --login-path=local --silent -DSRG_checks -N -e "TRUNCATE TABLE Employees_
 mysql  --login-path=local --silent -DSRG_checks -N -e "Load data local infile '/home/ubuntu/db_files/incoming/Employees.csv' into table Employees_Live fields terminated by ',' lines terminated by '\n'"
 
 ######################################## CHECK DETAIL #########################################################################
-
+#### BACKUPS NOW DONE VIA MYSQLDUMP #######
 #### EMPTY CURRENT BACKUP TABLE
-mysql  --login-path=local --silent -DSRG_checks -N -e "TRUNCATE TABLE CheckDetail_Live_bu"
-
+# mysql  --login-path=local --silent -DSRG_checks -N -e "TRUNCATE TABLE CheckDetail_Live_bu"
 #### CREATE NEW BACKUP OF CHECKDETAIL TABLE
 # THIS BACKUP TAKES FOREVER
-mysql  --login-path=local --silent -DSRG_checks -N -e "INSERT INTO CheckDetail_Live_bu SELECT * FROM CheckDetail_Live"
+# mysql  --login-path=local --silent -DSRG_checks -N -e "INSERT INTO CheckDetail_Live_bu SELECT * FROM CheckDetail_Live"
 ###############################################################################################################################
-
 
 #### DUMP EXISTING CHECK DETAIL INCOMING TABLE
 mysql  --login-path=local --silent -DSRG_checks -N -e "DROP TABLE IF EXISTS CheckDetail_Temp"
@@ -160,8 +156,9 @@ mysql  --login-path=local --silent -DSRG_checks -N -e "CREATE TABLE CheckDetail_
 #### Load the data from the latest file into the (temp) check detail
 mysql  --login-path=local --silent -DSRG_checks -N -e "Load data local infile '/home/ubuntu/db_files/incoming/CheckDetail.csv' into table CheckDetail_Temp fields terminated by ',' lines terminated by '\n'"
 
+#### WE ARE GOING TO USE ONE RECORD ID AND IT WILL BE IN MASTER
 #### Add a record id which will get auto incremented when imported into live
-mysql  --login-path=local --silent -DSRG_checks -N -e "ALTER TABLE CheckDetail_Temp ADD record_id INT"
+# mysql  --login-path=local --silent -DSRG_checks -N -e "ALTER TABLE CheckDetail_Temp ADD record_id INT"
 
 #### PUT TransactionDate INTO SQL FORMAT
 mysql  --login-path=local --silent -DSRG_checks -N -e "UPDATE CheckDetail_Temp SET DOB = STR_TO_DATE(DOB, '%m/%d/%Y') WHERE STR_TO_DATE(DOB, '%m/%d/%Y') IS NOT NULL"
@@ -208,7 +205,7 @@ mysql  --login-path=local --silent -DSRG_checks -N -e "UPDATE CheckDetail_Temp C
 
 
 #### ADD THE TABLETURNS FIELDS SO MATCHES 'LIVE' TABLE
-mysql  --login-path=local --silent -DSRG_checks -N -e "ALTER TABLE CheckDetail_Temp ADD OpenTime datetime AFTER record_id"
+mysql  --login-path=local --silent -DSRG_checks -N -e "ALTER TABLE CheckDetail_Temp ADD OpenTime datetime AFTER TransfersOut"
 mysql  --login-path=local --silent -DSRG_checks -N -e "ALTER TABLE CheckDetail_Temp ADD CloseTime datetime AFTER OpenTime"
 mysql  --login-path=local --silent -DSRG_checks -N -e "ALTER TABLE CheckDetail_Temp ADD MinutesOpen int(100) AFTER CloseTime"
 
@@ -228,10 +225,11 @@ mysql  --login-path=local --silent -DSRG_checks -N -e "UPDATE CheckDetail_Live C
 mysql  --login-path=local --silent -DSRG_checks -N -e "UPDATE CheckDetail_Live CDL SET CDL.CloseTime = CDL.DOB WHERE CDL.CloseTime < '2001-01-01'"
 
 
+
+
+##### NOW JOINING WITH CARD ACTIVITY AND INSERTING INTO MASTER TABLE
 ##### WRITE TO OUTFILE
-mysql  --login-path=local --silent -DSRG_checks -N -e "SELECT CheckDetail_Live.* INTO OUTFILE '/home/ubuntu/db_files/outfiles/CheckDetail_Live.out.csv' FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n' FROM CheckDetail_Live" 
-
-
+# mysql  --login-path=local --silent -DSRG_checks -N -e "SELECT CheckDetail_Live.* INTO OUTFILE '/home/ubuntu/db_files/outfiles/CheckDetail_Live.out.csv' FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n' FROM CheckDetail_Live" 
 
 ##### PROCESS THE FILE
 #### PREPEND HEADERS
