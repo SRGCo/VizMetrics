@@ -5,7 +5,7 @@
 
 
 ############################################################################################
-################## FIX THIS SCRIPT SO IT DOES ITS WORK IN A NON PRODUCTION DIRECTORY !!!!!
+################## THIS SCRIPT SHOULD DO FILE HANDLING IN A NON PRODUCTION DIRECTORY !!!!!
 ############################################################################################
 ########## ADD ERROR HANDLING AT EACH FAIL POINT ###########################################
 
@@ -15,6 +15,7 @@
 ##### HALT AND CATCH FIRE AT SINGLE ITERATION LEVEL
 set -e
 
+######### THESE ARE THE FIELDS WE WILL CALCULATE EVERY DAY #################################
 #1.	 Historical Current Frequency (Hist_current_freq): Transaction Date (DOB) - Last visit date
 #2.      Current Frequency (Current_freq): Today-Last visit date
 #3.      Recent Frequency (Recent_freq): Last Visit Date-Previous visit date (2 visits back)
