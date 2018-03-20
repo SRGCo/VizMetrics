@@ -7,7 +7,6 @@
 ########## ADD ERROR HANDLING AT EACH FAIL POINT ###########################################
 
 
-
 # exec 1> >(logger -s -t $(basename $0)) 2>&1
 
 #UNCOMMENT NEXT FOR VERBOSE
@@ -220,7 +219,7 @@ SUM(CompbucksAccrued),SUM(CompbucksRedeemed),MAX(CompbucksBalance),
 SUM(SereniteeGiftCardAccrued),SUM(SereniteeGiftCardRedeemed),MAX(SereniteeGiftCardBalance),
 SUM(NewsletterAccrued),SUM(NewsletterRedeemed),MAX(NewsletterBalance),
 SUM(SVDiscountTrackingAccrued),SUM(SVDiscountTrackingRedeemed),MAX(SVDiscountTrackingBalance),
-'0','0','0','0','0','0','0',''
+'0','0','0','0','0','0','0','0'
 
 FROM CardActivity_Live
 
