@@ -219,7 +219,7 @@ SUM(CompbucksAccrued),SUM(CompbucksRedeemed),MAX(CompbucksBalance),
 SUM(SereniteeGiftCardAccrued),SUM(SereniteeGiftCardRedeemed),MAX(SereniteeGiftCardBalance),
 SUM(NewsletterAccrued),SUM(NewsletterRedeemed),MAX(NewsletterBalance),
 SUM(SVDiscountTrackingAccrued),SUM(SVDiscountTrackingRedeemed),MAX(SVDiscountTrackingBalance),
-'0','0','0','0','0','0','0','0'
+'0','0','0','0','0','0','0','0','0','0'
 
 FROM CardActivity_Live
 
@@ -236,20 +236,20 @@ echo 'SQUASHED DATA TABLE POPULATED'
 ##################### ITERATE ON POSkey 
 ###### -N is the No Headers in Output option
 ###### -e is the 'read statement and quit'
-mysql  --login-path=local -DSRG_Dev -N -e "SELECT TransactionDate FROM Master GROUP BY TransactionDate ORDER BY TransactionDate ASC" | while read -r TransactionDate;
+mysql  --login-path=local -DSRG_Dev -N -e "SELECT TransactionDate FROM Master WHERE TransactionDate > '2013-09-01' GROUP BY TransactionDate ORDER BY TransactionDate ASC" | while read -r TransactionDate;
 do
 	######## GET FY FOR THIS TransactionDate (DOB)
 	FY=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT FY from Lunas WHERE DOB = '$TransactionDate'")
 
 	######## GET FY FOR THIS TransactionDate (DOB)
-	Luna=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT Luna from Lunas WHERE DOB = '$TransactionDate'")
+	YLuna=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT YLuna from Lunas WHERE DOB = '$TransactionDate'")
 
 
 			##### UPDATE FISCAL YEAR FROM TRANSACTIONDATE
-			mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET FY = '$FY', Luna = '$Luna' WHERE TransactionDate = '$TransactionDate'"
+			mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET FY = '$FY',YLuna = '$YLuna' WHERE TransactionDate = '$TransactionDate'"
 			echo $TransactionDate updated FY= $FY Luna = $Luna
 done
 
 
-echo FY & Y-LUNA CALCD & POPULATED
+echo FY YLUNA CALCD POPULATED
 
