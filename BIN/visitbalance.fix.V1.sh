@@ -26,7 +26,7 @@ do
 	VisitsAccrued=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT VisitsAccrued from Master_test2 WHERE TransactionDate = '$Min_dob' and CardNumber = '$CardNumber'")
 
 	##### SELECT ALL ROWS FOR THAT CARD AND SET Vm_VisitsAccrued = VisitsAccrued, Vm_VisitsBalance = VisitsBalance (they are the same)
-	mysql  --login-path=local -DSRG_Dev -N -e "SELECT TransactionDate from Master_test2 WHERE CardNumber = '$CardNumber' ORDER BY TransactionDate ASC" |  while read -r TransactionDate;
+	mysql  --login-path=local -DSRG_Dev -N -e "SELECT MIN(TransactionDate) from Master_test2 WHERE CardNumber = '$CardNumber'" |  while read -r TransactionDate;
 	do
 			
 			if [ -z "$VisitsAccrued" ]
