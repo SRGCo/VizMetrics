@@ -1,0 +1,4 @@
+SELECT VisitsAccrued, Vm_VisitsAccrued, TransactionDate, VisitsBalance from Master_test2 WHERE CardNumber = '6000227903295851' ORDER BY `Master_test2`.`TransactionDate` ASC
+
+
+SELECT CardNumber, TransactionDate, SUM(Vm_VisitsAccrued) , MAX(Vm_VisitsBalance) , MAX(FreqLifetime), (SUM(Vm_VisitsAccrued) + MAX(Vm_VisitsBalance) - MAX(FreqLifetime)) AS DELTA from Master_test2 group by TransactionDate, CardNumber

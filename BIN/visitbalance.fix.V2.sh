@@ -22,11 +22,13 @@ do
 	######## GET FIRST TRANSACTION
 	Min_dob=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT MIN(TransactionDate) from Master_test2 WHERE CardNumber = '$CardNumber'")
 
-	######## GET FY FOR THIS TransactionDate (DOB)
+	######## GET visitsaccrued FOR THIS TransactionDate (DOB)
 	VisitsAccrued=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT MAX(VisitsAccrued) from Master_test2 WHERE TransactionDate = '$Min_dob' and CardNumber = '$CardNumber'")
 
-	if [ "$VisitsAccrued" = "1.0000" ] || [ "$VisitsAccrued" = "1" ]
-	##### IF VisitsAccrued equals 1 or 1.0000
+	CarriedBal=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT MIN(VisitsBalance) from Master_test2 WHERE TransactionDate = '$Min_dob' and CardNumber = '$CardNumber'")
+
+	if [[ "$VisitsAccrued" > "0" && "$CarriedBal" < "1" ]] 
+	##### IF VisitsAccrued equals 1 or 1.0000 AND NO CARRIED BALANCE
 	then
 		##### UPDATE SUBTRACTING 1 FROM ALL VisitsBalance VALUES (to account for visit counted on enrollment day)
 		mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_test2 SET Vm_VisitsBalance = VisitsBalance -1 WHERE CardNumber = '$CardNumber' AND VisitsBalance > 0 AND VisitsBalance IS NOT NULL"
