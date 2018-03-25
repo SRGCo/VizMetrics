@@ -6,7 +6,7 @@
 
 
 #UNCOMMENT NEXT FOR VERBOSE
-# set -x
+set -x
 ##### HALT AND CATCH FIRE IF ANY COMMANd FAILS
 set -e
 
@@ -16,7 +16,7 @@ set -e
 
 ### what if more than one transaction per day
 
-mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(CardNumber) FROM Master_test ORDER BY CardNumber ASC" | while read -r CardNumber;
+mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(CardNumber) FROM Master_test WHERE CardNumber = '6000227901113361'" | while read -r CardNumber;
 do
 	
 	######## GET FIRST TRANSACTION

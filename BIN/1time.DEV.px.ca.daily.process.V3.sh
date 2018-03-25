@@ -15,6 +15,13 @@ set -x
 set -e
 
 
+##### BACK IT UP !!!!!!
+# mysqldump  --login-path=local -uroot SRG_Dev > /home/ubuntu/db_files/SRG_Dev_bu.sql
+
+
+
+
+
 ########### DROP AND RECREATE THE 'squashed' TABLE to READY FOR RELOAD
 mysql  --login-path=local --silent -DSRG_Dev -N -e "DROP TABLE CardActivity_squashed"
 echo 'SQUASHED TABLE DROPPED, CREATING SQUASHED TABLE FROM STRUCTURE'
@@ -84,11 +91,16 @@ SUM(SVDiscountTrackingAccrued),SUM(SVDiscountTrackingRedeemed),MAX(SVDiscountTra
 FROM CardActivity_Live
 
 WHERE LocationID IS NOT NULL AND CardTemplate = 'Serenitee Loyalty'  AND CheckNo <> '9999999'
-AND (TransactionType = 'Accrual / Redemption' OR TransactionType = 'Activate')
 
 GROUP by POSKey, LocationID, CardNumber, CardTemplate, TransactionDate"
-
 echo 'SQUASHED DATA TABLE POPULATED'
+
+### INDEX SQUASHED TABLE POSkey
+mysql  --login-path=local --silent -DSRG_Dev -N -e "ALTER TABLE CardActivity_squashed ADD INDEX(POSkey)"
+echo 'CARDACTIVITY SQUASHED POSkey indexed'
+
+
+
 
 
 

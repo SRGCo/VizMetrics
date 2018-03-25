@@ -46,7 +46,7 @@ do
 		##### GET 2ND TO MAX TRANSACTIONDATE
 		SecondMax=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(TransactionDate) from Master_test WHERE CardNumber = '$CardNumber' AND (Vm_VisitsAccrued = '1.0000' OR Vm_VisitsAccrued = '1') ORDER BY TransactionDate DESC limit 1,1") 
 		##### IF SECONDMAX IS NULL / EMPTY
-		##### IF WE ARE ONLY GRABBING WHERE THERE IS MORE THAN ONE ENTRY **WHY** ARE ANY SECONDMAX's NULL ?!?!?!
+		
 		if [ -z "$SecondMax" ]
 		then
 

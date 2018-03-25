@@ -10,7 +10,7 @@
 # exec 1> >(logger -s -t $(basename $0)) 2>&1
 
 #UNCOMMENT NEXT FOR VERBOSE
-set -x
+#set -x
 ##### HALT AND CATCH FIRE IF ANY COMMANd FAILS
 set -e
 
@@ -63,7 +63,7 @@ echo 'CARDACTIVITY -dev- DATA LOADED INTO CardActivity_Temp, DELETING CARDACTIVI
 # DELETE THE WORKING CARDACTIVITY CSV (from dev folder)
 rm -f /home/ubuntu/db_files/incoming/px/dev/CardActivity.csv
 
-### DEV FOR YEARLY FILES
+### DEV FOR YEARLY FILES
 mv /home/ubuntu/db_files/incoming/px/dev/*.csv /home/ubuntu/db_files/archive/dev/
 echo 'CARDACTIVITY -dev- DATA FILES DELETED'
  
@@ -73,21 +73,36 @@ mysql  --login-path=local --silent -DSRG_Dev -N -e "ALTER TABLE CardActivity_Tem
 echo 'CARDACTIVITY -dev- TransactionType and CardNumber indexed'
 
 
-### DELETE ANY/ALL RECORDS THAT ARE NOT WORTH PROCESSING ! ! ! !
+
+### REMOVE ANY/ALL RECORDS THAT ARE NOT WORTH PROCESSING ! ! ! !
 mysql  --login-path=local --silent -DSRG_Dev -N -e "DELETE FROM CardActivity_Temp WHERE CardTemplate != 'Serenitee Loyalty'"
-echo '15% deleted'
-mysql  --login-path=local --silent -DSRG_Dev -N -e "DELETE FROM CardActivity_Temp WHERE TransactionType = 'Check-In'"
+echo '10% deleted'
+mysql  --login-path=local --silent -DSRG_Dev -N -e "DELETE FROM CardActivity_Temp WHERE TransactionType = 'Identify Customer'"
+echo '25% deleted'
+mysql  --login-path=local --silent -DSRG_Dev -N -e "DELETE FROM CardActivity_Temp WHERE TransactionType = 'Web Reward Purchase'"
 echo '30% deleted'
-mysql  --login-path=local --silent -DSRG_Dev -N -e "DELETE FROM CardActivity_Temp WHERE TransactionType = 'Campaign Adjustment'"
+mysql  --login-path=local --silent -DSRG_Dev -N -e "DELETE FROM CardActivity_Temp WHERE TransactionType = 'Admin Adjustment'"
+echo '35% deleted'
+mysql  --login-path=local --silent -DSRG_Dev -N -e "DELETE FROM CardActivity_Temp WHERE TransactionType = 'Denied Campaign Adjustment'"
+echo '40% deleted'
+mysql  --login-path=local --silent -DSRG_Dev -N -e "DELETE FROM CardActivity_Temp WHERE TransactionType = 'Denied Accrual / Redemption'"
 echo '45% deleted'
-mysql  --login-path=local --silent -DSRG_Dev -N -e "DELETE FROM CardActivity_Temp WHERE TransactionType = 'Balance Inquiry'"
+mysql  --login-path=local --silent -DSRG_Dev -N -e "DELETE FROM CardActivity_Temp WHERE TransactionType = 'Denied Activate'"
+echo '50% deleted'
+mysql  --login-path=local --silent -DSRG_Dev -N -e "DELETE FROM CardActivity_Temp WHERE TransactionType = 'Check-In'"
+echo '55% deleted'
+mysql  --login-path=local --silent -DSRG_Dev -N -e "DELETE FROM CardActivity_Temp WHERE TransactionType = 'Campaign Adjustment'"
 echo '60% deleted'
+mysql  --login-path=local --silent -DSRG_Dev -N -e "DELETE FROM CardActivity_Temp WHERE TransactionType = 'Balance Inquiry'"
+echo '65% deleted'
 mysql  --login-path=local --silent -DSRG_Dev -N -e "DELETE FROM CardActivity_Temp WHERE TransactionType = 'Campaign Expiration'"
 echo '75% deleted'
 mysql  --login-path=local --silent -DSRG_Dev -N -e "DELETE FROM CardActivity_Temp WHERE TransactionType IS NULL"
 echo '90% deleted'
 mysql  --login-path=local --silent -DSRG_Dev -N -e "DELETE FROM CardActivity_Temp WHERE CardNumber = '0'"
 echo '100% deleted, ADDING LOCATIONID FIELD'
+
+
 
 # CREATE LOCATIONID FIELD
 mysql  --login-path=local --silent -DSRG_Dev -N -e "ALTER TABLE CardActivity_Temp ADD LocationID INT( 3 ) first"
@@ -224,16 +239,21 @@ SUM(CompbucksAccrued),SUM(CompbucksRedeemed),MAX(CompbucksBalance),
 SUM(SereniteeGiftCardAccrued),SUM(SereniteeGiftCardRedeemed),MAX(SereniteeGiftCardBalance),
 SUM(NewsletterAccrued),SUM(NewsletterRedeemed),MAX(NewsletterBalance),
 SUM(SVDiscountTrackingAccrued),SUM(SVDiscountTrackingRedeemed),MAX(SVDiscountTrackingBalance),
-'0','0','0','0','0','0','0','0','0','0',
+'0','0','0','0','0','0','0','0','0','0',''
 
 FROM CardActivity_Live
 
 WHERE LocationID IS NOT NULL AND CardTemplate = 'Serenitee Loyalty'  AND CheckNo <> '9999999'
-AND (TransactionType = 'Accrual / Redemption' OR TransactionType = 'Activate')
 
 GROUP by POSKey, LocationID, CardNumber, CardTemplate, TransactionDate"
-
 echo 'SQUASHED DATA TABLE POPULATED'
+
+### INDEX SQUASHED TABLE POSkey
+mysql  --login-path=local --silent -DSRG_Dev -N -e "ALTER TABLE CardActivity_squashed ADD INDEX(POSkey)"
+echo 'CARDACTIVITY SQUASHED POSkey indexed'
+
+
+
 
 
 
