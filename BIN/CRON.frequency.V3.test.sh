@@ -1,6 +1,6 @@
 #! //bin/bash
 # HAVE OUTPUT SO CRON EMAILS RESULTS
-# set -x
+ set -x
 
 
 
@@ -13,7 +13,7 @@
 #exec 1> >(logger -s -t $(basename $0)) 2>&1
 
 ##### HALT AND CATCH FIRE AT SINGLE ITERATION LEVEL
-set -e
+#set -e
 
 ######### THESE ARE THE FIELDS WE WILL CALCULATE EVERY DAY #################################
 #1.	 Historical Current Frequency (Hist_current_freq): Transaction Date (DOB) - Last visit date
@@ -34,19 +34,20 @@ set -e
 mysql  --login-path=local -DSRG_Dev -N -e "SELECT CardNumber FROM Master_test2 GROUP BY CardNumber HAVING COUNT(*) > 1 ORDER BY CardNumber ASC" | while read -r CardNumber;
 do
 	echo $CardNumber
-	######## COUNT VISITS OVER PREVIOUS 12 MONTHS AND LIFETIME
-	PrevYear=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT COUNT(DISTINCT(TransactionDate)) from Master_test2 WHERE CardNumber = '$CardNumber' 
-								AND Vm_VisitsAccrued = '1.0000' AND TransactionDate >= DATE_SUB(NOW(),INTERVAL 1 YEAR)")
+	######## COUNT ACCRUED VISITS OVER PREVIOUS 12 MONTHS
+	PrevYear=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT COUNT(TransactionDate) FROM Master_test2 WHERE CardNumber = '$CardNumber' AND TransactionDate >= DATE_SUB(NOW(),INTERVAL 1 YEAR) AND Vm_VisitsAccrued > '0'")
 
-	######## COUNT VISITS OVER PREVIOUS 12 MONTHS AND LIFETIME
-	Lifetime=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT COUNT(DISTINCT(TransactionDate)) from Master_test2 WHERE CardNumber = '$CardNumber' 
-								AND Vm_VisitsAccrued = '1.0000'")
+	######## COUNT VISITS OVER LIFETIME
+
+	Lifetime=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT COUNT(TransactionDate) FROM Master_test2 WHERE CardNumber = '$CardNumber' AND Vm_VisitsAccrued > '0' ")
+
+
 	##### GET MAX  TRANSACTIONDATE
 	MaxDate=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT MAX(TransactionDate) from Master_test2 WHERE CardNumber = '$CardNumber'")
 		##### GET 2ND TO MAX TRANSACTIONDATE
 		SecondMax=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(TransactionDate) from Master_test2 WHERE CardNumber = '$CardNumber' AND Vm_VisitsAccrued = '1.0000' ORDER BY TransactionDate DESC limit 1,1") 
 		##### IF SECONDMAX IS NULL / EMPTY
-		##### IF WE ARE ONLY GRABBING WHERE THERE IS MORE THAN ONE ENTRY **WHY** ARE ANY SECONDMAX's NULL ?!?!?!
+		##### IF WE ARE ONLY GRABBING WHERE THERE IS MORE THAN ONE ENTRY **WHY** ARE ANY SECONDMAXs NULL ?!?!?!
 		if [ -z "$SecondMax" ]
 		then
 

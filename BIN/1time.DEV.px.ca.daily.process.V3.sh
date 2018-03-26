@@ -91,7 +91,7 @@ SUM(SVDiscountTrackingAccrued),SUM(SVDiscountTrackingRedeemed),MAX(SVDiscountTra
 FROM CardActivity_Live
 
 WHERE LocationID IS NOT NULL AND CardTemplate = 'Serenitee Loyalty'  AND CheckNo <> '9999999'
-
+AND (TransactionType = 'Accrual / Redemption' OR TransactionType = 'Activate')
 GROUP by POSKey, LocationID, CardNumber, CardTemplate, TransactionDate"
 echo 'SQUASHED DATA TABLE POPULATED'
 
