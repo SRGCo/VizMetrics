@@ -60,5 +60,3 @@ echo Empty POSkey populated from POSkey_px
 # echo 'NEWLINE CHARACTERS STRIPPED, /outfiles/uber.join.clean.wheaders.csv CREATED, uber.join.wheaders DELETED'
 # echo '/home/ubuntu/db_files/outfiles/uber.join.clean.wheaders.csv READY.'
 
-eof
-
