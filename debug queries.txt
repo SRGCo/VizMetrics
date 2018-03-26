@@ -1,4 +1,28 @@
+SELECT * FROM `Master_test` WHERE `CardNumber` LIKE '6000227901113361' ORDER BY `TransactionDate` ASC
+
+
+
+
+ood test case
+6000227900307071
+
+
+
+SELECT CardNumber, SUM(Vm_VisitsAccrued) , MAX(Vm_VisitsBalance), (SUM(Vm_VisitsAccrued) 
+- MAX(Vm_VisitsBalance)) AS DELTA from Master_test group by CardNumber
+
+
+
+
 SELECT VisitsAccrued, Vm_VisitsAccrued, TransactionDate, VisitsBalance from Master_test2 WHERE CardNumber = '6000227903295851' ORDER BY `Master_test2`.`TransactionDate` ASC
+
+SELECT CardNumber, SUM(Vm_VisitsAccrued) , MAX(Vm_VisitsBalance) , MAX(FreqLifetime), (SUM(Vm_VisitsAccrued) + MAX(Vm_VisitsBalance) - MAX(FreqLifetime)) AS DELTA from Master_test group by CardNumber
 
 
 SELECT CardNumber, TransactionDate, SUM(Vm_VisitsAccrued) , MAX(Vm_VisitsBalance) , MAX(FreqLifetime), (SUM(Vm_VisitsAccrued) + MAX(Vm_VisitsBalance) - MAX(FreqLifetime)) AS DELTA from Master_test2 group by TransactionDate, CardNumber
+
+
+
+
+fu data
+SELECT * from Master_test2 WHERE CardNumber = '6000227903295851' and TransactionDate > '2017-02-09' ORDER BY `Master_test2`.`TransactionDate` DESC
