@@ -35,9 +35,16 @@ do
 			mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_test SET FY = '$FY',YLuna = '$YLuna' WHERE TransactionDate = '$TransactionDate'"
 			echo $TransactionDate updated FY= $FY Luna = $Luna
 done
-
-
 echo FY YLUNA CALCD POPULATED
+mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_test SET DOB = TransactionDate WHERE DOB IS NULL"
+echo Empty DOBs populated from TransactionDate
+mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_test SET LocationID = LocationID_px WHERE LocationID IS NULL"
+echo Empty LocationIDs populated form LocationID_px
+mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_test SET POSkey = POSKey_px WHERE POSkey IS NULL"
+echo Empty POSkey populated from POSkey_px
+
+
+
 
 
 

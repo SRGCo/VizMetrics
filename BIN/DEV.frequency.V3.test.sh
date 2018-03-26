@@ -1,6 +1,6 @@
 #! //bin/bash
 # HAVE OUTPUT SO CRON EMAILS RESULTS
-# set -x
+#set -x
 
 
 
@@ -31,16 +31,22 @@ set -e
 
 ####### THESE NEED TO CALC OFF Vm_VisitsAccrued !!!!!!!!!!!!!!!!!!!!!!!!!!!!! ###########################
 
-mysql  --login-path=local -DSRG_Dev -N -e "SELECT CardNumber FROM Master_test GROUP BY CardNumber HAVING COUNT(*) > 1 ORDER BY CardNumber ASC" | while read -r CardNumber;
+mysql  --login-path=local -DSRG_Dev -N -e "SELECT CardNumber FROM Master_test WHERE CardNumber IS NOT NULL GROUP BY CardNumber HAVING COUNT(*) > 1 ORDER BY CardNumber ASC" | while read -r CardNumber;
 do
 	echo $CardNumber
 	######## COUNT VISITS OVER PREVIOUS 12 MONTHS AND LIFETIME
 	PrevYear=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT COUNT(DISTINCT(TransactionDate)) from Master_test WHERE CardNumber = '$CardNumber' 
 								AND (Vm_VisitsAccrued = '1.0000' OR Vm_VisitsAccrued = '1') AND TransactionDate >= DATE_SUB(NOW(),INTERVAL 1 YEAR)")
 
+	######## MINIMUM VISITBALNCE
+	MinBal=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT MIN(Vm_Visitsbalance) from Master_test WHERE CardNumber = '$CardNumber'")
+
+
 	######## COUNT VISITS OVER PREVIOUS 12 MONTHS AND LIFETIME
 	Lifetime=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT COUNT(DISTINCT(TransactionDate)) from Master_test WHERE CardNumber = '$CardNumber' 
 								AND (Vm_VisitsAccrued = '1.0000' OR Vm_VisitsAccrued = '1')")
+	Lifetimereal="$(($MinBal+$Lifetime))"
+
 	##### GET MAX  TRANSACTIONDATE
 	MaxDate=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT MAX(TransactionDate) from Master_test WHERE CardNumber = '$CardNumber'")
 		##### GET 2ND TO MAX TRANSACTIONDATE
@@ -51,8 +57,8 @@ do
 		then
 
 			##### UPDATE ONLY FIRST FREQUENCIES
-			mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_test SET FreqCurrent = DATEDIFF(NOW(), '$MaxDate'), Freq12mos = '$PrevYear', FreqLifetime = '$Lifetime'  WHERE CardNumber = '$CardNumber'"
-			echo "first only MAX "$MaxDate" 2ND "$SecondMax"  Prevyr "$PrevYear" PrevLife "$Lifetime
+			mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_test SET FreqCurrent = DATEDIFF(NOW(), '$MaxDate'), Freq12mos = '$PrevYear', FreqLifetime = '$Lifetimereal'  WHERE CardNumber = '$CardNumber'"
+			echo "first only MAX "$MaxDate" 2ND "$SecondMax"  Prevyr "$PrevYear" PrevLife "$Lifetimereal" NOT REAL "$Lifetime" MinBal "$MinBal
 
 		##### IF SECONDMAX HAS A VALUE
 		else
@@ -62,34 +68,21 @@ do
 			if [ -z "$ThirdMax" ]
 			then
 				##### UPDATE ONLY FIRST AND SECOND FREQUENCIES
-				mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_test SET FreqCurrent = DATEDIFF(NOW(), '$MaxDate'), FreqRecent = DATEDIFF('$MaxDate', '$SecondMax'), Freq12mos = '$PrevYear', FreqLifetime = '$Lifetime'  WHERE CardNumber = '$CardNumber'"			   
-				echo "first and second MAX "$MaxDate" 2ND "$SecondMax" 3RD "$thirdMax"  Prevyr "$PrevYear" PrevLife "$Lifetime
+				mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_test SET FreqCurrent = DATEDIFF(NOW(), '$MaxDate'), FreqRecent = DATEDIFF('$MaxDate', '$SecondMax'), Freq12mos = '$PrevYear', FreqLifetime = '$Lifetimereal'  WHERE CardNumber = '$CardNumber'"			   
+				echo "first and second MAX "$MaxDate" 2ND "$SecondMax" 3RD "$thirdMax"  Prevyr "$PrevYear" PrevLife "$Lifetimereal" NOT REAL "$Lifetime" MinBal "$MinBal
 				
 
 			##### IF THIRDMAX HAS A VALUE
 			else
 				##### UPDATE ALL FREQUENCIES
-				mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_test SET FreqCurrent = DATEDIFF(NOW(), '$MaxDate'), FreqRecent = DATEDIFF('$MaxDate', '$SecondMax'), FreqPrevious = DATEDIFF('$SecondMax', '$ThirdMax'), Freq12mos = '$PrevYear', FreqLifetime = '$Lifetime'   WHERE CardNumber = '$CardNumber'"
+				mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_test SET FreqCurrent = DATEDIFF(NOW(), '$MaxDate'), FreqRecent = DATEDIFF('$MaxDate', '$SecondMax'), FreqPrevious = DATEDIFF('$SecondMax', '$ThirdMax'), Freq12mos = '$PrevYear', FreqLifetime = '$Lifetimereal'   WHERE CardNumber = '$CardNumber'"
 
-			echo "first second third MAX "$MaxDate" 2ND "$SecondMax" 3RD "$thirdmax" Prevyr "$PrevYear" PrevLife "$Lifetime
+			echo "first second third MAX "$MaxDate" 2ND "$SecondMax" 3RD "$thirdmax" Prevyr "$PrevYear" PrevLife "$Lifetimereal" NOT REAL "$Lifetime" MinBal "$MinBal
 
 				
 			fi
 
 		fi
-
-
-
-	##################### ITERATE ON RECORDID FOR HISTORICAL CURRENT FREQUENCIES
-	###### -N is the No Headers in Output option
-	###### -e is the 'read statement and quit'
-#	mysql  --login-path=local -DSRG_Dev -N -e "SELECT record_id, transactiondate FROM Master_test ORDER BY record_id ASC" | while read -r recordid, transactiondate ;
-#	do
-#		##### UPDATE HISTORICAL CURRENT FREQUENCIES
-#		mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_test SET Hist_current_freq = ('$transactiondate' - '$MaxDate') WHERE recordid = '$recordid'"
-#		echo $transactiondate $MaxDate $recordid UPDATED
-#	done
-
 done
 
 
