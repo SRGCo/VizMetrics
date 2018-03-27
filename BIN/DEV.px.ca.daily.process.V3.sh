@@ -187,7 +187,7 @@ echo 'SQUASHED TABLE CREATED, SQUASHING AND LOADING DATA FILE TO SQUASHED TABLE'
 ####### should we do the FY and luna inserts here
 mysql  --login-path=local --silent -DSRG_Dev -N -e "INSERT INTO CardActivity_squashed
 SELECT
-DISTINCT(POSKey), LocationID, CardNumber, CardTemplate, TransactionDate,
+DISTINCT(POSKey), LocationID, CardNumber, CardTemplate, TransactionDate, MIN(TransactionDate),
 SUM(LifetimeSpendAccrued),SUM(LifetimeSpendRedeemed),MAX(LifetimeSpendBalance),
 SUM(3000BonusPointsAccrued),SUM(3000BonusPointsRedeemed),MAX(3000BonusPointsBalance),
 SUM(CoffeesBoughtAccrued),SUM(CoffeesBoughtRedeemed),MAX(CoffeesBoughtBalance),
@@ -243,9 +243,10 @@ SUM(SVDiscountTrackingAccrued),SUM(SVDiscountTrackingRedeemed),MAX(SVDiscountTra
 
 FROM CardActivity_Live
 
-WHERE LocationID IS NOT NULL AND CardTemplate = 'Serenitee Loyalty'  AND CheckNo <> '9999999'
+WHERE LocationID IS NOT NULL  AND LocationID <> '0' AND CardTemplate = 'Serenitee Loyalty'  AND CheckNo <> '9999999'
 AND (TransactionType = 'Accrual / Redemption' OR TransactionType = 'Activate')
 GROUP by POSKey, LocationID, CardNumber, CardTemplate, TransactionDate"
+
 echo 'SQUASHED DATA TABLE POPULATED'
 
 ### INDEX SQUASHED TABLE POSkey
