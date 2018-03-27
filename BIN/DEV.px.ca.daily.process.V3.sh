@@ -53,7 +53,7 @@ mysql  --login-path=local --silent -DSRG_Dev -N -e "DROP TABLE IF EXISTS CardAct
 echo 'TEMP TABLE DROPPED, STARTING NEW TEMP TABLE CREATION'
 
 # Create a empty copy of CardActivity table from CardActivityStructure table
-mysql  --login-path=local --silent -DSRG_Dev -N -e "CREATE TABLE CardActivity_Temp AS (SELECT * FROM CardActivity_Structure WHERE 1=0)"
+mysql  --login-path=local --silent -DSRG_Dev -N -e "CREATE TABLE CardActivity_Temp LIKE CardActivity_Structure"
 echo 'TEMP TABLE CREATED, LOADING DATA FILE TO TEMP TABLE'
 
 # Load the data from the latest file into the (temp) CardActivity table
@@ -176,18 +176,18 @@ mysql  --login-path=local --silent -DSRG_Dev -N -e "INSERT INTO CardActivity_Liv
 
 
 ########### DROP AND RECREATE THE 'squashed' TABLE to READY FOR RELOAD
-mysql  --login-path=local --silent -DSRG_Dev -N -e "DROP TABLE CardActivity_squashed"
+mysql  --login-path=local --silent -DSRG_Dev -N -e "DROP TABLE IF EXISTS CardActivity_squashed"
 echo 'SQUASHED TABLE DROPPED, CREATING SQUASHED TABLE FROM STRUCTURE'
 
 # Create a empty copy of CardActivity table from CardActivityStructure table
-mysql  --login-path=local --silent -DSRG_Dev -N -e "CREATE TABLE CardActivity_squashed AS (SELECT * FROM CardActivity_squashed_structure WHERE 1=0)"
+mysql  --login-path=local --silent -DSRG_Dev -N -e "CREATE TABLE CardActivity_squashed LIKE CardActivity_squashed_structure"
 echo 'SQUASHED TABLE CREATED, SQUASHING AND LOADING DATA FILE TO SQUASHED TABLE'
 
 ############## SQUASH AND INSERT DATA FROM LIVE CardActivity ###############
 ####### should we do the FY and luna inserts here
 mysql  --login-path=local --silent -DSRG_Dev -N -e "INSERT INTO CardActivity_squashed
 SELECT
-DISTINCT(POSKey), LocationID, CardNumber, CardTemplate, TransactionDate, MIN(TransactionDate),
+DISTINCT(POSKey), LocationID, CardNumber, CardTemplate, TransactionDate, MIN(TransactionTime), MIN(checkno),
 SUM(LifetimeSpendAccrued),SUM(LifetimeSpendRedeemed),MAX(LifetimeSpendBalance),
 SUM(3000BonusPointsAccrued),SUM(3000BonusPointsRedeemed),MAX(3000BonusPointsBalance),
 SUM(CoffeesBoughtAccrued),SUM(CoffeesBoughtRedeemed),MAX(CoffeesBoughtBalance),
@@ -248,11 +248,6 @@ AND (TransactionType = 'Accrual / Redemption' OR TransactionType = 'Activate')
 GROUP by POSKey, LocationID, CardNumber, CardTemplate, TransactionDate"
 
 echo 'SQUASHED DATA TABLE POPULATED'
-
-### INDEX SQUASHED TABLE POSkey
-mysql  --login-path=local --silent -DSRG_Dev -N -e "ALTER TABLE CardActivity_squashed ADD INDEX(POSkey)"
-echo 'CARDACTIVITY SQUASHED POSkey indexed'
-
 
 
 

@@ -10,30 +10,44 @@
 # exec 1> >(logger -s -t $(basename $0)) 2>&1
 
 #UNCOMMENT NEXT FOR VERBOSE
-set -x
-##### HALT AND CATCH FIRE IF ANY COMMANd FAILS
+# set -x
+##### HALT AND CATCH FIRE IF ANY COMMAND FAILS
 set -e
 
+######## Get CardNumber
+mysql  --login-path=local -DSRG_Dev -N -e "SELECT CardNumber FROM Master_test WHERE CardNumber IS NOT NULL GROUP BY CardNumber HAVING COUNT(*) > 1 ORDER BY CardNumber ASC" | while read -r CardNumber;
+do
+	######### GET DATA IF CHECK FROM BETWEEN MIDNIGHT AND 4 AM
+	mysql  --login-path=local -DSRG_Dev -N -e "SELECT POSkey, TransactionDate, CheckNo FROM CardActivity_squashed where cardnumber like $CardNumber
+	AND TransactionTime > '00:00' and TransactionTime < '04:00'"| while read -r POSkey TransactionDate CheckNo;
+	do
+		
+		########## GET THE POSkey FOR SAME CHECK FROM PREVIOUS DAY IF IT EXISTS
+		POSkey_prev=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT POSkey FROM CardActivity_squashed where cardnumber like '$CardNumber' 
+		AND TransactionDate = DATE_SUB('$TransactionDate', INTERVAL 1 DAY) AND CheckNo = '$CheckNo'")
+		#### SET POSkey FOR LATER RECORD TO EARLIER DATES POSkey (IF PREVIOUS POSKEY EXISTS)
+		if [ -n "$POSkey_prev" ]
+		then		
+			mysql  --login-path=local -DSRG_Dev -N -e "UPDATE CardActivity_squashed SET POSkey = '$POSkey_prev' WHERE POSkey = '$POSkey'"
+			echo "CARD: "$CardNumber" Transdate1: "$TransactionDate" Check: "$CheckNo" Key1: "$POSkey" Key2: "$POSkey_prev 
+		fi
+	done
 
-##### BACK IT UP !!!!!!
-# mysqldump  --login-path=local -uroot SRG_Dev > /home/ubuntu/db_files/SRG_Dev_bu.sql
+done
 
 
-
-
-########### DROP AND RECREATE THE 'squashed' TABLE to READY FOR RELOAD
-mysql  --login-path=local --silent -DSRG_Dev -N -e "DROP TABLE CardActivity_squashed"
-echo 'SQUASHED TABLE DROPPED, CREATING SQUASHED TABLE FROM STRUCTURE'
+########### DROP AND RECREATE THE 2ND 'squashed' TABLE to READY FOR RELOAD
+mysql  --login-path=local --silent -DSRG_Dev -N -e "DROP TABLE IF EXISTS CardActivity_squashed_2"
+echo '2ND SQUASHED TABLE DROPPED, CREATING SQUASHED TABLE FROM STRUCTURE'
 
 # Create a empty copy of CardActivity table from CardActivityStructure table
-mysql  --login-path=local --silent -DSRG_Dev -N -e "CREATE TABLE CardActivity_squashed AS (SELECT * FROM CardActivity_squashed_structure WHERE 1=0)"
-echo 'SQUASHED TABLE CREATED, SQUASHING AND LOADING DATA FILE TO SQUASHED TABLE'
+mysql  --login-path=local --silent -DSRG_Dev -N -e "CREATE TABLE CardActivity_squashed_2 LIKE CardActivity_squashed_structure"
+echo '2ND SQUASHED TABLE CREATED, SQUASHING 1ST SQUASHED TABLE'
 
-############## SQUASH AND INSERT DATA FROM LIVE CardActivity ###############
-####### should we do the FY and luna inserts here
-mysql  --login-path=local --silent -DSRG_Dev -N -e "INSERT INTO CardActivity_squashed
+############## SQUASH AND INSERT DATA FROM FIRST SQUASHED TABLE ###############
+mysql  --login-path=local --silent -DSRG_Dev -N -e "INSERT INTO CardActivity_squashed_2
 SELECT
-DISTINCT(POSKey), LocationID, CardNumber, CardTemplate, TransactionDate, MIN(TransactionTime), MIN(checkno),
+DISTINCT(POSKey), LocationID, CardNumber, CardTemplate, MIN(TransactionDate), MIN(TransactionTime), MIN(checkno),
 SUM(LifetimeSpendAccrued),SUM(LifetimeSpendRedeemed),MAX(LifetimeSpendBalance),
 SUM(3000BonusPointsAccrued),SUM(3000BonusPointsRedeemed),MAX(3000BonusPointsBalance),
 SUM(CoffeesBoughtAccrued),SUM(CoffeesBoughtRedeemed),MAX(CoffeesBoughtBalance),
@@ -87,23 +101,14 @@ SUM(NewsletterAccrued),SUM(NewsletterRedeemed),MAX(NewsletterBalance),
 SUM(SVDiscountTrackingAccrued),SUM(SVDiscountTrackingRedeemed),MAX(SVDiscountTrackingBalance),
 '0','0','0','0','0','0','0','0','0','0',''
 
-FROM CardActivity_Live
+FROM CardActivity_squashed
 
-WHERE LocationID IS NOT NULL  AND LocationID <> '0' AND CardTemplate = 'Serenitee Loyalty'  AND CheckNo <> '9999999'
-AND (TransactionType = 'Accrual / Redemption' OR TransactionType = 'Activate')
-GROUP by POSKey, LocationID, CardNumber, CardTemplate, TransactionDate"
+GROUP by POSKey, LocationID, CardNumber, CardTemplate"
 
-echo 'SQUASHED DATA TABLE POPULATED'
+echo 'SQUASHED DATA TABLE    2    POPULATED'
 
 ### INDEX SQUASHED TABLE POSkey
-mysql  --login-path=local --silent -DSRG_Dev -N -e "ALTER TABLE CardActivity_squashed ADD INDEX(POSkey)"
-echo 'CARDACTIVITY SQUASHED POSkey indexed'
-
-
-
-
-
-
-
+mysql  --login-path=local --silent -DSRG_Dev -N -e "ALTER TABLE CardActivity_squashed_2 ADD INDEX(POSkey)"
+echo 'CARDACTIVITY SQUASHED    2    POSkey indexed'
 
 

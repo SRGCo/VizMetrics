@@ -41,13 +41,15 @@ do
 
 
 	#### NO VISIT ACCRUED ON FIRST TRANSACTIONDATE AND NOT AN EXCHANGE
-########### VisitAccrued NULL OR 0 AND No Carried Balance
-	if [[ "$CarriedBal" = "0" && [ "$VisitsAccrued" = "0" || "$VisitsAccrued" <> NULL ] ]]
+	########### VisitAccrued NULL OR 0 AND No Carried Balance
+	if [ "$CarriedBal" = "0" ]
+	then
+	if  [ "$VisitsAccrued" = "0" ] ||  [ -z "$VisitsAccrued"  ] 
 	then
 		echo $CardNumber" DID NOT Accrue First Day "$Min_dob" no exchange "$CarriedBal
 		##### UPDATE SUBTRACTING 1 FROM ALL VisitsBalance VALUES (to account for visit counted on enrollment day)
 		mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_test SET Vm_VisitsBalance = VisitsBalance, Vm_VisitsAccrued = VisitsAccrued WHERE CardNumber = '$CardNumber' "
-
+	fi
 	fi
 
 

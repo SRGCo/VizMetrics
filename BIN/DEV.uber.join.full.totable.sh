@@ -12,7 +12,7 @@ set -e
 
 #### Double check UNION !!!!!!!!!!!!!!!!
 
-mysql  --login-path=local -DSRG_Dev -N -e "INSERT INTO Master_test SELECT CD.*, CA.* FROM CheckDetail_Live AS CD LEFT JOIN CardActivity_squashed AS CA ON CD.POSkey = CA.POSkey UNION SELECT CD.*, CA.* FROM .CheckDetail_Live as CD RIGHT JOIN CardActivity_squashed AS CA ON CD.POSkey = CA.POSkey"
+mysql  --login-path=local -DSRG_Dev -N -e "INSERT INTO Master_test SELECT CD.*, CA.* FROM CheckDetail_Live AS CD LEFT JOIN CardActivity_squashed_2 AS CA ON CD.POSkey = CA.POSkey UNION SELECT CD.*, CA.* FROM .CheckDetail_Live as CD RIGHT JOIN CardActivity_squashed_2 AS CA ON CD.POSkey = CA.POSkey"
 # echo 'UBER JOIN COMPLETED, /outfiles/joined.cd.ca.csv CREATED'
 echo 'Uber join data inserted into Master_test'
 
