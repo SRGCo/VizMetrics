@@ -41,7 +41,8 @@ do
 
 
 	#### NO VISIT ACCRUED ON FIRST TRANSACTIONDATE AND NOT AN EXCHANGE
-	if [[ "$CarriedBal" = "0" && "$VisitsAccrued" = "0" ]]
+########### VisitAccrued NULL OR 0 AND No Carried Balance
+	if [[ "$CarriedBal" = "0" && [ "$VisitsAccrued" = "0" || "$VisitsAccrued" <> NULL ] ]]
 	then
 		echo $CardNumber" DID NOT Accrue First Day "$Min_dob" no exchange "$CarriedBal
 		##### UPDATE SUBTRACTING 1 FROM ALL VisitsBalance VALUES (to account for visit counted on enrollment day)

@@ -42,7 +42,7 @@ do
 	MinBal=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT MIN(Vm_Visitsbalance) from Master_test WHERE CardNumber = '$CardNumber'")
 
 
-	######## COUNT VISITS OVER PREVIOUS 12 MONTHS AND LIFETIME
+	######## COUNT VISITS OVER LIFETIME
 	Lifetime=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT COUNT(DISTINCT(TransactionDate)) from Master_test WHERE CardNumber = '$CardNumber' 
 								AND (Vm_VisitsAccrued = '1.0000' OR Vm_VisitsAccrued = '1')")
 	Lifetimereal="$(($MinBal+$Lifetime))"
