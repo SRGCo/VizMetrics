@@ -6,7 +6,7 @@
 
 
 #UNCOMMENT NEXT FOR VERBOSE
-# set -x
+set -x
 ##### HALT AND CATCH FIRE IF ANY COMMANd FAILS
 set -e
 
@@ -36,6 +36,10 @@ do
 
 		##### UPDATE SUBTRACTING 1 FROM ALL VisitsBalance VALUES (to account for visit counted on enrollment day)
 		mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_test SET Vm_VisitsAccrued = '' WHERE CardNumber = '$CardNumber' and TransactionDate > '$Min_dob'"
+
+		##### UPDATE SUBTRACTING 1 FROM ALL VisitsBalance VALUES (to account for visit counted on enrollment day)
+		mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_test SET Vm_VisitsAccrued = VisitsAccrued WHERE CardNumber = '$CardNumber' and TransactionDate > '$Min_dob'"
+
 	fi
 
 

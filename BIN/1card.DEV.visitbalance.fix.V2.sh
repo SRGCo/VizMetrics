@@ -16,7 +16,7 @@ set -e
 
 ### what if more than one transaction per day
 
-mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(CardNumber) FROM Master_test WHERE CardNumber = '6000227901113361'" | while read -r CardNumber;
+mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(CardNumber) FROM Master_test  WHERE CardNumber = '6000227901477006' ORDER BY CardNumber ASC" | while read -r CardNumber;
 do
 	
 	######## GET FIRST TRANSACTION
@@ -36,26 +36,34 @@ do
 
 		##### UPDATE SUBTRACTING 1 FROM ALL VisitsBalance VALUES (to account for visit counted on enrollment day)
 		mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_test SET Vm_VisitsAccrued = '' WHERE CardNumber = '$CardNumber' and TransactionDate > '$Min_dob'"
+
+		##### UPDATE SUBTRACTING 1 FROM ALL VisitsBalance VALUES (to account for visit counted on enrollment day)
+		mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_test SET Vm_VisitsAccrued = VisitsAccrued WHERE CardNumber = '$CardNumber' and TransactionDate > '$Min_dob'"
+
 	fi
 
 
 
 	#### NO VISIT ACCRUED ON FIRST TRANSACTIONDATE AND NOT AN EXCHANGE
-	if [[ "$CarriedBal" = "0" && "$VisitsAccrued" = "0" ]]
+	########### VisitAccrued NULL OR 0 AND No Carried Balance
+	if [ "$CarriedBal" = "0" ]
+	then
+	if  [ "$VisitsAccrued" = "0" ] ||  [ -z "$VisitsAccrued"  ] 
 	then
 		echo $CardNumber" DID NOT Accrue First Day "$Min_dob" no exchange "$CarriedBal
 		##### UPDATE SUBTRACTING 1 FROM ALL VisitsBalance VALUES (to account for visit counted on enrollment day)
 		mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_test SET Vm_VisitsBalance = VisitsBalance, Vm_VisitsAccrued = VisitsAccrued WHERE CardNumber = '$CardNumber' "
-
+	fi
 	fi
 
 
 	####  AN EXCHANGE
 	if [ "$CarriedBal"  -gt "1" ]
 	then
+
 		echo $CardNumber"        First Day         "$Min_dob"       EXCHANGED!!! "$CarriedBal
 		##### UPDATE SUBTRACTING 1 FROM ALL VisitsBalance VALUES (to account for visit counted on enrollment day)
-		mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_test SET Vm_VisitsBalance = VisitsBalance, Vm_VisitsAccrued = VisitsAccrued WHERE CardNumber = '$CardNumber' "
+		mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_test SET Vm_VisitsBalance = (VisitsBalance + "$CarriedBal"), Vm_VisitsAccrued = VisitsAccrued WHERE CardNumber = '$CardNumber' "
 
 	fi
 
