@@ -1,0 +1,5 @@
+UPDATE Master_test INNER JOIN Guests
+ON Master_test.CardNumber = `Guests`.`Card Number`
+SET Master_test.enroll_date = `Guests`.`Enroll Date`, 
+Master_test.Account_status = `Guests`.`Account Status'
+
