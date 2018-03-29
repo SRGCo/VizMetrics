@@ -7,8 +7,13 @@ exec 1> >(logger -s -t $(basename $0)) 2>&1
 ##### HALT AND CATCH FIRE IF ANY COMMANd FAILS
 set -e
 
+
+AND CardNumber
+
+
 ######### UBER JOIN LIVE CHECK DETAIL WITH LIVE SQUASHED CARD ACTIVITY
-mysql  --login-path=local -uroot -N -e "SELECT * INTO OUTFILE '/home/ubuntu/db_files/outfiles/joined.cd.ca.csv' FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n' FROM SRG_Dev.Master_test  WHERE SRG_Dev.Master_test.Account_status <> 'TERMIN' AND SRG_Dev.Master_test.Account_status <> 'SUSPEN' AND SRG_Dev.Master_test.Account_status <> 'Exchanged' AND SRG_Dev.Master_test.Account_status IS NOT NULL"
+mysql  --login-path=local -uroot -N -e "SELECT * INTO OUTFILE '/home/ubuntu/db_files/outfiles/joined.cd.ca.csv' FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n' FROM SRG_Dev.Master_test  WHERE SRG_Dev.Master_test.Account_status <> 'TERMIN' AND SRG_Dev.Master_test.Account_status <> 'SUSPEN' AND SRG_Dev.Master_test.Account_status <> 'Exchanged' AND SRG_Dev.Master_test.Account_status IS NOT NULL AND SRG_Dev.Master_test.Account_status <> 'Exchange' AND SRG_Dev.Master_test.Account_status <> 'Exclude'"
+
 echo 'UBER JOIN COMPLETED, ACTIVE PX ACCOUNTS ONLY /outfiles/joined.cd.ca.csv CREATED'
 
 

@@ -8,8 +8,8 @@ exec 1> >(logger -s -t $(basename $0)) 2>&1
 set -e
 
 ######### UBER JOIN LIVE CHECK DETAIL WITH LIVE SQUASHED CARD ACTIVITY
-mysql  --login-path=local -uroot -N -e "SELECT * INTO OUTFILE '/home/ubuntu/db_files/outfiles/joined.cd.ca.csv' FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n' FROM SRG_Dev.Master_test  WHERE SRG_Dev.Master_test.Account_status <> 'TERMIN' AND SRG_Dev.Master_test.Account_status <> 'SUSPEN' AND SRG_Dev.Master_test.Account_status <> 'Exchanged' AND SRG_Dev.Master_test.Account_status IS NOT NULL"
-echo 'UBER JOIN COMPLETED, ACTIVE PX ACCOUNTS ONLY /outfiles/joined.cd.ca.csv CREATED'
+mysql  --login-path=local -uroot -N -e "SELECT * INTO OUTFILE '/home/ubuntu/db_files/outfiles/joined.cd.ca.csv' FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n' FROM SRG_Dev.Master_test WHERE SRG_Dev.Master_test.Account_status <> 'TERMIN' AND SRG_Dev.Master_test.Account_status <> 'SUSPEN' AND SRG_Dev.Master_test.Account_status <> 'Exchanged' AND SRG_Dev.Master_test.Account_status IS NOT NULL"
+echo 'UBER JOIN COMPLETED, /outfiles/joined.cd.ca.csv CREATED'
 
 
 ########### PREPEND HEADERS TO UBER JOIN
@@ -26,6 +26,7 @@ echo '/home/ubuntu/db_files/outfiles/uber.join.clean.wheaders.csv READY.'
 ####
 head -300 /home/ubuntu/db_files/outfiles/uber.join.clean.wheaders.csv > /home/ubuntu/db_files/outfiles/small.uber.csv
 echo small uber created
+
 
 
 
