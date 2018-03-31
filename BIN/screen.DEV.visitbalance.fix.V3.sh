@@ -6,7 +6,7 @@
 
 
 #UNCOMMENT NEXT FOR VERBOSE
-set -x
+# set -x
 ##### HALT AND CATCH FIRE IF ANY COMMANd FAILS
 set -e
 
@@ -16,7 +16,7 @@ set -e
 
 ### what if more than one transaction per day
 
-mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(CardNumber) FROM Master_test WHERE CardNumber = '6000227900335882'" | while read -r CardNumber;
+mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(CardNumber) FROM Master_test ORDER BY CardNumber ASC" | while read -r CardNumber;
 do
 	
 	######## GET FIRST TRANSACTION
@@ -25,7 +25,7 @@ do
 	######## GET visitsaccrued FOR THIS TransactionDate (DOB)
 	VisitsAccrued=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT MAX(VisitsAccrued) from Master_test WHERE TransactionDate = '$Min_dob' and CardNumber = '$CardNumber'")
 
-	CarriedBal=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT MIN(VisitsBalance) from Master_test WHERE TransactionDate = '$Min_dob' AND CardNumber = '$CardNumber'")
+	CarriedBal=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT MAX(VisitsBalance) from Master_test WHERE TransactionDate = '$Min_dob' AND CardNumber = '$CardNumber'")
 
 	#### NOT AN EXCHANGE
 	######## VISIT ACCRUED ON FIRST TRANSACTIONDATE
@@ -61,7 +61,7 @@ do
 			##### SET FIRST DATES visitsaccrued to 0 (to account for visit counted on enrollment day), vm_visitsbalance = visitsbalance
 			mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_test SET Vm_VisitsAccrued = '' WHERE CardNumber = '$CardNumber' and TransactionDate = '$Min_dob'"
 			##### UPDATE SUBTRACTING 1 FROM ALL VisitsBalance VALUES (to account for visit counted on enrollment day)
-			mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_test SET Vm_VisitsAccrued = VisitsAccrued, Vm_VisitsBalance = VisitsBalance - 1 WHERE CardNumber = '$CardNumber' and TransactionDate > '$Min_dob'"
+			mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_test SET Vm_VisitsAccrued = VisitsAccrued, Vm_VisitsBalance = VisitsBalance WHERE CardNumber = '$CardNumber' and TransactionDate > '$Min_dob'"
 
 		fi
 	fi
@@ -76,7 +76,11 @@ do
 
 	fi
 
+	##### FIX THE MULTI TRANS ON DAY 1
+	############## AFTER WE FIGURE OUT WHY IT HAPPENS
+	# mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_test SET Vm_VisitsBalance = '0' WHERE Vm_VisitsBalance ='-1'"
 
 
 done
+
 
