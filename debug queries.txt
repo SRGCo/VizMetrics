@@ -1,3 +1,27 @@
+SELECT CardNumber, TransactionDate, CheckNumber, LocationID, LocationID_px, CheckNo, DollarsSpentAccrued, CheckSubtotalAccrued, GrossSalesCoDefined, NetSalesCoDefined, Promos, Comps, ExclusiveTaxes, NonCashTenders, NonCashTips, CashTenders, CashTips FROM `Master_test` WHERE `CardNumber` LIKE '6000227900010139' ORDER BY `Master_test`.`TransactionDate` DESC
+
+
+SELECT CardNumber, TransactionDate, CheckNumber, LocationID, LocationID_px, CheckNo, DollarsSpentAccrued, CheckSubtotalAccrued, GrossSalesCoDefined, NetSalesCoDefined, Promos, Comps, ExclusiveTaxes, NonCashTenders, NonCashTips, CashTenders, CashTips FROM `Master_test` WHERE `CardNumber` IS NOT NULL ORDER BY `Master_test`.`TransactionDate` DESC
+
+
+6000227904627185 only the activate shows up in card activity live?  where is the accrual row date: 1-31-18 check 2928 at mags 06 - 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 SELECT * FROM `Master_test` WHERE `CardNumber` LIKE '6000227901113361' ORDER BY `TransactionDate` ASC
 
 
