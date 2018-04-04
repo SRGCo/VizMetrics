@@ -14,8 +14,10 @@
 ##### HALT AND CATCH FIRE IF ANY COMMAND FAILS
 set -e
 
+
+######## 
 ######## Get CardNumber
-mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(CardNumber) FROM CardActivity_squashed WHERE CardNumber IS NOT NULL ORDER BY CardNumber ASC" | while read -r CardNumber;
+mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(CardNumber) FROM CardActivity_squashed WHERE CardNumber = '6000227900084217' AND CardNumber IS NOT NULL ORDER BY CardNumber ASC" | while read -r CardNumber;
 do
 	######### GET DATA IF CHECK FROM BETWEEN MIDNIGHT AND 4 AM
 	mysql  --login-path=local -DSRG_Dev -N -e "SELECT POSkey, TransactionDate, CheckNo FROM CardActivity_squashed where cardnumber like $CardNumber
@@ -28,7 +30,7 @@ do
 		#### SET POSkey FOR LATER RECORD TO EARLIER DATES POSkey (IF PREVIOUS POSKEY EXISTS)
 		if [ -n "$POSkey_prev" ]
 		then		
-			mysql  --login-path=local -DSRG_Dev -N -e "UPDATE CardActivity_squashed SET POSkey = '$POSkey_prev' WHERE POSkey = '$POSkey'"
+			# mysql  --login-path=local -DSRG_Dev -N -e "UPDATE CardActivity_squashed SET POSkey = '$POSkey_prev' WHERE POSkey = '$POSkey'"
 			echo "CARD: "$CardNumber" Transdate1: "$TransactionDate" Check: "$CheckNo" Key1: "$POSkey" Key2: "$POSkey_prev 
 		fi
 	done
@@ -45,7 +47,7 @@ mysql  --login-path=local --silent -DSRG_Dev -N -e "CREATE TABLE CardActivity_sq
 echo '2ND SQUASHED TABLE CREATED, SQUASHING 1ST SQUASHED TABLE'
 
 ############## SQUASH AND INSERT DATA FROM FIRST SQUASHED TABLE ###############
-mysql  --login-path=local --silent -DSRG_Dev -N -e "INSERT INTO CardActivity_squashed_2
+# mysql  --login-path=local --silent -DSRG_Dev -N -e "INSERT INTO CardActivity_squashed_2
 SELECT
 DISTINCT(POSKey), LocationID, CardNumber, CardTemplate, MIN(TransactionDate), MIN(TransactionTime), MIN(checkno),
 SUM(LifetimeSpendAccrued),SUM(LifetimeSpendRedeemed),MAX(LifetimeSpendBalance),
@@ -108,7 +110,7 @@ GROUP by POSKey, LocationID, CardNumber, CardTemplate"
 echo 'SQUASHED DATA TABLE    2    POPULATED'
 
 ### INDEX SQUASHED TABLE POSkey
-mysql  --login-path=local --silent -DSRG_Dev -N -e "ALTER TABLE CardActivity_squashed_2 ADD INDEX(POSkey)"
+# mysql  --login-path=local --silent -DSRG_Dev -N -e "ALTER TABLE CardActivity_squashed_2 ADD INDEX(POSkey)"
 echo 'CARDACTIVITY SQUASHED    2    POSkey indexed'
 
 
