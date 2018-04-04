@@ -16,6 +16,13 @@ mysql  --login-path=local -DSRG_Dev -N -e "INSERT INTO Master_test SELECT CD.*, 
 # echo 'UBER JOIN COMPLETED, /outfiles/joined.cd.ca.csv CREATED'
 echo 'Uber join data inserted into Master_test'
 
+# Create enroll_date and Account_status fields
+mysql  --login-path=local --silent -DSRG_Dev -N -e "ALTER TABLE Master_test ADD enroll_date VARCHAR(11)"
+# Create POSkey field
+mysql  --login-path=local --silent -DSRG_Dev -N -e "ALTER TABLE Master_test ADD Account_status VARCHAR(26)"
+mysql  --login-path=local --silent -DSRG_Dev -N -e "ALTER TABLE Master_test ADD INDEX(Account_status)"
+echo 'Added enroll_date and account status'
+
 
 ##### CALC THE (non-dynamic) FREQUENCY FIELDS -FY Y-LUNA
 ##### FIRST 4 CHARS of TransactionDate BECOME FY
@@ -33,15 +40,33 @@ do
 
 			##### UPDATE FISCAL YEAR FROM TRANSACTIONDATE
 			mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_test SET FY = '$FY',YLuna = '$YLuna' WHERE TransactionDate = '$TransactionDate'"
-			echo $TransactionDate updated FY= $FY Luna = $Luna
+			echo $TransactionDate updated FY= $FY YLuna = $YLuna
 done
 echo FY YLUNA CALCD POPULATED
+
+######## UPDATE ACCOUNT STATUS FROM GUEST TABLE
+mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_test JOIN Guests ON Master_test.CardNumber = Guests.Card Number SET Master_test.enroll_date = Guests.Enroll Date, Master_test.Account_status = Guests.Account_Status"
+echo 'Account Status updated from Guests table'
+mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_test JOIN Px_exchanges ON Master_test.CardNumber = Px_exchanges.CurrentCardNumber SET Master_test.Account_status = 'Exchange'"
+echo 'EXCHANGED accounts account status updated from px_exchanges table'
+mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_test JOIN Excludes ON Master_test.CardNumber = Excludes.CardNumber SET Master_test.Account_status = 'Exclude'"
+echo 'EXCLUDED accounts account status updated from Excludes table'
+
+
+######## UPDATE THE EMPTY CHECKDETAIL FIELDS WITH PX DATA
+
+mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_test SET CheckNumber = CheckNo WHERE CheckNo IS NULL"
+echo Empty CheckNumber-s populated from CheckNo
+
 mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_test SET DOB = TransactionDate WHERE DOB IS NULL"
-echo Empty DOBs populated from TransactionDate
+echo Empty DOB-s populated from TransactionDate
 mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_test SET LocationID = LocationID_px WHERE LocationID IS NULL"
-echo Empty LocationIDs populated form LocationID_px
+echo Empty LocationID-s populated form LocationID_px
 mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_test SET POSkey = POSKey_px WHERE POSkey IS NULL"
-echo Empty POSkey populated from POSkey_px
+echo Empty POSkey-s populated from POSkey_px
+mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_test SET GrossSalesCoDefined = DollarsSpentAccrued WHERE GrossSalesCoDefined IS NULL"
+echo 'Empty GrossSalesCoDefined-s Populated (PROMOS OR COMPS COULD NOT BE ADD, LOWBALL FIGURES)'
+
 
 
 
