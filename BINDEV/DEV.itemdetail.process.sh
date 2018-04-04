@@ -13,63 +13,41 @@ set -x
 # Master Sale Departments
 # CheckDetail_live
 
-
-### 1 ###
-# Items Table (will be joined by ItemID **NOT** ItemNumber)
-# CTuit export = Item - Full Table
-# Save it to incoming Items.raw.csv
-
-### 2 ###
-# SalesDepartment table (only if it has changed)
-# CTuit export = SaleDepartment (can just cross reference with mysql table)
-
-### 3 ### 
-# MasterSale Department should *NOT* change ####
-
-### 4 ### 
-# CTuit export = Item Detail by Date
-# ItemDetail_temp and ItemDetail_Live tables
-
-### 5 ###
-# CheckDetail_Live must be up to date
-
 ###########################################################################
 #### 1 #### CTuit export = Item - Full Table 			###########
 #### 1 #### Save it to incoming Items.raw.csv               ###############
 
-#### Delete CheckDetail.old.csv to make room for new one.
-rm /home/srg/db_files/incoming/Items.old.csv
+#### Delete CheckDetail.old.csv to make room for new one
+rm /home/ubuntu/db_files/incoming/Items.old.csv
 
 #### Rename current CheckDetail.csv file to make room for new one.
-mv /home/srg/db_files/incoming/Items.csv /home/srg/db_files/incoming/Items.old.csv
+mv /home/ubuntu/db_files/incoming/Items.csv /home/ubuntu/db_files/incoming/Items.old.csv
 
 ### WRITE FROM LINE 2 ON TO NEW FILE ItemDetail.csv
-tail -n+2 /home/srg/db_files/incoming/Items.raw.csv > /home/srg/db_files/incoming/Items.csv 
-
-
+tail -n+2 /home/ubuntu/db_files/incoming/Items.raw.csv > /home/ubuntu/db_files/incoming/Items.csv 
 
 ###########################################################################
 #### 4 #### CURRENTLY USING### Item Detail by Date ##### export from CTUIT  ##
 #### 4 #### saving as ItemDetail.raw.csv                       ###############
 
 #### Delete CheckDetail.old.csv to make room for new one.
-rm /home/srg/db_files/incoming/ItemDetail.old.csv
+rm /home/ubuntu/db_files/incoming/ItemDetail.old.csv
 
 #### Rename current CheckDetail.csv file to make room for new one.
-mv /home/srg/db_files/incoming/ItemDetail.csv /home/srg/db_files/incoming/ItemDetail.old.csv
+mv /home/ubuntu/db_files/incoming/ItemDetail.csv /home/ubuntu/db_files/incoming/ItemDetail.old.csv
 
 ### WRITE FROM LINE 2 ON TO NEW FILE ItemDetail.csv
-tail -n+2 /home/srg/db_files/incoming/ItemDetail.raw.csv > /home/srg/db_files/incoming/ItemDetail.csv
+tail -n+2 /home/ubuntu/db_files/incoming/ItemDetail.raw.csv > /home/ubuntu/db_files/incoming/ItemDetail.csv
 
 #########################   IMPORT TWEAK  #####################################
 ### MATCH THE INCOMING FILE STRUCTURE TO THE EXTENDED TABLE STRUCTURE
-sed -e 's/$/,,,,,,,,,,/g' -e '$ s/,$//' /home/srg/db_files/incoming/ItemDetail.csv  > /home/srg/db_files/incoming/new_file && mv /home/srg/db_files/incoming/new_file /home/srg/db_files/incoming/ItemDetail.csv 
+sed -e 's/$/,,,,,,,,,,/g' -e '$ s/,$//' /home/ubuntu/db_files/incoming/ItemDetail.csv  > /home/ubuntu/db_files/incoming/new_file && mv /home/ubuntu/db_files/incoming/new_file /home/ubuntu/db_files/incoming/ItemDetail.csv 
 
 #### Delete ItemDetail_Live.out.csv to make room for new one.
-rm /home/srg/db_files/incoming/ItemDetail_Live.out.csv
+rm /home/ubuntu/db_files/incoming/ItemDetail_Live.out.csv
 
 ### BACKUP DB ######
-mysqldump -uroot -ps3r3n1t33 SRG_items > /home/srg/db_files/SRG_items_bu.sql
+# mysqldump -uroot -ps3r3n1t33 SRG_Dev > /home/ubuntu/db_files/SRG_Dev_bu.sql
 
 
 ### FIRE UP MYSQL TO BEGIN PROCESSING DATA
@@ -77,7 +55,7 @@ mysql -v -uroot -ps3r3n1t33<<EOFMYSQL
 
 ### CHOOSE DATABASE
 
-USE SRG_items;
+USE SRG_Dev;
 
 
 ### 1 ###
@@ -85,7 +63,7 @@ USE SRG_items;
 	TRUNCATE TABLE Items;
 
 # Load the data from the ItemDetail.csv file into the Items table
-	Load data local infile '/home/srg/db_files/incoming/Items.csv' into table Items fields terminated by ',' lines terminated by '\n';
+	Load data local infile '/home/ubuntu/db_files/incoming/Items.csv' into table Items fields terminated by ',' lines terminated by '\n';
 
 
 
@@ -100,7 +78,7 @@ USE SRG_items;
 	CREATE TABLE ItemDetail_temp AS (SELECT * FROM ItemDetail_Structure WHERE 1=0);
 
 #### Load the data from the latest file into the (temp) TableTurns table ########################
-	Load data local infile '/home/srg/db_files/incoming/ItemDetail.csv' into table ItemDetail_temp fields terminated by ',' lines terminated by '\n';
+	Load data local infile '/home/ubuntu/db_files/incoming/ItemDetail.csv' into table ItemDetail_temp fields terminated by ',' lines terminated by '\n';
 
 ### UPDATE THE DOB FIELD TO SQL FORMAT
 	UPDATE ItemDetail_temp SET DOB = str_to_date(DOB, '%m/%d/%Y');
@@ -185,7 +163,7 @@ USE SRG_items;
 #### MAKE CERTAIN CHECK DETAIL IS FULLY UP TO DATE BEFORE RUNNING #############
 #### POPULATE NEW FIELDS ######################################################
 
-UPDATE SRG_items.ItemDetail_temp as ID
+UPDATE SRG_Dev.ItemDetail_temp as ID
 LEFT JOIN SRG_checks.CheckDetail_Live as CD
 ON ID.POSkey = CD.POSkey
 SET 
@@ -206,21 +184,21 @@ ID.MinutesOpen = CD.MinutesOpen;
 
 
 ##### WRITE TO OUTFILE
-	SELECT ItemDetail_Live.* INTO OUTFILE '/home/srg/db_files/incoming/ItemDetail_Live.out.csv' FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n' FROM ItemDetail_Live; 
+	SELECT ItemDetail_Live.* INTO OUTFILE '/home/ubuntu/db_files/incoming/ItemDetail_Live.out.csv' FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n' FROM ItemDetail_Live; 
 
 
 # QUIT MYSQL
 EOFMYSQL
 
 #### Delete ItemDetail.old.csv to make room for new one.
-rm /home/srg/db_files/incoming/ItemDetail_Live.old.csv
+rm /home/ubuntu/db_files/incoming/ItemDetail_Live.old.csv
 
 #### Rename current CheckDetail.csv file to make room for new one.
-mv /home/srg/db_files/incoming/ItemDetail_Live.csv /home/srg/db_files/incoming/ItemDetail_Live.old.csv
+mv /home/ubuntu/db_files/incoming/ItemDetail_Live.csv /home/ubuntu/db_files/incoming/ItemDetail_Live.old.csv
 
 ##### PROCESS THE FILE
 #### PREPEND HEADERS
-cat /home/srg/db_files/headers/itemdetail.headers.csv /home/srg/db_files/incoming/ItemDetail_Live.out.csv > /home/srg/db_files/incoming/ItemDetail_Live.csv
+cat /home/ubuntu/db_files/headers/itemdetail.headers.csv /home/ubuntu/db_files/incoming/ItemDetail_Live.out.csv > /home/ubuntu/db_files/incoming/ItemDetail_Live.csv
 
 ##### CheckDetail_Live.csv
 
