@@ -45,7 +45,7 @@ done
 echo FY YLUNA CALCD POPULATED
 
 ######## UPDATE ACCOUNT STATUS FROM GUEST TABLE
-mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_test JOIN Guests ON Master_test.CardNumber = Guests.Card Number SET Master_test.enroll_date = Guests.Enroll Date, Master_test.Account_status = Guests.Account_Status"
+mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_test JOIN Guests ON Master_test.CardNumber = Guests.CardNumber SET Master_test.enroll_date = Guests.EnrollDate, Master_test.Account_status = Guests.AccountStatus"
 echo 'Account Status updated from Guests table'
 mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_test JOIN Px_exchanges ON Master_test.CardNumber = Px_exchanges.CurrentCardNumber SET Master_test.Account_status = 'Exchange'"
 echo 'EXCHANGED accounts account status updated from px_exchanges table'
