@@ -15,7 +15,7 @@
 ##### HALT AND CATCH FIRE AT SINGLE ITERATION LEVEL
 set -e
 
-######### THESE ARE THE Px_monthly FIELDS
+######### Px_monthly FIELDS
 #1.	CardNumber
 #2.	Date_Calcd = 1st day of focus month
 #3.	FirstName = Guest firstname from 'Guests' table (should be Px_guests table) 
@@ -30,16 +30,23 @@ set -e
 #12.	LifetimePointsBalance = Lifetime points accrued (as of 1st day of focus month)
 #13.	LifetimeVisistsBalance = Lifetime visits accrued  (as of 1st day of focus month)
 #14.	LastVisit = Last visit date (ever)
-#15.	FreqCurrent = Current Freq (same every record for this account) 
-#16.	FreqRecent = Recent Freq  (same every record for this account)
-#17.	Freq12mos = 12Mo Freq (same every record for this account)
+#15.	FreqCurrent = Current Freq (1st day of focus month - last visit date) 
+#16.	FreqRecent = Recent Freq  (1st day of focus month - previous last visit date, 2 visits back)
+#17.	Freq12mos = 12Mo Freq (Count visits over 12 months previous to 1st day of focus month)
 #18.	HistFreqCurrent = Historical current freq (current freq as of 1st day of focus month)
+#19.	Lifetimefrequency = Count visits since enrollment (as of 1st day of focus month)
+#################### SEGMENTATION FIELDS NOT YET ADDED ################
+#20.	field20 = LifeTime Freq segmentation 
+#21.	field21 = 12mo freq segmentation
+#22.	field22 = Recent freq segmentation
+#23.	field23 = Current freq segmentation
+#24.	field24 = program age
+#25.	field25 = Visit Balance (at visit date segmentation)
 
 
 ########## the excludes
 ## CardNumber IS NOT NULL AND (Account_status <> 'TERMIN' AND Account_status <> 'SUSPEN' AND Account_status <> 'Exchanged'
 ## 	AND Account_status <> 'Exchange' AND Account_status <> 'Exclude') OR (Account_status IS NULL)
-					
 
 
 ##################### ITERATE ON CardNumber TO CALCULATE 
@@ -55,11 +62,18 @@ mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(CardNumber)
 					ORDER BY CardNumber ASC" | while read -r CardNumber;
 do
 
-	mysql  --login-path=local -DSRG_Dev -N -e "SELECT MAX(TransactionDate) as MaxDate, 
-						EXTRACT(MONTH FROM MIN(transactiondate)) as MinMonth, 
-						EXTRACT(YEAR FROM MIN(transactiondate)) as MinYear
-						FROM Master_test WHERE  CardNumber = '$CardNumber'" |while read -r MaxDate MinMonth MinYear; 
+	mysql  --login-path=local -DSRG_Dev -N -e "SELECT 
+						EXTRACT(YEAR FROM MAX(TransactionDate) as MaxYear,
+						EXTRACT(MONTH FROM MAX(TransactionDate) as MaxMonth, 
+						EXTRACT(YEAR FROM MIN(transactiondate)) as MinYear,
+						EXTRACT(MONTH FROM MIN(transactiondate)) as MinMonth 
+						FROM Master_test WHERE  CardNumber = '$CardNumber'" |while read -r MaxYear MaxMonth MinYear MinMonth; 
 	do
+				mysql  --login-path=local -DSRG_Dev -N -e "SELECT FirstName, LastName, EnrollDate, Zip 
+						FROM Guest WHERE CardNumber = '$CardNumber'" |while read -r FirstName LastName EnrollDate Zip; 
+		do
+
+
 
 echo "OG MinMonth "$MinMonth
 ######## DECREASE 1ST MONTH BY 1 (FOR ADDITION IN ITERATION) UNLESS IT IS 1 (JAN) THEN MAKE IT TWELVE AND ROLL BACK THE YEAR
@@ -73,14 +87,30 @@ if [ "$MinMonth" == 1 ]
 		focusmonth=$MinYear"-"$MinMonth"-01" 
 fi
 	echo "CardNumber "$CardNumber" MaxDate "$MaxDate" MinYear "$MinYear" focusmonth "$focusmonth" nextmonth "$nextmonth" MinMonth "$MinMonth			
+	while [ "$focusyear" -lt "$latestyear"]
+	do
 
-########## CHECK IF THIS CARD HAS FOCUS MONTHS FROM PRIOR RUNS TO SAVE WORK
+
+	done
+
+
+
+
+## V2 ####### CHECK IF THIS CARD HAS FOCUS MONTHS FROM PRIOR RUNS TO SAVE WORK
 ########## WHILE THE FOCUS MONTH ISNT MONTH AFTER MAX TRANSACTION DATE ITERATE THROUGH THE MONTHS/YEARS
 #	while [ "$focusmonth" !=  "$nextmonth" ]
 #	do
+
+
+###### CALC ALL THE FIELDS
+
 	
 #	echo "focusmonth "$focusmonth" nextmonth "$nextmonth" MinMonth "$MinMonth			
 	########## CHECK IF THIS CARD HAS FOCUS MONTHS FROM PRIOR RUNS TO SAVE WORK
+				
+
+		done
+
 
 	done
 done
