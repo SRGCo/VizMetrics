@@ -36,6 +36,12 @@ set -e
 #18.	HistFreqCurrent = Historical current freq (current freq as of 1st day of focus month)
 
 
+########## the excludes
+## CardNumber IS NOT NULL AND (Account_status <> 'TERMIN' AND Account_status <> 'SUSPEN' AND Account_status <> 'Exchanged'
+## 	AND Account_status <> 'Exchange' AND Account_status <> 'Exclude') OR (Account_status IS NULL)
+					
+
+
 ##################### ITERATE ON CardNumber TO CALCULATE 
 ###### -N is the No Headers in Output option
 ###### -e is the 'read statement and quit'
@@ -44,60 +50,41 @@ set -e
 ####### GET ONLY NON-EXCLUDED CARDNUMBERS
 
 
-mysql  --login-path=local -DSRG_Dev -N -e "SELECT CardNumber, MAX(TranactionDate) FROM Master_test WHERE CardNumber IS NOT NULL
-					AND (Master_test.Account_status <> 'TERMIN' 
-					AND Master_test.Account_status <> 'SUSPEN' 
-					AND Master_test.Account_status <> 'Exchanged'
-					AND Master_test.Account_status <> 'Exchange' 
-					AND Master_test.Account_status <> 'Exclude') OR (Account_status IS NULL)
-				GROUP BY CardNumber ORDER BY CardNumber ASC" | while read -r CardNumber LastVisit;
+mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(CardNumber)
+					FROM Master_test WHERE  CardNumber = '390000000003838'
+					ORDER BY CardNumber ASC" | while read -r CardNumber;
 do
 
-	######## DETERMINE FIRST DATE OF EACH MONTH SINCE CARD INCEPTION
+	mysql  --login-path=local -DSRG_Dev -N -e "SELECT MAX(TransactionDate) as MaxDate, 
+						EXTRACT(MONTH FROM MIN(transactiondate)) as MinMonth, 
+						EXTRACT(YEAR FROM MIN(transactiondate)) as MinYear
+						FROM Master_test WHERE  CardNumber = '$CardNumber'" |while read -r MaxDate MinMonth MinYear; 
+	do
+
+echo "OG MinMonth "$MinMonth
+######## DECREASE 1ST MONTH BY 1 (FOR ADDITION IN ITERATION) UNLESS IT IS 1 (JAN) THEN MAKE IT TWELVE AND ROLL BACK THE YEAR
+######## DETERMINE FIRST DATE OF EACH MONTH SINCE CARD INCEPTION
+if [ "$MinMonth" == 1 ] 
+	then 
+		MinMonth="12"
+		focusmonth=$MinYear"-"$MinMonth"-01" 
+	else 
+		MinMonth=$((MinMonth - 1))  
+		focusmonth=$MinYear"-"$MinMonth"-01" 
+fi
+	echo "CardNumber "$CardNumber" MaxDate "$MaxDate" MinYear "$MinYear" focusmonth "$focusmonth" nextmonth "$nextmonth" MinMonth "$MinMonth			
+
+########## CHECK IF THIS CARD HAS FOCUS MONTHS FROM PRIOR RUNS TO SAVE WORK
+########## WHILE THE FOCUS MONTH ISNT MONTH AFTER MAX TRANSACTION DATE ITERATE THROUGH THE MONTHS/YEARS
+#	while [ "$focusmonth" !=  "$nextmonth" ]
+#	do
 	
+#	echo "focusmonth "$focusmonth" nextmonth "$nextmonth" MinMonth "$MinMonth			
 	########## CHECK IF THIS CARD HAS FOCUS MONTHS FROM PRIOR RUNS TO SAVE WORK
 
-	
-
-
-
-
-
-
-	PrevYear=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT COUNT(*) from Master_test WHERE CardNumber = '$CardNumber' 
-								AND Vm_VisitsAccrued = '1' AND TransactionDate >= DATE_SUB(NOW(),INTERVAL 1 YEAR)")
-		
-		if [ -z "$SecondMax" ]
-		then
-
-			##### UPDATE ONLY FIRST FREQUENCIES
-			mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_test SET FreqCurrent = DATEDIFF(NOW(), '$MaxDate'), Freq12mos = '$PrevYear', FreqLifetime = '$Lifetimereal'  WHERE CardNumber = '$CardNumber'"
-			echo $CardNumber" first only MAX "$MaxDate" 2ND "$SecondMax"  Prevyr "$PrevYear" VmVB "$VmVB" PrevLifereal "$Lifetimereal" prevlifenotreal"$Lifetime" MinBal "$MinBal
-
-		##### IF SECONDMAX HAS A VALUE
-		else
-			##### GET 3RD TO MAX TRANSACTIONDATE
-			ThirdMax=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT transactiondate from Master_test WHERE CardNumber = '$CardNumber' AND Vm_VisitsAccrued = '1' ORDER BY TransactionDate DESC limit 2,1") 
-			##### IF THIRDMAX IS NULL / EMPTY
-			if [ -z "$ThirdMax" ]
-			then
-				##### UPDATE ONLY FIRST AND SECOND FREQUENCIES
-				mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_test SET FreqCurrent = DATEDIFF(NOW(), '$MaxDate'), FreqRecent = DATEDIFF('$MaxDate', '$SecondMax'), Freq12mos = '$PrevYear', FreqLifetime = '$Lifetimereal'  WHERE CardNumber = '$CardNumber'"			   
-				echo $CardNumber" first and second MAX "$MaxDate" 2ND "$SecondMax" Prevyr "$PrevYear" VmVB "$VmVB" PrevLifereal "$Lifetimereal" prevlifenotreal "$Lifetime" MinBal "$MinBal
-				
-
-			##### IF THIRDMAX HAS A VALUE
-			else
-				##### UPDATE ALL FREQUENCIES
-				mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_test SET FreqCurrent = DATEDIFF(NOW(), '$MaxDate'), FreqRecent = DATEDIFF('$MaxDate', '$SecondMax'), FreqPrevious = DATEDIFF('$SecondMax', '$ThirdMax'), Freq12mos = '$PrevYear', FreqLifetime = '$Lifetimereal'   WHERE CardNumber = '$CardNumber'"
-
-			echo $CardNumber" first second third MAX "$MaxDate" 2ND "$SecondMax" 3RD "$ThirdMax" Prevyr "$PrevYear" VmVB "$VmVB" PrevLifereal "$Lifetimereal" prevlifenotreal "$Lifetime" MinBal "$MinBal
-
-				
-			fi
-
-		fi
+	done
 done
+
 
 
 
