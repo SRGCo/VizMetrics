@@ -17,24 +17,24 @@ set -e
 
 ######### Px_monthly FIELDS
 #1.	CardNumber
-#2.	Date_Calcd = 1st day of focus month
+#2.	FocusDate = 1st day of focus month
 #3.	FirstName = Guest firstname from 'Guests' table (should be Px_guests table) 
 #4.	LastName = Guest lastname (same every record for this account)
 #5	EnrollDate = Guest enroll date (from guests table ?????)
 #6	Zip = Guests' zipcode from guests table
-#7	DollarsSpentMonth = Dollars spent during focus month
-#8.	PointsRedeemedMonth = Points redeemed during focus month
-#9.	PointsAccruedMonth = Points acrrued during focus month
-#10.	VisitsAccruedMonth = Visits accrued during focus month
-#11.	LifetimeSpendBalance = Lifetime Dollars spent (as of 1st day of focus month)
-#12.	LifetimePointsBalance = Lifetime points accrued (as of 1st day of focus month)
-#13.	LifetimeVisistsBalance = Lifetime visits accrued  (as of 1st day of focus month)
+#7	DollarsSpentMonth = Dollars spent during focus month [DollarsSpentAccrued]
+#8.	PointsRedeemedMonth = Points redeemed during focus month [SereniteePointsRedeemed]
+#9.	PointsAccruedMonth = Points acrrued during focus month [SereniteePointsAccrued]
+#10.	VisitsAccruedMonth = Visits accrued during focus month [VisitsAccrued]
+#11.	LifetimeSpendBalance = Lifetime Dollars spent (as of FocusDate)
+#12.	LifetimePointsBalance = Lifetime points accrued (as of FocusDate)
+#13.	LifetimeVisistsBalance = Lifetime visits accrued  (as of FocusDate)
 #14.	LastVisit = Last visit date (ever)
 #15.	FreqCurrent = Current Freq (1st day of focus month - last visit date) 
 #16.	FreqRecent = Recent Freq  (1st day of focus month - previous last visit date, 2 visits back)
 #17.	Freq12mos = 12Mo Freq (Count visits over 12 months previous to 1st day of focus month)
-#18.	HistFreqCurrent = Historical current freq (current freq as of 1st day of focus month)
-#19.	Lifetimefrequency = Count visits since enrollment (as of 1st day of focus month)
+#18.	HistFreqCurrent = Historical current freq (current freq as of FocusDate)
+#19.	Lifetimefrequency = Count visits since enrollment (as of FocusDate)
 #################### SEGMENTATION FIELDS NOT YET ADDED ################
 #20.	field20 = LifeTime Freq segmentation 
 #21.	field21 = 12mo freq segmentation
@@ -58,65 +58,72 @@ set -e
 
 
 mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(CardNumber)
-					FROM Master_test WHERE  CardNumber = '390000000003838'
-					ORDER BY CardNumber ASC" | while read -r CardNumber;
+			FROM Master_test
+			WHERE (SRG_Dev.Master_test.Account_status <> 'TERMIN' 
+					AND SRG_Dev.Master_test.Account_status <> 'SUSPEN' 
+					AND SRG_Dev.Master_test.Account_status <> 'Exchanged'
+					AND SRG_Dev.Master_test.Account_status <> 'Exchange' 
+					AND SRG_Dev.Master_test.Account_status <> 'Exclude') OR (Account_status IS NULL)
+					ORDER BY CardNumber DESC" | while read -r CardNumber;
 do
+echo "CardNumber "$CardNumber
+	######## GET FIRST NAME
+	FirstName=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT FirstName FROM Guests WHERE CardNumber = '$CardNumber' LIMIT 1")
 
-	mysql  --login-path=local -DSRG_Dev -N -e "SELECT 
-						EXTRACT(YEAR FROM MAX(TransactionDate) as MaxYear,
-						EXTRACT(MONTH FROM MAX(TransactionDate) as MaxMonth, 
-						EXTRACT(YEAR FROM MIN(transactiondate)) as MinYear,
-						EXTRACT(MONTH FROM MIN(transactiondate)) as MinMonth 
-						FROM Master_test WHERE  CardNumber = '$CardNumber'" |while read -r MaxYear MaxMonth MinYear MinMonth; 
-	do
-				mysql  --login-path=local -DSRG_Dev -N -e "SELECT FirstName, LastName, EnrollDate, Zip 
-						FROM Guest WHERE CardNumber = '$CardNumber'" |while read -r FirstName LastName EnrollDate Zip; 
+	######## GET LAST NAME
+	LastName=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT LastName FROM Guests WHERE CardNumber = '$CardNumber' LIMIT 1")
+
+	######## GET ENROLL DATE
+	EnrollDate=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT EnrollDate FROM Guests WHERE CardNumber = '$CardNumber' LIMIT 1")
+
+	######## GET ZIP
+	Zip=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT Zip FROM Guests WHERE CardNumber = '$CardNumber' LIMIT 1")
+
+echo "FirstName "$FirstName" LastName "$LastName" Enroll "$EnrollDate" Zip "$Zip
+	######## GET MAxYear
+	MaxDate=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT MAX(TransactionDate) FROM Master_test WHERE CardNumber = '$CardNumber'")
+	MaxDateUnix=$(date +%s -d "$MaxDate") 
+
+	######## GET MinYear
+	MinDate=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT MIN(TransactionDate) FROM Master_test WHERE CardNumber = '$CardNumber'")
+
+echo "MinDate "$MinDate" MaxDate "$MaxDate
+
+	FocusDate=$(date +%Y-%m-01 -d "$MinDate")
+	FocusDateUnix=$(date +%s -d "$FocusDate")
+	FocusDateEnd=$(date +%Y-%m-%d -d "$FocusDate + 1 Month -1 day")
+	FocusDateEndUnix=$(date +%s -d "$FocusDateEnd") 
+ 
+echo "STARTING------- FocusDate "$FocusDate" FocusDateEnd "$FocusDateEnd" MaxDate "$MaxDate" MinDate "$MinDate	
+echo "Unixfocus "$FocusDateUnix" FocusDateUnixEnd "$FocusDateEndUnix
+
+	while [ $FocusDateUnix -le $MaxDateUnix ]
+	do	
+		###### DO THE MONTHLY CALCULATION QUERIES HERE
+		mysql  --login-path=local -DSRG_Dev -N -e "SELECT SUM(DollarsSpentAccrued),
+								SUM(SereniteePointsRedeemed),
+								SUM(SereniteePointsAccrued),
+								SUM(VisitsAccrued)
+								FROM Master_test WHERE  CardNumber = '$CardNumber'
+								AND TransactionDate >= '$FocusDate'
+								AND TransactionDate <= '$FocusDateEnd'" | while read -r DollarsSpentMonth PointsRedeemed PointsAccrued VisitsAccrued;
 		do
-
-
-
-echo "OG MinMonth "$MinMonth
-######## DECREASE 1ST MONTH BY 1 (FOR ADDITION IN ITERATION) UNLESS IT IS 1 (JAN) THEN MAKE IT TWELVE AND ROLL BACK THE YEAR
-######## DETERMINE FIRST DATE OF EACH MONTH SINCE CARD INCEPTION
-if [ "$MinMonth" == 1 ] 
-	then 
-		MinMonth="12"
-		focusmonth=$MinYear"-"$MinMonth"-01" 
-	else 
-		MinMonth=$((MinMonth - 1))  
-		focusmonth=$MinYear"-"$MinMonth"-01" 
-fi
-	echo "CardNumber "$CardNumber" MaxDate "$MaxDate" MinYear "$MinYear" focusmonth "$focusmonth" nextmonth "$nextmonth" MinMonth "$MinMonth			
-	while [ "$focusyear" -lt "$latestyear"]
-	do
-
-
-	done
-
-
-
-
-## V2 ####### CHECK IF THIS CARD HAS FOCUS MONTHS FROM PRIOR RUNS TO SAVE WORK
-########## WHILE THE FOCUS MONTH ISNT MONTH AFTER MAX TRANSACTION DATE ITERATE THROUGH THE MONTHS/YEARS
-#	while [ "$focusmonth" !=  "$nextmonth" ]
-#	do
-
-
-###### CALC ALL THE FIELDS
-
-	
-#	echo "focusmonth "$focusmonth" nextmonth "$nextmonth" MinMonth "$MinMonth			
-	########## CHECK IF THIS CARD HAS FOCUS MONTHS FROM PRIOR RUNS TO SAVE WORK
-				
-
+			echo " FocusDate "$FocusDate" FocusDateEnd "$FocusDateEnd" DollarsSpentMonth "$DollarsSpentMonth" Ptsredeemed "$PointsRedeemed "PtsAccrued "$PointsAccrued" VisitsAccrued "$VisitsAccrued
 		done
 
 
+	FocusDate=$(date +%Y-%m-%d -d "$FocusDate + 1 Month")
+	FocusDateEnd=$(date +%Y-%m-%d -d "$FocusDate + 1 Month - 1 day")
+	FocusDateUnix=$(date +%s -d "$FocusDate") 
+
+
+
 	done
+
 done
 
 
 
 
-echo Frequencies Updated
+echo Monthly Px Stats Updated
 
