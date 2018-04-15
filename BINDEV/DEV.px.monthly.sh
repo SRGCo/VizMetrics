@@ -29,19 +29,20 @@ set -e
 #11.	LifetimeSpendBalance = Lifetime Dollars spent (as of FocusDate)
 #12.	LifetimePointsBalance = Lifetime points accrued (as of FocusDate)
 #13.	LifetimeVisistsBalance = Lifetime visits accrued  (as of FocusDate)
-#14.	LastVisit = Last visit date (ever)
-#15.	FreqCurrent = Current Freq (1st day of focus month - last visit date) 
-#16.	FreqRecent = Recent Freq  (1st day of focus month - previous last visit date, 2 visits back)
-#17.	Freq12mos = 12Mo Freq (Count visits over 12 months previous to 1st day of focus month)
-#18.	HistFreqCurrent = Historical current freq (current freq as of FocusDate)
-#19.	Lifetimefrequency = Count visits since enrollment (as of FocusDate)
+#14.*** LifetimePointsRedeemed = Lifetime points redeemed (as of FocusDate) *********************
+#15	LastVisit = Last visit date (ever)
+#16.	FreqCurrent = Current Freq (1st day of focus month - last visit date) 
+#17.	FreqRecent = Recent Freq  (1st day of focus month - previous last visit date, 2 visits back)
+#18.	Freq12mos = 12Mo Freq (Count visits over 12 months previous to 1st day of focus month)
+#19.	HistFreqCurrent = Historical current freq (current freq as of FocusDate)
+#20.	Lifetimefrequency = Count visits since enrollment (as of FocusDate)
 #################### SEGMENTATION FIELDS NOT YET ADDED ################
-#20.	field20 = LifeTime Freq segmentation 
-#21.	field21 = 12mo freq segmentation
-#22.	field22 = Recent freq segmentation
-#23.	field23 = Current freq segmentation
-#24.	field24 = program age
-#25.	field25 = Visit Balance (at visit date segmentation)
+#21.	field20 = LifeTime Freq segmentation 
+#22.	field21 = 12mo freq segmentation
+#23.	field22 = Recent freq segmentation
+#24.	field23 = Current freq segmentation
+#25.	field24 = program age
+#26.	field25 = Visit Balance (at visit date segmentation)
 
 
 ########## the excludes
@@ -58,34 +59,19 @@ set -e
 
 
 mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(CardNumber)
-			FROM Master_test
-			WHERE (SRG_Dev.Master_test.Account_status <> 'TERMIN' 
-					AND SRG_Dev.Master_test.Account_status <> 'SUSPEN' 
-					AND SRG_Dev.Master_test.Account_status <> 'Exchanged'
-					AND SRG_Dev.Master_test.Account_status <> 'Exchange' 
-					AND SRG_Dev.Master_test.Account_status <> 'Exclude') OR (Account_status IS NULL)
-					ORDER BY CardNumber DESC" | while read -r CardNumber;
+					FROM Master_test
+					WHERE 		
+					CardNumber = '6000227900311115'
+						ORDER BY CardNumber DESC" | while read -r CardNumber;
 do
 echo "CardNumber "$CardNumber
-	######## GET FIRST NAME
-	FirstName=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT FirstName FROM Guests WHERE CardNumber = '$CardNumber' LIMIT 1")
-
-	######## GET LAST NAME
-	LastName=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT LastName FROM Guests WHERE CardNumber = '$CardNumber' LIMIT 1")
-
-	######## GET ENROLL DATE
-	EnrollDate=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT EnrollDate FROM Guests WHERE CardNumber = '$CardNumber' LIMIT 1")
-
-	######## GET ZIP
-	Zip=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT Zip FROM Guests WHERE CardNumber = '$CardNumber' LIMIT 1")
-
-echo "FirstName "$FirstName" LastName "$LastName" Enroll "$EnrollDate" Zip "$Zip
-	######## GET MAxYear
 	MaxDate=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT MAX(TransactionDate) FROM Master_test WHERE CardNumber = '$CardNumber'")
 	MaxDateUnix=$(date +%s -d "$MaxDate") 
 
 	######## GET MinYear
 	MinDate=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT MIN(TransactionDate) FROM Master_test WHERE CardNumber = '$CardNumber'")
+	MinDateUnix=$(date +%s -d "$MinDate") 
+
 
 echo "MinDate "$MinDate" MaxDate "$MaxDate
 
@@ -100,21 +86,127 @@ echo "Unixfocus "$FocusDateUnix" FocusDateUnixEnd "$FocusDateEndUnix
 	while [ $FocusDateUnix -le $MaxDateUnix ]
 	do	
 		###### DO THE MONTHLY CALCULATION QUERIES HERE
-		mysql  --login-path=local -DSRG_Dev -N -e "SELECT SUM(DollarsSpentAccrued),
+		mysql  --login-path=local -DSRG_Dev -N -e "SELECT
+								MIN(TransactionDate), 
+								SUM(DollarsSpentAccrued),
 								SUM(SereniteePointsRedeemed),
 								SUM(SereniteePointsAccrued),
-								SUM(VisitsAccrued)
+								SUM(VisitsAccrued)                   
 								FROM Master_test WHERE  CardNumber = '$CardNumber'
+								AND DollarsSpentAccrued IS NOT NULL
+								AND VisitsAccrued > '0'
 								AND TransactionDate >= '$FocusDate'
-								AND TransactionDate <= '$FocusDateEnd'" | while read -r DollarsSpentMonth PointsRedeemed PointsAccrued VisitsAccrued;
+								AND TransactionDate <= '$FocusDateEnd'" | while read -r TransMonth DollarsSpentMonth PointsRedeemedMonth PointsAccruedMonth VisitsAccruedMonth;
 		do
-			echo " FocusDate "$FocusDate" FocusDateEnd "$FocusDateEnd" DollarsSpentMonth "$DollarsSpentMonth" Ptsredeemed "$PointsRedeemed "PtsAccrued "$PointsAccrued" VisitsAccrued "$VisitsAccrued
+			if [ $FocusDateUnix -gt $MinDateUnix ]
+			then
+				mysql  --login-path=local -DSRG_Dev -N -e "SELECT SUM(DollarsSpentAccrued), 
+									SUM(SereniteePointsRedeemed), 
+									SUM(SereniteePointsAccrued), 
+									SUM(VisitsAccrued) FROM Master_test WHERE CardNumber = '$CardNumber'
+									AND TransactionDate < '$FocusDate'" | while read -r DollarsSpentLife PointsRedeemedLife PointsAccruedLife VisitsAccruedLife;
+				do
+						echo " FocusDate "$FocusDate" FocusDateEnd "$FocusDateEnd" DollarsSpentMonth "$DollarsSpentMonth" Ptsredeemed "$PointsRedeemed "PtsAccrued "$PointsAccrued" VisitsAccrued "$VisitsAccrued" Month "$TransMonth
+						echo "FocusDateUnix "$FocusDateUnix" MinDateUnix "$MinDateUnix
+						echo " FocusDate "$FocusDate" FocusDateEnd "$FocusDateEnd" DollarsSpentLIFE "$DollarsSpentLife" PtsredeemedLife "$PointsRedeemedLife "PtsAccruedLife "$PointsAccruedLife" VisitsAccruedLife "$VisitsAccruedLife
+
+				######## GET FIRST NAME
+				FirstName=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT FirstName FROM Guests WHERE CardNumber = '$CardNumber' LIMIT 1")
+
+				######## GET LAST NAME
+				LastName=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT LastName FROM Guests WHERE CardNumber = '$CardNumber' LIMIT 1")
+
+				######## GET ENROLL DATE
+				EnrollDate=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT EnrollDate FROM Guests WHERE CardNumber = '$CardNumber' LIMIT 1")
+	
+				######## GET ZIP
+				Zip=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT Zip FROM Guests WHERE CardNumber = '$CardNumber' LIMIT 1")
+
+				echo "FirstName "$FirstName" LastName "$LastName" Enroll "$EnrollDate" Zip "$Zip
+
+				####### ADD ZEROs FOR NULLs on MONTHS OF NO ACTIVITY
+				if [ $DollarsSpentMonth == 'NULL' ]
+				then
+					DollarsSpentMonth=0
+					PointsRedeemedMonth=0 
+					PointsAccruedMonth=0 
+					VisitsAccruedMonth=0
+				fi	
+				
+
+				#UPDATE TABLE
+				mysql  --login-path=local -DSRG_Dev -N -e "INSERT INTO Px_monthly SET CardNumber = '$CardNumber',
+										Date_Calcd = '$FocusDate',
+										FirstName = '$FirstName',
+										LastName = '$LastName',
+										EnrollDate = '$EnrollDate',
+										Zip = '$Zip',
+										DollarsSpentMonth = '$DollarsSpentMonth',
+										PointsRedeemedMonth = '$PointsRedeemedMonth',
+										PointsAccruedMonth = '$PointsAccruedMonth',
+										VisitsAccruedMonth = '$VisitsAccruedMonth',
+										LifetimeSpendBalance = '$DollarsSpentLife',
+										LifetimePointsBalance = '$PointsAccruedLife',
+										LifetimeVisitsBalance = '$VisitsAccruedLife',
+										LifetimePointsRedeemed = '$PointsRedeemedLife',
+										LastVisit = '$MaxDate'";
+												
+				done		 
+   
+
+
+
+			else
+			####### THIS WOULD BE THE CASE OF ENROLLMENT MONTH WHEN WE'D GET NULLS OTHERWISE
+			DollarsSpentLife=0
+			PointsRedeemedLife=0
+			PointsAccruedLife=0
+			VisitsAccruedLife=0
+						echo "######## first FocusDate "$FocusDate" FocusDateEnd "$FocusDateEnd" DollarsSpentMonth "$DollarsSpentMonth" Ptsredeemed "$PointsRedeemed "PtsAccrued "$PointsAccrued" VisitsAccrued "$VisitsAccrued" Month "$TransMonth
+						echo "FocusDateUnix "$FocusDateUnix" MinDateUnix "$MinDateUnix
+						echo " FocusDate "$FocusDate" FocusDateEnd "$FocusDateEnd" DollarsSpentLIFE "$DollarsSpentLife" PtsredeemedLife "$PointsRedeemedLife "PtsAccruedLife "$PointsAccruedLife" VisitsAccruedLife "$VisitsAccruedLife
+
+			######## GET FIRST NAME
+			FirstName=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT FirstName FROM Guests WHERE CardNumber = '$CardNumber' LIMIT 1")
+
+			######## GET LAST NAME
+			LastName=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT LastName FROM Guests WHERE CardNumber = '$CardNumber' LIMIT 1")
+
+			######## GET ENROLL DATE
+			EnrollDate=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT EnrollDate FROM Guests WHERE CardNumber = '$CardNumber' LIMIT 1")
+	
+			######## GET ZIP
+			Zip=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT Zip FROM Guests WHERE CardNumber = '$CardNumber' LIMIT 1")
+
+			echo "FirstName "$FirstName" LastName "$LastName" Enroll "$EnrollDate" Zip "$Zip
+
+
+			#UPDATE TABLE
+			mysql  --login-path=local -DSRG_Dev -N -e "INSERT INTO Px_monthly SET CardNumber = '$CardNumber',
+										Date_Calcd = '$FocusDate',
+										FirstName = '$FirstName',
+										LastName = '$LastName',
+										EnrollDate = '$EnrollDate',
+										Zip = '$Zip',
+										DollarsSpentMonth = '$DollarsSpentMonth',
+										PointsRedeemedMonth = '$PointsRedeemedMonth',
+										VisitsAccruedMonth = '$VisitsAccruedMonth',
+										LifetimeSpendBalance = '$DollarsSpentLife',
+										LifetimePointsBalance = '$PointsAccruedLife',
+										LifetimeVisitsBalance = '$VisitsAccruedLife',
+										LifetimePointsRedeemed = '$PointsRedeemedLife',
+										LastVisit = '$MaxDate'";
+												
+					 
+   			fi
+			
+
+
 		done
-
-
-	FocusDate=$(date +%Y-%m-%d -d "$FocusDate + 1 Month")
-	FocusDateEnd=$(date +%Y-%m-%d -d "$FocusDate + 1 Month - 1 day")
-	FocusDateUnix=$(date +%s -d "$FocusDate") 
+		FocusDate=$(date +%Y-%m-%d -d "$FocusDate + 1 Month")
+		FocusDateEnd=$(date +%Y-%m-%d -d "$FocusDate + 1 Month - 1 day")
+		FocusDateUnix=$(date +%s -d "$FocusDate")
+		MinDateUnix=$(date +%s -d "$MinDate") 
 
 
 
