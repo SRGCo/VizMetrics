@@ -98,8 +98,6 @@ echo "Unixfocus "$FocusDateUnix" FocusDateUnixEnd "$FocusDateEndUnix
 								AND TransactionDate >= '$FocusDate'
 								AND TransactionDate <= '$FocusDateEnd'" | while read -r TransMonth DollarsSpentMonth PointsRedeemedMonth PointsAccruedMonth VisitsAccruedMonth;
 		do
-			if [ $FocusDateUnix -gt $MinDateUnix ]
-			then
 				mysql  --login-path=local -DSRG_Dev -N -e "SELECT SUM(DollarsSpentAccrued), 
 									SUM(SereniteePointsRedeemed), 
 									SUM(SereniteePointsAccrued), 
@@ -110,33 +108,33 @@ echo "Unixfocus "$FocusDateUnix" FocusDateUnixEnd "$FocusDateEndUnix
 						echo "FocusDateUnix "$FocusDateUnix" MinDateUnix "$MinDateUnix
 						echo " FocusDate "$FocusDate" FocusDateEnd "$FocusDateEnd" DollarsSpentLIFE "$DollarsSpentLife" PtsredeemedLife "$PointsRedeemedLife "PtsAccruedLife "$PointsAccruedLife" VisitsAccruedLife "$VisitsAccruedLife
 
-				######## GET FIRST NAME
-				FirstName=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT FirstName FROM Guests WHERE CardNumber = '$CardNumber' LIMIT 1")
+					######## GET FIRST NAME
+					FirstName=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT FirstName FROM Guests WHERE CardNumber = '$CardNumber' LIMIT 1")
 
-				######## GET LAST NAME
-				LastName=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT LastName FROM Guests WHERE CardNumber = '$CardNumber' LIMIT 1")
+					######## GET LAST NAME
+					LastName=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT LastName FROM Guests WHERE CardNumber = '$CardNumber' LIMIT 1")
 
-				######## GET ENROLL DATE
-				EnrollDate=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT EnrollDate FROM Guests WHERE CardNumber = '$CardNumber' LIMIT 1")
+					######## GET ENROLL DATE
+					EnrollDate=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT EnrollDate FROM Guests WHERE CardNumber = '$CardNumber' LIMIT 1")
 	
-				######## GET ZIP
-				Zip=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT Zip FROM Guests WHERE CardNumber = '$CardNumber' LIMIT 1")
+					######## GET ZIP
+					Zip=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT Zip FROM Guests WHERE CardNumber = '$CardNumber' LIMIT 1")
+	
+					echo "FirstName "$FirstName" LastName "$LastName" Enroll "$EnrollDate" Zip "$Zip
 
-				echo "FirstName "$FirstName" LastName "$LastName" Enroll "$EnrollDate" Zip "$Zip
-
-				####### ADD ZEROs FOR NULLs on MONTHS OF NO ACTIVITY
-				if [ $DollarsSpentMonth == 'NULL' ]
-				then
+					####### ADD ZEROs FOR NULLs on MONTHS OF NO ACTIVITY
+					if [ $DollarsSpentMonth == 'NULL' ]
+					then
 					DollarsSpentMonth=0
 					PointsRedeemedMonth=0 
 					PointsAccruedMonth=0 
 					VisitsAccruedMonth=0
-				fi	
+					fi	
 				
 
-				#UPDATE TABLE
-				mysql  --login-path=local -DSRG_Dev -N -e "INSERT INTO Px_monthly SET CardNumber = '$CardNumber',
-										Date_Calcd = '$FocusDate',
+					#UPDATE TABLE
+					mysql  --login-path=local -DSRG_Dev -N -e "INSERT INTO Px_monthly SET CardNumber = '$CardNumber',
+										FocusDate = '$FocusDate',
 										FirstName = '$FirstName',
 										LastName = '$LastName',
 										EnrollDate = '$EnrollDate',
@@ -156,49 +154,7 @@ echo "Unixfocus "$FocusDateUnix" FocusDateUnixEnd "$FocusDateEndUnix
 
 
 
-			else
-			####### THIS WOULD BE THE CASE OF ENROLLMENT MONTH WHEN WE'D GET NULLS OTHERWISE
-			DollarsSpentLife=0
-			PointsRedeemedLife=0
-			PointsAccruedLife=0
-			VisitsAccruedLife=0
-						echo "######## first FocusDate "$FocusDate" FocusDateEnd "$FocusDateEnd" DollarsSpentMonth "$DollarsSpentMonth" Ptsredeemed "$PointsRedeemed "PtsAccrued "$PointsAccrued" VisitsAccrued "$VisitsAccrued" Month "$TransMonth
-						echo "FocusDateUnix "$FocusDateUnix" MinDateUnix "$MinDateUnix
-						echo " FocusDate "$FocusDate" FocusDateEnd "$FocusDateEnd" DollarsSpentLIFE "$DollarsSpentLife" PtsredeemedLife "$PointsRedeemedLife "PtsAccruedLife "$PointsAccruedLife" VisitsAccruedLife "$VisitsAccruedLife
-
-			######## GET FIRST NAME
-			FirstName=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT FirstName FROM Guests WHERE CardNumber = '$CardNumber' LIMIT 1")
-
-			######## GET LAST NAME
-			LastName=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT LastName FROM Guests WHERE CardNumber = '$CardNumber' LIMIT 1")
-
-			######## GET ENROLL DATE
-			EnrollDate=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT EnrollDate FROM Guests WHERE CardNumber = '$CardNumber' LIMIT 1")
-	
-			######## GET ZIP
-			Zip=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT Zip FROM Guests WHERE CardNumber = '$CardNumber' LIMIT 1")
-
-			echo "FirstName "$FirstName" LastName "$LastName" Enroll "$EnrollDate" Zip "$Zip
-
-
-			#UPDATE TABLE
-			mysql  --login-path=local -DSRG_Dev -N -e "INSERT INTO Px_monthly SET CardNumber = '$CardNumber',
-										Date_Calcd = '$FocusDate',
-										FirstName = '$FirstName',
-										LastName = '$LastName',
-										EnrollDate = '$EnrollDate',
-										Zip = '$Zip',
-										DollarsSpentMonth = '$DollarsSpentMonth',
-										PointsRedeemedMonth = '$PointsRedeemedMonth',
-										VisitsAccruedMonth = '$VisitsAccruedMonth',
-										LifetimeSpendBalance = '$DollarsSpentLife',
-										LifetimePointsBalance = '$PointsAccruedLife',
-										LifetimeVisitsBalance = '$VisitsAccruedLife',
-										LifetimePointsRedeemed = '$PointsRedeemedLife',
-										LastVisit = '$MaxDate'";
-												
-					 
-   			fi
+		
 			
 
 
