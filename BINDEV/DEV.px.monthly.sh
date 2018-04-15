@@ -113,8 +113,17 @@ do
 					PointsAccruedMonth=0 
 					VisitsAccruedMonth=0
 					fi	
+					######## VISITS ACCRUED 12 MONTHS PREVIOUS TO FOCUSDATE
+					PrevYear=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT COUNT(TransactionDate) FROM Master_test 
+												WHERE CardNumber = '$CardNumber' 
+												AND TransactionDate >= DATE_SUB('$FocusDate',INTERVAL 1 YEAR) 
+												AND TransactionDate < '$FocusDate'												
+												AND VisitsAccrued > '0'")
+			
 				
 					
+
+	
 					#UPDATE TABLE
 					mysql  --login-path=local -DSRG_Dev -N -e "INSERT INTO Px_monthly SET CardNumber = '$CardNumber',
 										FocusDate = '$FocusDate',
