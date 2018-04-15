@@ -59,29 +59,27 @@ set -e
 
 
 mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(CardNumber)
-					FROM Master_test
-					WHERE 		
-					CardNumber = '6000227900311115'
-						ORDER BY CardNumber DESC" | while read -r CardNumber;
+					FROM Master_test	
+					ORDER BY CardNumber DESC" | while read -r CardNumber;
 do
-echo "CardNumber "$CardNumber
 	MaxDate=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT MAX(TransactionDate) FROM Master_test WHERE CardNumber = '$CardNumber'")
 	MaxDateUnix=$(date +%s -d "$MaxDate") 
-
-	######## GET MinYear
 	MinDate=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT MIN(TransactionDate) FROM Master_test WHERE CardNumber = '$CardNumber'")
+
 	MinDateUnix=$(date +%s -d "$MinDate") 
-
-
-echo "MinDate "$MinDate" MaxDate "$MaxDate
-
 	FocusDate=$(date +%Y-%m-01 -d "$MinDate")
 	FocusDateUnix=$(date +%s -d "$FocusDate")
 	FocusDateEnd=$(date +%Y-%m-%d -d "$FocusDate + 1 Month -1 day")
 	FocusDateEndUnix=$(date +%s -d "$FocusDateEnd") 
- 
-echo "STARTING------- FocusDate "$FocusDate" FocusDateEnd "$FocusDateEnd" MaxDate "$MaxDate" MinDate "$MinDate	
-echo "Unixfocus "$FocusDateUnix" FocusDateUnixEnd "$FocusDateEndUnix
+
+	######## GET FIRST NAME
+	FirstName=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT FirstName FROM Guests WHERE CardNumber = '$CardNumber'  LIMIT 1")
+	######## GET LAST NAME
+	LastName=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT LastName FROM Guests WHERE CardNumber = '$CardNumber' LIMIT 1")
+	######## GET ENROLL DATE
+	EnrollDate=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT EnrollDate FROM Guests WHERE CardNumber = '$CardNumber' LIMIT 1")
+	######## GET ZIP
+	Zip=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT Zip FROM Guests WHERE CardNumber = '$CardNumber' LIMIT 1")
 
 	while [ $FocusDateUnix -le $MaxDateUnix ]
 	do	
@@ -104,23 +102,8 @@ echo "Unixfocus "$FocusDateUnix" FocusDateUnixEnd "$FocusDateEndUnix
 									SUM(VisitsAccrued) FROM Master_test WHERE CardNumber = '$CardNumber'
 									AND TransactionDate < '$FocusDate'" | while read -r DollarsSpentLife PointsRedeemedLife PointsAccruedLife VisitsAccruedLife;
 				do
-						echo " FocusDate "$FocusDate" FocusDateEnd "$FocusDateEnd" DollarsSpentMonth "$DollarsSpentMonth" Ptsredeemed "$PointsRedeemed "PtsAccrued "$PointsAccrued" VisitsAccrued "$VisitsAccrued" Month "$TransMonth
-						echo "FocusDateUnix "$FocusDateUnix" MinDateUnix "$MinDateUnix
-						echo " FocusDate "$FocusDate" FocusDateEnd "$FocusDateEnd" DollarsSpentLIFE "$DollarsSpentLife" PtsredeemedLife "$PointsRedeemedLife "PtsAccruedLife "$PointsAccruedLife" VisitsAccruedLife "$VisitsAccruedLife
-
-					######## GET FIRST NAME
-					FirstName=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT FirstName FROM Guests WHERE CardNumber = '$CardNumber' LIMIT 1")
-
-					######## GET LAST NAME
-					LastName=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT LastName FROM Guests WHERE CardNumber = '$CardNumber' LIMIT 1")
-
-					######## GET ENROLL DATE
-					EnrollDate=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT EnrollDate FROM Guests WHERE CardNumber = '$CardNumber' LIMIT 1")
 	
-					######## GET ZIP
-					Zip=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT Zip FROM Guests WHERE CardNumber = '$CardNumber' LIMIT 1")
-	
-					echo "FirstName "$FirstName" LastName "$LastName" Enroll "$EnrollDate" Zip "$Zip
+					echo "CN"$CardNumber" FN"$FirstName" LN"$LastName" ED"$EnrollDate" Zp"$Zip" FD"$FocusDate" FDE"$FocusDateEnd" DSM"$DollarsSpentMonth" PTR"$PointsRedeemed " PTA"$PointsAccrued" VA"$VisitsAccrued" MO"$TransMonth
 
 					####### ADD ZEROs FOR NULLs on MONTHS OF NO ACTIVITY
 					if [ $DollarsSpentMonth == 'NULL' ]
@@ -130,13 +113,59 @@ echo "Unixfocus "$FocusDateUnix" FocusDateUnixEnd "$FocusDateEndUnix
 					PointsAccruedMonth=0 
 					VisitsAccruedMonth=0
 					fi	
+			
+#################### FREQUENCY STARTS HERE  - - WRITE TO VARIABLES INSTEAD OF MASTER TABLE			
+					######## VISITS ACCRUED 12 MONTHS PREVIOUS TO FOCUSDATE
+					PrevYear=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT COUNT(TransactionDate) FROM Master_test 
+												WHERE CardNumber = '$CardNumber' 
+												AND TransactionDate >= DATE_SUB('$FocusDate',INTERVAL 1 YEAR) 
+												AND TransactionDate < '$FocusDate'												
+												AND VisitsAccrued > '0'")
+			
 				
+						##### GET MAX  TRANSACTIONDATE
+						MaxDate=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT MAX(TransactionDate) from Master_test WHERE CardNumber = '$CardNumber'")
+						##### GET 2ND TO MAX TRANSACTIONDATE
+						SecondMax=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(TransactionDate) from Master_test WHERE CardNumber = '$CardNumber' AND Vm_VisitsAccrued = '1.0000' ORDER BY TransactionDate DESC limit 1,1") 
+						##### IF SECONDMAX IS NULL / EMPTY
+						##### IF WE ARE ONLY GRABBING WHERE THERE IS MORE THAN ONE ENTRY **WHY** ARE ANY SECONDMAXs NULL ?!?!?!
+						if [ -z "$SecondMax" ]
+						then
 
+						##### UPDATE ONLY FIRST FREQUENCIES
+						#mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_test SET FreqCurrent = DATEDIFF(NOW(), '$MaxDate'), Freq12mos = '$PrevYear', FreqLifetime = '$Lifetime'  WHERE CardNumber = '$CardNumber'"
+						# echo $MaxDate $PrevYear, $Lifetime, Current updated $CardNumber
+		
+						##### IF SECONDMAX HAS A VALUE
+						else
+						##### GET 3RD TO MAX TRANSACTIONDATE
+						ThirdMax=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(transactiondate) from Master_test WHERE CardNumber = '$CardNumber' AND Vm_VisitsAccrued = '1.0000' ORDER BY TransactionDate DESC limit 2,1") 
+						##### IF THIRDMAX IS NULL / EMPTY
+							if [ -z "$ThirdMax" ]
+							then
+							##### UPDATE ONLY FIRST AND SECOND FREQUENCIES
+							#	mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_test SET FreqCurrent = DATEDIFF(NOW(), '$MaxDate'), 
+												FreqRecent = DATEDIFF('$MaxDate', '$SecondMax'), Freq12mos = '$PrevYear', 
+												FreqLifetime = '$Lifetime'  WHERE CardNumber = '$CardNumber'"
+							# echo $MaxDate, $SecondMax $PrevYear, $Lifetime, Current, Recent updated $CardNumber
+
+							##### IF THIRDMAX HAS A VALUE
+							else
+							##### UPDATE ALL FREQUENCIES
+							# mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_test SET FreqCurrent = DATEDIFF(NOW(), '$MaxDate'), 
+									FreqRecent = DATEDIFF('$MaxDate', '$SecondMax'), FreqPrevious = DATEDIFF('$SecondMax', '$ThirdMax'), 
+									Freq12mos = '$PrevYear', FreqLifetime = '$Lifetime'   WHERE CardNumber = '$CardNumber'"
+
+							# echo $MaxDate, $SecondMax, $ThirdMax, $PrevYear, $Lifetime, Current, Recent, previous updated $CardNumber
+							fi
+						fi
+
+	
 					#UPDATE TABLE
 					mysql  --login-path=local -DSRG_Dev -N -e "INSERT INTO Px_monthly SET CardNumber = '$CardNumber',
 										FocusDate = '$FocusDate',
-										FirstName = '$FirstName',
-										LastName = '$LastName',
+										FirstName = '${FirstName//\'/''}',
+										LastName = '${LastName//\'/''}',
 										EnrollDate = '$EnrollDate',
 										Zip = '$Zip',
 										DollarsSpentMonth = '$DollarsSpentMonth',
