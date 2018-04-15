@@ -59,29 +59,27 @@ set -e
 
 
 mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(CardNumber)
-					FROM Master_test
-					WHERE 		
-					CardNumber = '6000227900311115'
-						ORDER BY CardNumber DESC" | while read -r CardNumber;
+					FROM Master_test	
+					ORDER BY CardNumber DESC" | while read -r CardNumber;
 do
-echo "CardNumber "$CardNumber
 	MaxDate=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT MAX(TransactionDate) FROM Master_test WHERE CardNumber = '$CardNumber'")
 	MaxDateUnix=$(date +%s -d "$MaxDate") 
-
-	######## GET MinYear
 	MinDate=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT MIN(TransactionDate) FROM Master_test WHERE CardNumber = '$CardNumber'")
+
 	MinDateUnix=$(date +%s -d "$MinDate") 
-
-
-echo "MinDate "$MinDate" MaxDate "$MaxDate
-
 	FocusDate=$(date +%Y-%m-01 -d "$MinDate")
 	FocusDateUnix=$(date +%s -d "$FocusDate")
 	FocusDateEnd=$(date +%Y-%m-%d -d "$FocusDate + 1 Month -1 day")
 	FocusDateEndUnix=$(date +%s -d "$FocusDateEnd") 
- 
-echo "STARTING------- FocusDate "$FocusDate" FocusDateEnd "$FocusDateEnd" MaxDate "$MaxDate" MinDate "$MinDate	
-echo "Unixfocus "$FocusDateUnix" FocusDateUnixEnd "$FocusDateEndUnix
+
+	######## GET FIRST NAME
+	FirstName=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT FirstName FROM Guests WHERE CardNumber = '$CardNumber'  LIMIT 1")
+	######## GET LAST NAME
+	LastName=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT LastName FROM Guests WHERE CardNumber = '$CardNumber' LIMIT 1")
+	######## GET ENROLL DATE
+	EnrollDate=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT EnrollDate FROM Guests WHERE CardNumber = '$CardNumber' LIMIT 1")
+	######## GET ZIP
+	Zip=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT Zip FROM Guests WHERE CardNumber = '$CardNumber' LIMIT 1")
 
 	while [ $FocusDateUnix -le $MaxDateUnix ]
 	do	
@@ -104,23 +102,8 @@ echo "Unixfocus "$FocusDateUnix" FocusDateUnixEnd "$FocusDateEndUnix
 									SUM(VisitsAccrued) FROM Master_test WHERE CardNumber = '$CardNumber'
 									AND TransactionDate < '$FocusDate'" | while read -r DollarsSpentLife PointsRedeemedLife PointsAccruedLife VisitsAccruedLife;
 				do
-						echo " FocusDate "$FocusDate" FocusDateEnd "$FocusDateEnd" DollarsSpentMonth "$DollarsSpentMonth" Ptsredeemed "$PointsRedeemed "PtsAccrued "$PointsAccrued" VisitsAccrued "$VisitsAccrued" Month "$TransMonth
-						echo "FocusDateUnix "$FocusDateUnix" MinDateUnix "$MinDateUnix
-						echo " FocusDate "$FocusDate" FocusDateEnd "$FocusDateEnd" DollarsSpentLIFE "$DollarsSpentLife" PtsredeemedLife "$PointsRedeemedLife "PtsAccruedLife "$PointsAccruedLife" VisitsAccruedLife "$VisitsAccruedLife
-
-					######## GET FIRST NAME
-					FirstName=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT FirstName FROM Guests WHERE CardNumber = '$CardNumber' LIMIT 1")
-
-					######## GET LAST NAME
-					LastName=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT LastName FROM Guests WHERE CardNumber = '$CardNumber' LIMIT 1")
-
-					######## GET ENROLL DATE
-					EnrollDate=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT EnrollDate FROM Guests WHERE CardNumber = '$CardNumber' LIMIT 1")
 	
-					######## GET ZIP
-					Zip=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT Zip FROM Guests WHERE CardNumber = '$CardNumber' LIMIT 1")
-	
-					echo "FirstName "$FirstName" LastName "$LastName" Enroll "$EnrollDate" Zip "$Zip
+					echo "CN"$CardNumber" FN"$FirstName" LN"$LastName" ED"$EnrollDate" Zp"$Zip" FD"$FocusDate" FDE"$FocusDateEnd" DSM"$DollarsSpentMonth" PTR"$PointsRedeemed " PTA"$PointsAccrued" VA"$VisitsAccrued" MO"$TransMonth
 
 					####### ADD ZEROs FOR NULLs on MONTHS OF NO ACTIVITY
 					if [ $DollarsSpentMonth == 'NULL' ]
@@ -131,12 +114,12 @@ echo "Unixfocus "$FocusDateUnix" FocusDateUnixEnd "$FocusDateEndUnix
 					VisitsAccruedMonth=0
 					fi	
 				
-
+					
 					#UPDATE TABLE
 					mysql  --login-path=local -DSRG_Dev -N -e "INSERT INTO Px_monthly SET CardNumber = '$CardNumber',
 										FocusDate = '$FocusDate',
-										FirstName = '$FirstName',
-										LastName = '$LastName',
+										FirstName = '${FirstName//\'/''}',
+										LastName = '${LastName//\'/''}',
 										EnrollDate = '$EnrollDate',
 										Zip = '$Zip',
 										DollarsSpentMonth = '$DollarsSpentMonth',
