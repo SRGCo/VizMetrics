@@ -124,15 +124,17 @@ do
 			
 				
 						##### GET MAX  TRANSACTIONDATE
-						MaxDate=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT MAX(TransactionDate) from Master_test WHERE CardNumber = '$CardNumber'")
+						MaxDate=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT MAX(TransactionDate) from Master_test WHERE TransactionDate < '$FocusDate' AND CardNumber = '$CardNumber'")
 						##### GET 2ND TO MAX TRANSACTIONDATE
-						SecondMax=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(TransactionDate) from Master_test WHERE CardNumber = '$CardNumber' AND Vm_VisitsAccrued = '1.0000' ORDER BY TransactionDate DESC limit 1,1") 
+						SecondMax=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(TransactionDate) from Master_test WHERE TransactionDate < '$FocusDate' 
+													AND CardNumber = '$CardNumber' AND Vm_VisitsAccrued = '1.0000' ORDER BY TransactionDate DESC limit 1,1") 
 						##### IF SECONDMAX IS NULL / EMPTY
 						##### IF WE ARE ONLY GRABBING WHERE THERE IS MORE THAN ONE ENTRY **WHY** ARE ANY SECONDMAXs NULL ?!?!?!
 						if [ -z "$SecondMax" ]
 						then
 
 						##### UPDATE ONLY FIRST FREQUENCIES
+						
 						#mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_test SET FreqCurrent = DATEDIFF(NOW(), '$MaxDate'), Freq12mos = '$PrevYear', FreqLifetime = '$Lifetime'  WHERE CardNumber = '$CardNumber'"
 						# echo $MaxDate $PrevYear, $Lifetime, Current updated $CardNumber
 		
