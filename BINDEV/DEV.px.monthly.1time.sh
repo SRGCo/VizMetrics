@@ -39,13 +39,28 @@ do
 									FROM Master_test
 									WHERE CardNumber = '$CardNumber' LIMIT 1")
 
-
+	####### ADD blanks FOR NULLs 
+	if [ $CurrentFreq == 'NULL' ]	
+	then	
+	CurrentFreq='0'	
+	fi	
+	####### ADD blanks FOR NULLs 
+	if [ $PrevYear == 'NULL' ]	
+	then	
+	PrevYear='0'	
+	fi
+	####### ADD blanks FOR NULLs 
+	if [ $ProgAge == 'NULL' ]	
+	then	
+	ProgAge='0'	
+	fi
 	###### UPDATE TABLE THIS ONE TIME SCRIPT UPDATES NOT INSERTS
-	mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Px_monthly SET FreqCurrent = '$CurrentFreq',
+	mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Px_monthly_1st SET FreqCurrent = '$CurrentFreq',
 								Freq12mos = '$PrevYear',
 								ProgramAge = '$ProgAge'
 								WHERE CardNumber = '$CardNumber'
 								AND FocusDate = '$FocusDate'"
+
 
 	echo "CardNumber"$CardNumber" EnrDate"$EnrollDate" FDate"$FocusDate" FreqCur"$CurrentFreq" 12mo"$PrevYear" Progage"$ProgAge 
 

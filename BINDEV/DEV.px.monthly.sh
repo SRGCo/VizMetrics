@@ -36,13 +36,12 @@ set -e
 #18.*	Freq12mos = 12Mo Freq (Count visits over 12 months previous to 1st day of focus month)
 #19.	HistFreqCurrent = Historical current freq (current freq as of FocusDate)
 #20.	Lifetimefrequency = Count visits since enrollment (as of FocusDate)
-#################### SEGMENTATION FIELDS NOT YET ADDED ################
-#21.	field21 = LifeTime Freq segmentation 
-#22.	field22 = 12mo freq segmentation
-#23.	field23 = Recent freq segmentation
-#24.	field24 = Current freq segmentation
-#25.*	ProgramAge = months since enrollment month as of focusdate [+1]
-#26.	field26 = Visit Balance (at visit date segmentation)
+#21.	LifetimeFreqSeg = LifeTime Freq segmentation 
+#22.	12MoFreqSeg = 12mo freq segmentation
+#23.	RecentFreqSeg = Recent freq segmentation
+#24.	CurFreqSeg = Current freq segmentation
+#25.*	ProgramAge = months since enrollment month as of focusdate [+1 for MM calcs]
+#26.	VisitBalance = Visit Balance (at visit date segmentation)
 
 
 ########## the excludes
@@ -143,6 +142,21 @@ do
 									FROM Master_test
 									WHERE CardNumber = '$CardNumber' LIMIT 1")
 
+					####### ADD blanks FOR NULLs 
+					if [ $CurrentFreq == 'NULL' ]	
+					then	
+					CurrentFreq='0'	
+					fi	
+					####### ADD blanks FOR NULLs 
+					if [ $PrevYear == 'NULL' ]	
+					then	
+					PrevYear='0'	
+					fi
+					####### ADD blanks FOR NULLs 
+					if [ $ProgAge == 'NULL' ]	
+					then	
+					ProgAge='0'	
+					fi
 	
 					#UPDATE TABLE
 					mysql  --login-path=local -DSRG_Dev -N -e "INSERT INTO Px_monthly SET CardNumber = '$CardNumber',

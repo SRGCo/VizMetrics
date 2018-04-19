@@ -17,8 +17,8 @@ echo 'Px_Monthly RAW DATA WRITTEN TO CSV /home/ubuntu/db_files/outfiles/px.month
 
 ########### PREPEND HEADERS 
 ######## IF CAT FINISHES CORRECTLY DELETE THE FILE WO HEADERS
-cat /home/ubuntu/db_files/headers/px.monthly.no.segmentfields.headers.csv /home/ubuntu/db_files/outfiles/px.monthly.V2.csv > /home/ubuntu/db_files/outfiles/px.monthly.V2.wheaders.csv && rm /home/ubuntu/db_files/outfiles/px.monthly.V2.csv
-echo 'HEADERS ADDED, /home/ubuntu/db_files/headers/px.monthly.no.segmentfields.headers.csv CREATED, /home/ubuntu/db_files/outfiles/px.monthly.V2.csv DELETED'
+cat /home/ubuntu/db_files/headers/px.monthly.headers.csv /home/ubuntu/db_files/outfiles/px.monthly.V2.csv > /home/ubuntu/db_files/outfiles/px.monthly.V2.wheaders.csv && rm /home/ubuntu/db_files/outfiles/px.monthly.V2.csv
+echo 'HEADERS ADDED, /home/ubuntu/db_files/headers/px.monthly.headers.csv CREATED, /home/ubuntu/db_files/outfiles/px.monthly.V2.csv DELETED'
 
 
 #### REPLACE THE NEWLINE CHARS {\n} IN FILE 
