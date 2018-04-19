@@ -117,63 +117,26 @@ do
 #################### FREQUENCY STARTS HERE  - - WRITE TO VARIABLES INSTEAD OF MASTER TABLE			
 					######## VISITS ACCRUED 12 MONTHS PREVIOUS TO FOCUSDATE
 					PrevYear=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT COUNT(TransactionDate) FROM Master_test 
-												WHERE CardNumber = '$CardNumber' 
-												AND TransactionDate >= DATE_SUB('$FocusDate',INTERVAL 1 YEAR) 
-												AND TransactionDate < '$FocusDate'												
-												AND VisitsAccrued > '0'")
-			
-				
+								WHERE CardNumber = '$CardNumber' 
+								AND TransactionDate >= DATE_SUB('$FocusDate',INTERVAL 1 YEAR) 
+								AND TransactionDate < '$FocusDate'																		
+								AND VisitsAccrued > '0'")
+
 					##### GET CURRENT FREQ AS OF FOCUS DATE
 					CurrentFreq=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT DATEDIFF('$FocusDate' ,MAX(TRANSACTIONDATE)) FROM Master_test
-											           WHERE TransactionDate < '$FocusDate' AND CardNumber = '$CardNumber' AND VisitsAccrued > '0'")
+						           	WHERE TransactionDate < '$FocusDate' 
+								AND CardNumber = '$CardNumber' 
+								AND VisitsAccrued > '0'")
 
-					##### GET CURRENT FREQ AS OF FOCUS DATE
-					ProgAge=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT PERIOD_DIFF(EXTRACT(YEAR_MONTH FROM '$EnrollDate'), EXTRACT(YEAR_MONTH FROM '$FocusDate')) AS months")
-											           
+					##### GET CURRENT FREQ AS OF FOCUS DATE PLUS 1 FOR MM CALCS
+					ProgAge=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT (PERIOD_DIFF(EXTRACT(YEAR_MONTH FROM '$FocusDate'), EXTRACT(YEAR_MONTH FROM '$EnrollDate')) + 1) AS months 
+									FROM Master_test
+									WHERE CardNumber = '$CardNumber' LIMIT 1")
 
-				
 
 
-			
-					MaxDate=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT MAX(TransactionDate) from Master_test WHERE TransactionDate < '$FocusDate' AND CardNumber = '$CardNumber'")
-						##### GET 2ND TO MAX TRANSACTIONDATE
-						SecondMax=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(TransactionDate) from Master_test WHERE TransactionDate < '$FocusDate' 
-													AND CardNumber = '$CardNumber' AND Vm_VisitsAccrued = '1.0000' ORDER BY TransactionDate DESC limit 1,1") 
-						##### IF SECONDMAX IS NULL / EMPTY
-						##### IF WE ARE ONLY GRABBING WHERE THERE IS MORE THAN ONE ENTRY **WHY** ARE ANY SECONDMAXs NULL ?!?!?!
-						if [ -z "$SecondMax" ]
-						then
 
-						##### UPDATE ONLY FIRST FREQUENCIES
-						
-						#mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_test SET FreqCurrent = DATEDIFF(NOW(), '$MaxDate'), Freq12mos = '$PrevYear', FreqLifetime = '$Lifetime'  WHERE CardNumber = '$CardNumber'"
-						# echo $MaxDate $PrevYear, $Lifetime, Current updated $CardNumber
-		
-						##### IF SECONDMAX HAS A VALUE
-						else
-						##### GET 3RD TO MAX TRANSACTIONDATE
-						ThirdMax=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(transactiondate) from Master_test WHERE CardNumber = '$CardNumber' AND Vm_VisitsAccrued = '1.0000' ORDER BY TransactionDate DESC limit 2,1") 
-						##### IF THIRDMAX IS NULL / EMPTY
-							if [ -z "$ThirdMax" ]
-							then
-							##### UPDATE ONLY FIRST AND SECOND FREQUENCIES
-							#	mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_test SET FreqCurrent = DATEDIFF(NOW(), '$MaxDate'), 
-												FreqRecent = DATEDIFF('$MaxDate', '$SecondMax'), Freq12mos = '$PrevYear', 
-												FreqLifetime = '$Lifetime'  WHERE CardNumber = '$CardNumber'"
-							# echo $MaxDate, $SecondMax $PrevYear, $Lifetime, Current, Recent updated $CardNumber
 
-							##### IF THIRDMAX HAS A VALUE
-							else
-							##### UPDATE ALL FREQUENCIES
-							# mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_test SET FreqCurrent = DATEDIFF(NOW(), '$MaxDate'), 
-									FreqRecent = DATEDIFF('$MaxDate', '$SecondMax'), FreqPrevious = DATEDIFF('$SecondMax', '$ThirdMax'), 
-									Freq12mos = '$PrevYear', FreqLifetime = '$Lifetime'   WHERE CardNumber = '$CardNumber'"
-
-							# echo $MaxDate, $SecondMax, $ThirdMax, $PrevYear, $Lifetime, Current, Recent, previous updated $CardNumber
-							fi
-						fi
-
-	
 					#UPDATE TABLE
 					mysql  --login-path=local -DSRG_Dev -N -e "INSERT INTO Px_monthly SET CardNumber = '$CardNumber',
 										FocusDate = '$FocusDate',
@@ -189,7 +152,10 @@ do
 										LifetimePointsBalance = '$PointsAccruedLife',
 										LifetimeVisitsBalance = '$VisitsAccruedLife',
 										LifetimePointsRedeemed = '$PointsRedeemedLife',
-										LastVisit = '$MaxDate'";
+										LastVisit = '$MaxDate'
+										FreqCurrent = '$CurrentFreq',
+										Freq12mos = '$PrevYear',
+										ProgramAge = '$ProgAge'";
 												
 				done		 
    
