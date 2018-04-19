@@ -29,20 +29,20 @@ set -e
 #11.	LifetimeSpendBalance = Lifetime Dollars spent (as of FocusDate)
 #12.	LifetimePointsBalance = Lifetime points accrued (as of FocusDate)
 #13.	LifetimeVisistsBalance = Lifetime visits accrued  (as of FocusDate)
-#14.*** LifetimePointsRedeemed = Lifetime points redeemed (as of FocusDate) *********************
+#14.    LifetimePointsRedeemed = Lifetime points redeemed (as of FocusDate) 
 #15	LastVisit = Last visit date (ever)
-#16.	FreqCurrent = Current Freq (1st day of focus month - last visit date) 
+#16.*	FreqCurrent = Current Freq (1st day of focus month - last visit date) 
 #17.	FreqRecent = Recent Freq  (1st day of focus month - previous last visit date, 2 visits back)
-#18.	Freq12mos = 12Mo Freq (Count visits over 12 months previous to 1st day of focus month)
+#18.*	Freq12mos = 12Mo Freq (Count visits over 12 months previous to 1st day of focus month)
 #19.	HistFreqCurrent = Historical current freq (current freq as of FocusDate)
 #20.	Lifetimefrequency = Count visits since enrollment (as of FocusDate)
 #################### SEGMENTATION FIELDS NOT YET ADDED ################
-#21.	field20 = LifeTime Freq segmentation 
-#22.	field21 = 12mo freq segmentation
-#23.	field22 = Recent freq segmentation
-#24.	field23 = Current freq segmentation
-#25.	field24 = program age
-#26.	field25 = Visit Balance (at visit date segmentation)
+#21.	field21 = LifeTime Freq segmentation 
+#22.	field22 = 12mo freq segmentation
+#23.	field23 = Recent freq segmentation
+#24.	field24 = Current freq segmentation
+#25.*	ProgramAge = months since enrollment month as of focusdate [+1]
+#26.	field26 = Visit Balance (at visit date segmentation)
 
 
 ########## the excludes
@@ -122,6 +122,26 @@ do
 			
 				
 					
+=======
+			
+#################### FREQUENCY STARTS HERE  - - WRITE TO VARIABLES INSTEAD OF MASTER TABLE			
+					######## VISITS ACCRUED 12 MONTHS PREVIOUS TO FOCUSDATE
+					PrevYear=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT COUNT(TransactionDate) FROM Master_test 
+								WHERE CardNumber = '$CardNumber' 
+								AND TransactionDate >= DATE_SUB('$FocusDate',INTERVAL 1 YEAR) 
+								AND TransactionDate < '$FocusDate'																		
+								AND VisitsAccrued > '0'")
+
+					##### GET CURRENT FREQ AS OF FOCUS DATE
+					CurrentFreq=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT DATEDIFF('$FocusDate' ,MAX(TRANSACTIONDATE)) FROM Master_test
+						           	WHERE TransactionDate < '$FocusDate' 
+								AND CardNumber = '$CardNumber' 
+								AND VisitsAccrued > '0'")
+
+					##### GET CURRENT FREQ AS OF FOCUS DATE PLUS 1 FOR MM CALCS
+					ProgAge=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT (PERIOD_DIFF(EXTRACT(YEAR_MONTH FROM '$FocusDate'), EXTRACT(YEAR_MONTH FROM '$EnrollDate')) + 1) AS months 
+									FROM Master_test
+									WHERE CardNumber = '$CardNumber' LIMIT 1")
 
 	
 					#UPDATE TABLE
@@ -139,7 +159,10 @@ do
 										LifetimePointsBalance = '$PointsAccruedLife',
 										LifetimeVisitsBalance = '$VisitsAccruedLife',
 										LifetimePointsRedeemed = '$PointsRedeemedLife',
-										LastVisit = '$MaxDate'";
+										LastVisit = '$MaxDate'
+										FreqCurrent = '$CurrentFreq',
+										Freq12mos = '$PrevYear',
+										ProgramAge = '$ProgAge'";
 												
 				done		 
    
