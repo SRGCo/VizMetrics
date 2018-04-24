@@ -2,9 +2,7 @@
 # NEXT for echo
 # set -x
 
-mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(CardNumber)
 					FROM Master_test	
-					ORDER BY CardNumber ASC" | while read -r CardNumber;
 do
 	MaxDate=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT MAX(TransactionDate) FROM Master_test WHERE CardNumber = '$CardNumber'")
 	MaxDateUnix=$(date +%s -d "$MaxDate") 
@@ -19,50 +17,44 @@ do
 	EnrollDate=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT EnrollDate FROM Guests WHERE CardNumber = '$CardNumber' LIMIT 1")
 
 
-	while [ $FocusDateUnix -le $MaxDateUnix ]
-		do	
-		######## VISITS ACCRUED 12 MONTHS PREVIOUS TO FOCUSDATE
-		PrevYear=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT COUNT(TransactionDate) FROM Master_test 
-								WHERE CardNumber = '$CardNumber' 
-								AND TransactionDate >= DATE_SUB('$FocusDate',INTERVAL 1 YEAR) 
-								AND TransactionDate < '$FocusDate'																		
-								AND VisitsAccrued > '0'")
+	##### 12MO FREQ SEGMENTED
+	YearFreqSeg="$(($PrevYear / $ProgAge))"
 
-		##### GET CURRENT FREQ AS OF FOCUS DATE
-		CurrentFreq=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT DATEDIFF('$FocusDate' ,MAX(TRANSACTIONDATE)) FROM Master_test
-						           	WHERE TransactionDate < '$FocusDate' 
-								AND CardNumber = '$CardNumber' 
-								AND VisitsAccrued > '0'")
-
-		##### GET CURRENT FREQ AS OF FOCUS DATE PLUS 1 FOR MM CALCS
-		ProgAge=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT (PERIOD_DIFF(EXTRACT(YEAR_MONTH FROM '$FocusDate'), EXTRACT(YEAR_MONTH FROM '$EnrollDate')) + 1) AS months 
-									FROM Master_test
-									WHERE CardNumber = '$CardNumber' LIMIT 1")
-
-	####### ADD blanks FOR NULLs 
-	if [ $CurrentFreq == 'NULL' ]	
-	then	
-	CurrentFreq='0'	
-	fi	
-	####### ADD blanks FOR NULLs 
-	if [ $PrevYear == 'NULL' ]	
-	then	
-	PrevYear='0'	
-	fi
-	####### ADD blanks FOR NULLs 
-	if [ $ProgAge == 'NULL' ]	
-	then	
-	ProgAge='0'	
-	fi
+####### UPDATE TABLE
 	###### UPDATE TABLE THIS ONE TIME SCRIPT UPDATES NOT INSERTS
-	mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Px_monthly_1st SET FreqCurrent = '$CurrentFreq',
-								Freq12mos = '$PrevYear',
-								ProgramAge = '$ProgAge'
-								WHERE CardNumber = '$CardNumber'
-								AND FocusDate = '$FocusDate'"
+	mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Px_monthly SET FreqRecent = DATEDIFF('$MaxDate', '$RecentFreq'),
+									LifetimeFrequency = '$LifeFreq',
+									LifetimeFreqSeg = '$LifeFreqSeg',
+									12MoFreqSeg = '$YearFreqSeg',
+									VisitBalance =  '$VisitBalance'
+									WHERE CardNumber = '$CardNumber'
+									AND FocusDate = '$FocusDate'"
 
 
 	echo "CardNumber"$CardNumber" EnrDate"$EnrollDate" FDate"$FocusDate" FreqCur"$CurrentFreq" 12mo"$PrevYear" Progage"$ProgAge 
+###################### WILL WE NEED SECONDARY CALCS WITH ALL VALUES FROM REAL MONTHLY? ###########
+###################### OR CAN WE DO THESE IN FIRST ROUND OF CALCS ABOVE IN PX MONTHLY ##############
+	####### DO SECONDARY CALCULATIONS
+	##### 12MO FREQ SEGMENTED
+	##### Visit count since enroll date {at FocusDate}
+	FreqRecent=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT FreqRecent from Px_monthly WHERE CardNumber = '$CardNumber'
+								 AND FocusDate '$FocusDate'") 
+	### RECENT FREQUENCY IN MONTHS NOT DAYS
+	RecentFreqSeg="$(($FreqRecent / 30))"
+
+	##### Visit count since enroll date {at FocusDate}
+	FreqCurrent=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT FreqCurrent from Px_monthly WHERE CardNumber = '$CardNumber'
+								 AND FocusDate '$FocusDate'") 
+	### RECENT FREQUENCY IN MONTHS NOT DAYS
+	CurrentFreqSeg="$(($FreqRecent / 30))"
+
+
+####### UPDATE TABLE AFTER SECONDARY CALCULATIONS
+	###### UPDATE TABLE THIS ONE TIME SCRIPT UPDATES NOT INSERTS
+	mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Px_monthly SET RecentFreqSeg = '$RecentFreqSeg,
+									CurFreqSeg = '$CurrentFreqSeg'
+									WHERE CardNumber = '$CardNumber'
+									AND FocusDate = '$FocusDate'"
 
 	# ITERATE TO NEXT FOCUSDATE
 	FocusDate=$(date +%Y-%m-%d -d "$FocusDate + 1 Month")
@@ -70,7 +62,5 @@ do
 	FocusDateUnix=$(date +%s -d "$FocusDate")
 	MinDateUnix=$(date +%s -d "$MinDate") 
 
-
 	done
-
 done

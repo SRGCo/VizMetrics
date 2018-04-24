@@ -2,8 +2,6 @@
 # NEXT for echo
 # set -x
 
-
-
 ############################################################################################
 ################## THIS SCRIPT SHOULD DO FILE HANDLING IN A NON PRODUCTION DIRECTORY !!!!!
 ############################################################################################
@@ -31,6 +29,7 @@ set -e
 #13.	LifetimeVisistsBalance = Lifetime visits accrued  (as of FocusDate)
 #14.    LifetimePointsRedeemed = Lifetime points redeemed (as of FocusDate) 
 #15	LastVisit = Last visit date (ever)
+<<<<<<< HEAD
 #16.*	FreqCurrent = Current Freq (1st day of focus month - last visit date) 
 #17.	FreqRecent = Recent Freq  (1st day of focus month - previous last visit date, 2 visits back)
 #18.*	Freq12mos = 12Mo Freq (Count visits over 12 months previous to 1st day of focus month)
@@ -42,6 +41,20 @@ set -e
 #24.	CurFreqSeg = Current freq segmentation
 #25.*	ProgramAge = months since enrollment month as of focusdate [+1 for MM calcs]
 #26.	VisitBalance = Visit Balance (at visit date segmentation)
+=======
+
+#16.	FreqCurrent = FocusDate - Date last visit {prior to FocusDate}
+#17.-	FreqRecent = FocusDate - Date previous last visit {2 visits back from FocusDate)
+#18.	Freq12mos = Visit count during 12 months previous to FocusDate
+#19.-	*** HistFreqCurrent = TransactionDate - last visit {prior to FocusDate} ***
+#20.-	Lifetimefrequency = Count visits since enrollment (as of FocusDate)
+#21.-	LifetimeFreqSeg  = (visitbalance [at focusdate] / ProgramAge [at focusdate])
+#22.-	12MoFreqSeg = ( [at focusdate] / ProgramAge [at focusdate]) 
+#23.-	RecentFreqSeg = FreqRecent in months (leap years?)
+#24.-	CurFreqSeg = FreqCurrent in months (leap years?)
+#25.	ProgramAge = months since enrollment month as of focusdate [+1]
+#26.-	VisitBalance = Visit Balance (as of current date)
+>>>>>>> monthly-test-branch
 
 
 ########## the excludes
@@ -57,10 +70,15 @@ set -e
 ####### GET ONLY NON-EXCLUDED CARDNUMBERS
 
 
-mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(CardNumber)
-					FROM Master_test	
-					ORDER BY CardNumber DESC" | while read -r CardNumber;
+mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(CardNumber), MAX(Vm_Visitbalance)
+					FROM Master_test
+					WHERE CardNumber > '0'	
+					ORDER BY CardNumber ASC" | while read -r CardNumber VisitBalance;
 do
+	
+	##### WE WILL ITERATE EACH CARD UP UNTIL MOST RECENT FOCUSDATE (FOCUSDATE CLOSEST TO CURDATE)
+	TodayDate=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT CURDATE() as date FROM Master_test LIMIT 1")
+	TodayDateUnix=$(date +%s -d "$TodayDate") 
 	MaxDate=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT MAX(TransactionDate) FROM Master_test WHERE CardNumber = '$CardNumber'")
 	MaxDateUnix=$(date +%s -d "$MaxDate") 
 	MinDate=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT MIN(TransactionDate) FROM Master_test WHERE CardNumber = '$CardNumber'")
@@ -80,7 +98,7 @@ do
 	######## GET ZIP
 	Zip=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT Zip FROM Guests WHERE CardNumber = '$CardNumber' LIMIT 1")
 
-	while [ $FocusDateUnix -le $MaxDateUnix ]
+	while [ $FocusDateUnix -le $TodayDateUnix ]
 	do	
 		###### DO THE MONTHLY CALCULATION QUERIES HERE
 		mysql  --login-path=local -DSRG_Dev -N -e "SELECT
@@ -95,6 +113,8 @@ do
 								AND TransactionDate >= '$FocusDate'
 								AND TransactionDate <= '$FocusDateEnd'" | while read -r TransMonth DollarsSpentMonth PointsRedeemedMonth PointsAccruedMonth VisitsAccruedMonth;
 		do
+				echo "++++++++++++++++++++++++CARD: "$CardNumber" ++++++++++++++"
+
 				mysql  --login-path=local -DSRG_Dev -N -e "SELECT SUM(DollarsSpentAccrued), 
 									SUM(SereniteePointsRedeemed), 
 									SUM(SereniteePointsAccrued), 
@@ -102,8 +122,8 @@ do
 									AND TransactionDate < '$FocusDate'" | while read -r DollarsSpentLife PointsRedeemedLife PointsAccruedLife VisitsAccruedLife;
 				do
 	
-					echo "CN"$CardNumber" FN"$FirstName" LN"$LastName" ED"$EnrollDate" Zp"$Zip" FD"$FocusDate" FDE"$FocusDateEnd" DSM"$DollarsSpentMonth" PTR"$PointsRedeemed " PTA"$PointsAccrued" VA"$VisitsAccrued" MO"$TransMonth
 
+<<<<<<< HEAD
 					####### ADD ZEROs FOR NULLs on MONTHS OF NO ACTIVITY
 					if [ $DollarsSpentMonth == 'NULL' ]
 					then
@@ -124,11 +144,17 @@ do
 =======
 			
 #################### FREQUENCY STARTS HERE  - - WRITE TO VARIABLES INSTEAD OF MASTER TABLE			
+=======
+
+
+					
+					#################### FREQUENCY STARTS HERE  - - WRITE TO VARIABLES INSTEAD OF MASTER TABLE			
+>>>>>>> monthly-test-branch
 					######## VISITS ACCRUED 12 MONTHS PREVIOUS TO FOCUSDATE
 					PrevYear=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT COUNT(TransactionDate) FROM Master_test 
 								WHERE CardNumber = '$CardNumber' 
 								AND TransactionDate >= DATE_SUB('$FocusDate',INTERVAL 1 YEAR) 
-								AND TransactionDate < '$FocusDate'																		
+								AND TransactionDate < '$FocusDate'																	
 								AND VisitsAccrued > '0'")
 
 					##### GET CURRENT FREQ AS OF FOCUS DATE
@@ -140,8 +166,9 @@ do
 					##### GET CURRENT FREQ AS OF FOCUS DATE PLUS 1 FOR MM CALCS
 					ProgAge=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT (PERIOD_DIFF(EXTRACT(YEAR_MONTH FROM '$FocusDate'), EXTRACT(YEAR_MONTH FROM '$EnrollDate')) + 1) AS months 
 									FROM Master_test
-									WHERE CardNumber = '$CardNumber' LIMIT 1")
+									WHERE CardNumber = '$CardNumber' LIMIT 1")	
 
+<<<<<<< HEAD
 					####### ADD blanks FOR NULLs 
 					if [ $CurrentFreq == 'NULL' ]	
 					then	
@@ -158,6 +185,70 @@ do
 					ProgAge='0'	
 					fi
 	
+=======
+					####### ADD ZEROs FOR NULLs on MONTHS OF NO ACTIVITY
+					if [ $DollarsSpentMonth == 'NULL' ]
+					then
+					DollarsSpentMonth=0
+					fi	
+					if [ $PointsRedeemedMonth == 'NULL' ]
+					then
+					PointsRedeemedMonth=0
+					fi				
+					if [ $PointsAccruedMonth == 'NULL' ]
+					then
+					PointsAccruedMonth=0
+					fi
+					if [ $VisitsAccruedMonth == 'NULL' ]
+					then
+					VisitsAccruedMonth=0
+					fi
+
+					if [ $DollarsSpentLife == 'NULL' ]
+					then
+					DollarsSpentLife=0
+					fi					 
+					if [ $PointsAccruedLife == 'NULL' ]
+					then
+					PointsAccruedLife=0
+					fi
+					if [ $VisitsAccruedLife == 'NULL' ]
+					then
+					VisitsAccruedLife=0
+					fi
+					if [ $PointsRedeemedLife == 'NULL' ]
+					then
+					PointsRedeemedLife=0
+					fi
+
+					if [ $PrevYear == 'NULL' ]
+					then
+					PrevYear=0
+					fi					 
+					if [ $CurrentFreq == 'NULL' ]
+					then
+					CurrentFreq=0
+					fi
+					if [ $ProgAge == 'NULL' ]
+					then
+					ProgAge=0
+					fi		
+
+
+
+
+
+		
+
+					####### ECHO DATA FOR DEBUG
+					echo "FirstName"$FirstName" LastName"$LastName" Enrolled"$EnrollDate" Zip"$Zip" FocDate"$FocusDate" FocDateEnd"$FocusDateEnd 
+					echo "DolSpentMo"$DollarsSpentMonth" PtsRedeemMo"$PointsRedeemed " PtsAccrMo"$PointsAccrued" VisAccrMo"$VisitsAccrued"DolSpentLife"$DollarsSpentLife
+					echo "PAL"$PointsAccruedLife " VisAcrLife"$VisitsAccruedLife" PtsredeemedLife"$PointsRedeemedLife
+					echo "LastVisitever"$MaxDate" CurrentFreqMo"$CurrentFreq" 12MO"$PrevYear" ProgAge".$ProgAge
+					echo "================================="
+
+
+>>>>>>> monthly-test-branch
 					#UPDATE TABLE
 					mysql  --login-path=local -DSRG_Dev -N -e "INSERT INTO Px_monthly SET CardNumber = '$CardNumber',
 										FocusDate = '$FocusDate',
@@ -173,18 +264,13 @@ do
 										LifetimePointsBalance = '$PointsAccruedLife',
 										LifetimeVisitsBalance = '$VisitsAccruedLife',
 										LifetimePointsRedeemed = '$PointsRedeemedLife',
-										LastVisit = '$MaxDate'
+										LastVisit = '$MaxDate',
 										FreqCurrent = '$CurrentFreq',
 										Freq12mos = '$PrevYear',
 										ProgramAge = '$ProgAge'";
 												
 				done		 
-   
 
-
-
-		
-			
 
 
 		done
