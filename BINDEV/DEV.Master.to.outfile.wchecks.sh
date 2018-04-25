@@ -10,12 +10,12 @@ set -e
 
 
 ######### UBER JOIN LIVE CHECK DETAIL WITH LIVE SQUASHED CARD ACTIVITY
-mysql  --login-path=local -uroot -N -e "SELECT * INTO OUTFILE '/home/ubuntu/db_files/outfiles/joined.cd.ca.csv' FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n' FROM SRG_Dev.Master_test 
-					WHERE (SRG_Dev.Master_test.Account_status <> 'TERMIN' 
-					AND SRG_Dev.Master_test.Account_status <> 'SUSPEN' 
-					AND SRG_Dev.Master_test.Account_status <> 'Exchanged'
-					AND SRG_Dev.Master_test.Account_status <> 'Exchange' 
-					AND SRG_Dev.Master_test.Account_status <> 'Exclude') OR (Account_status IS NULL)"
+mysql  --login-path=local -uroot  -DSRG_Dev -N -e "SELECT * INTO OUTFILE '/home/ubuntu/db_files/outfiles/joined.cd.ca.csv' FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n' FROM Master_test 
+					WHERE (Master_test.Account_status <> 'TERMIN' 
+					AND Master_test.Account_status <> 'SUSPEN' 
+					AND Master_test.Account_status <> 'Exchanged'
+					AND Master_test.Account_status <> 'Exchange' 
+					AND Master_test.Account_status <> 'Exclude') OR (Account_status IS NULL)"
 
 echo 'UBER JOIN COMPLETED, ACTIVE PX ACCOUNTS ONLY /outfiles/joined.cd.ca.csv CREATED'
 
@@ -35,5 +35,10 @@ echo '/home/ubuntu/db_files/outfiles/uber.join.clean.wheaders.csv READY.'
 head -300 /home/ubuntu/db_files/outfiles/uber.join.clean.wheaders.csv > /home/ubuntu/db_files/outfiles/small.uber.csv
 echo small uber created
 
+#### Turn both big and small files to dos
+unix2dos -n /home/ubuntu/db_files/outfiles/uber.join.clean.wheaders.csv /home/ubuntu/db_files/outfiles/Master.wheaders.csv
+
+#### Turn both big and small files to dos
+unix2dos -n /home/ubuntu/db_files/outfiles/small.uber.csv /home/ubuntu/db_files/outfiles/Master.small.wheaders.csv
 
 

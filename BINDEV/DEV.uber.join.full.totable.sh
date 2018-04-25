@@ -9,10 +9,22 @@ set -e
 
 
 ######### UBER JOIN LIVE CHECK DETAIL WITH LIVE SQUASHED CARD ACTIVITY
+# Delete Temp table if it exists
+mysql  --login-path=local --silent -DSRG_Dev -N -e "DROP TABLE IF EXISTS Master_test"
+echo 'TEMP TABLE DROPPED, STARTING NEW TEMP TABLE CREATION'
+
+# Create a empty copy of CardActivity table from CardActivityStructure table
+mysql  --login-path=local --silent -DSRG_Dev -N -e "CREATE TABLE Master_test LIKE Master_test_structure"
+echo 'MASTER TEST CREATED STARTING JOIN'
+
+
 
 #### Double check UNION !!!!!!!!!!!!!!!!
 
-mysql  --login-path=local -DSRG_Dev -N -e "INSERT INTO Master_test SELECT CD.*, CA.* FROM CheckDetail_Live AS CD LEFT JOIN CardActivity_squashed_2 AS CA ON CD.POSkey = CA.POSkey UNION SELECT CD.*, CA.* FROM .CheckDetail_Live as CD RIGHT JOIN CardActivity_squashed_2 AS CA ON CD.POSkey = CA.POSkey"
+mysql  --login-path=local -DSRG_Dev -N -e "INSERT INTO Master_test SELECT CD.*, CA.* FROM CheckDetail_Live AS CD 
+						LEFT JOIN CardActivity_squashed_2 AS CA ON CD.POSkey = CA.POSkey 
+						UNION SELECT CD.*, CA.* FROM .CheckDetail_Live as CD 
+						RIGHT JOIN CardActivity_squashed_2 AS CA ON CD.POSkey = CA.POSkey"
 # echo 'UBER JOIN COMPLETED, /outfiles/joined.cd.ca.csv CREATED'
 echo 'Uber join data inserted into Master_test'
 
