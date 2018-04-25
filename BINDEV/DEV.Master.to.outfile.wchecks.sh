@@ -35,10 +35,4 @@ echo '/home/ubuntu/db_files/outfiles/uber.join.clean.wheaders.csv READY.'
 head -300 /home/ubuntu/db_files/outfiles/uber.join.clean.wheaders.csv > /home/ubuntu/db_files/outfiles/small.uber.csv
 echo small uber created
 
-#### Turn both big and small files to dos
-unix2dos -n /home/ubuntu/db_files/outfiles/uber.join.clean.wheaders.csv /home/ubuntu/db_files/outfiles/Master.wheaders.csv
-
-#### Turn both big and small files to dos
-unix2dos -n /home/ubuntu/db_files/outfiles/small.uber.csv /home/ubuntu/db_files/outfiles/Master.small.wheaders.csv
-
 

@@ -76,7 +76,10 @@ mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_test SET LocationID = L
 echo Empty LocationID-s populated form LocationID_px
 mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_test SET POSkey = POSKey_px WHERE POSkey IS NULL"
 echo Empty POSkey-s populated from POSkey_px
-mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_test SET GrossSalesCoDefined = DollarsSpentAccrued WHERE GrossSalesCoDefined IS NULL"
+mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_test SET GrossSalesCoDefined = DollarsSpentAccrued WHERE GrossSalesCoDefined IS NULL 
+						AND Master_test.Account_status <> 'TERMIN' AND Master_test.Account_status <> 'SUSPEN' 
+						AND Master_test.Account_status <> 'Exchanged' AND Master_test.Account_status <> 'Exchange' 
+						AND Master_test.Account_status <> 'Exclude'"
 echo 'Empty GrossSalesCoDefined-s Populated (PROMOS OR COMPS COULD NOT BE ADD, LOWBALL FIGURES)'
 
 
