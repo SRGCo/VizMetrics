@@ -10,14 +10,16 @@ set -e
 
 
 ######### UBER JOIN LIVE CHECK DETAIL WITH LIVE SQUASHED CARD ACTIVITY
-mysql  --login-path=local -uroot  -DSRG_Dev -N -e "SELECT * INTO OUTFILE '/home/ubuntu/db_files/outfiles/joined.cd.ca.csv' FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n' FROM Master_test 
-					WHERE (Master_test.Account_status <> 'TERMIN' 
-					AND Master_test.Account_status <> 'SUSPEN' 
-					AND Master_test.Account_status <> 'Exchanged'
-					AND Master_test.Account_status <> 'Exchange' 
-					AND Master_test.Account_status <> 'Exclude') OR (Account_status IS NULL)"
+mysql  --login-path=local -uroot  -DSRG_Dev -N -e "SELECT * INTO OUTFILE '/home/ubuntu/db_files/outfiles/joined.cd.ca.csv' FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n' FROM Master 
+					WHERE (Master.Account_status <> 'TERMIN' 
+					AND Master.Account_status <> 'SUSPEN' 
+					AND Master.Account_status <> 'Exchanged'
+					AND Master.Account_status <> 'Exchange' 
+					AND Master.Account_status <> 'Exclude') OR (Account_status IS NULL)"
 
 echo 'UBER JOIN COMPLETED, ACTIVE PX ACCOUNTS ONLY /outfiles/joined.cd.ca.csv CREATED'
+
+######## Better File names !!!
 
 
 ########### PREPEND HEADERS TO UBER JOIN
