@@ -14,7 +14,7 @@ mysql  --login-path=local --silent -DSRG_Dev -N -e "DROP TABLE IF EXISTS Master_
 echo 'TEMP TABLE DROPPED, STARTING NEW TEMP TABLE CREATION'
 
 # Create a empty copy of CardActivity table from CardActivityStructure table
-mysql  --login-path=local --silent -DSRG_Dev -N -e "CREATE TABLE Master_temp LIKE Master_test_structure"
+mysql  --login-path=local --silent -DSRG_Dev -N -e "CREATE TABLE Master_temp LIKE Master_structure"
 echo 'MASTER TEST CREATED STARTING JOIN'
 
 #### Double check UNION !!!!!!!!!!!!!!!!
