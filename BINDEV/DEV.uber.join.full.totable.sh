@@ -38,7 +38,7 @@ echo 'Added enroll_date and account status to Master_temp'
 ##################### ITERATE ON POSkey 
 ###### -N is the No Headers in Output option
 ###### -e is the 'read statement and quit'
-mysql  --login-path=local -DSRG_Dev -N -e "SELECT TransactionDate FROM Master_temp WHERE TransactionDate > '2013-09-01' GROUP BY TransactionDate ORDER BY TransactionDate ASC" | while read -r TransactionDate;
+mysql  --login-path=local -DSRG_Dev -N -e "SELECT Master_temp.DOB FROM Master_temp WHERE Master_temp.DOB > '2013-09-01' GROUP BY Master_temp.DOB ORDER BY Master_temp.DOB DESC" | while read -r TransactionDate;
 do
 	######## GET FY FOR THIS TransactionDate (DOB)
 	FY=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT FY from Lunas WHERE DOB = '$TransactionDate'")
@@ -48,7 +48,7 @@ do
 
 
 			##### UPDATE FISCAL YEAR FROM TRANSACTIONDATE
-			mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_temp SET FY = '$FY',YLuna = '$YLuna' WHERE TransactionDate = '$TransactionDate'"
+			mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_temp SET FY = '$FY',YLuna = '$YLuna' WHERE Master_temp.DOB = '$TransactionDate'"
 			echo $TransactionDate updated FY= $FY YLuna = $YLuna
 done
 echo FY YLUNA CALCD POPULATED
@@ -64,7 +64,7 @@ echo 'EXCLUDED accounts account status updated from Excludes table'
 
 ######## UPDATE THE EMPTY CHECKDETAIL FIELDS WITH PX DATA
 
-mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_temp SET CheckNumber = CheckNo WHERE CheckNo IS NULL"
+mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_temp SET CheckNumber = CheckNo WHERE CheckNumber IS NULL"
 echo Empty CheckNumber-s populated from CheckNo
 
 mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_temp SET DOB = TransactionDate WHERE DOB IS NULL"
