@@ -58,14 +58,14 @@ echo 'TEMP TABLE CREATED, LOADING DATA FILE TO TEMP TABLE'
 
 # Load the data from the latest file into the (temp) CardActivity table
 mysql  --login-path=local --silent -DSRG_Dev -N -e "Load data local infile '/home/ubuntu/db_files/incoming/px/Infile.CardActivity.csv' into table CardActivity_Temp fields terminated by ',' lines terminated by '\n'"
-echo 'CARDACTIVITY -dev- DATA LOADED INTO CardActivity_Temp, DELETING CARDACTIVITY DATA FILE'
+echo 'CARDACTIVITY DATA LOADED INTO CardActivity_Temp'
 
-# DELETE THE WORKING CARDACTIVITY CSV (from dev folder)
-rm -f /home/ubuntu/db_files/incoming/px/dev/CardActivity.csv
+# DELETE THE WORKING CARDACTIVITY CSV
+#rm -f /home/ubuntu/db_files/incoming/px/CardActivity.csv
 
 ### DEV FOR YEARLY FILES
-mv /home/ubuntu/db_files/incoming/px/dev/*.csv /home/ubuntu/db_files/archive/dev/
-echo 'CARDACTIVITY -dev- DATA FILES DELETED'
+#mv /home/ubuntu/db_files/incoming/px/*.csv /home/ubuntu/db_files/archive/
+#echo 'CARDACTIVITY -dev- DATA FILES DELETED'
  
 ### INDEX CARD TEMPLATE AND TRANSACTIONTYPE, CardNumber
 mysql  --login-path=local --silent -DSRG_Dev -N -e "ALTER TABLE CardActivity_Temp ADD INDEX(TransactionType)"
