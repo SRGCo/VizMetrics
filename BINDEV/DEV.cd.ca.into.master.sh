@@ -7,6 +7,7 @@ set -x
 ##### HALT AND CATCH FIRE IF ANY COMMAND FAILS
 set -e
 
+################# THIS INSERTS ALL DATA FROM TEMP TABLE, IT SHOULD JUST UPDATE.
 
 ######### UBER JOIN LIVE CHECK DETAIL WITH LIVE SQUASHED CARD ACTIVITY
 # Delete Temp table if it exists
@@ -38,7 +39,7 @@ echo 'Added enroll_date and account status to Master_temp'
 ##################### ITERATE ON POSkey 
 ###### -N is the No Headers in Output option
 ###### -e is the 'read statement and quit'
-mysql  --login-path=local -DSRG_Dev -N -e "SELECT Master_temp.DOB FROM Master_temp WHERE Master_temp.DOB > '2013-09-01' GROUP BY Master_temp.DOB ORDER BY Master_temp.DOB DESC" | while read -r TransactionDate;
+mysql  --login-path=local -DSRG_Dev -N -e "SELECT Master_temp.DOB FROM Master_temp WHERE Master_temp.DOB > DATE_SUB(CURDATE(), INTERVAL 3 MONTH) GROUP BY Master_temp.DOB ORDER BY Master_temp.DOB DESC" | while read -r TransactionDate;
 do
 	######## GET FY FOR THIS TransactionDate (DOB)
 	FY=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT FY from Lunas WHERE DOB = '$TransactionDate'")
@@ -79,7 +80,7 @@ mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_temp SET GrossSalesCoDe
 						AND Master_temp.Account_status <> 'Exclude'"
 echo 'Empty GrossSalesCoDefined-s Populated (PROMOS OR COMPS COULD NOT BE ADD, LOWBALL FIGURES)'
 
-####### COPY TEMP DATA INTO MASTER_TEST
-mysql  --login-path=local --silent -DSRG_Prod -N -e "INSERT INTO Master SELECT * FROM Master_Temp"
+####### COPY TEMP DATA INTO MASTER
+mysql  --login-path=local --silent -DSRG_Dev -N -e "INSERT INTO Master SELECT * FROM Master_temp"
 echo 'Data inserted into Master table'
 

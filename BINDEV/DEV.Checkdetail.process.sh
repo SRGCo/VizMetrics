@@ -12,6 +12,9 @@ set -x
 ## 2 ## Employees
 ## 3 ## CheckDetail - Full by date [CheckDetail.update.raw.csv]
 
+
+
+
 ################# TABLETURNS ##############################
 
 ## 1 ## DELETE OLD TABLETURNS FILE TO MAKE ROOM FOR NEW -OLD- FILE
@@ -33,10 +36,6 @@ rm /home/ubuntu/db_files/incoming/Employees.old.csv
 
 ## 2 ## RENAME CURRENT EMPLOYEES FILE TO MAKE ROOM FOR INCOMING
 mv /home/ubuntu/db_files/incoming/Employees.csv /home/ubuntu/db_files/incoming/Employees.old.csv
-
-
-
-################### THIS IS FAILING ############################
 
 ## 2 ## REMOVE FIRST ROW/HEADERS BEFORE IMPORTING
 tail -n+2 /home/ubuntu/db_files/incoming/Employees.raw.csv > /home/ubuntu/db_files/incoming/Employees.csv 

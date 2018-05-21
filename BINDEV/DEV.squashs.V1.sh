@@ -10,7 +10,7 @@
 # exec 1> >(logger -s -t $(basename $0)) 2>&1
 
 #UNCOMMENT NEXT FOR VERBOSE
-# set -x
+#set -x
 ##### HALT AND CATCH FIRE IF ANY COMMAND FAILS
 set -e
 
@@ -89,8 +89,9 @@ GROUP by POSKey, LocationID, CardNumber, CardTemplate, TransactionDate"
 echo 'SQUASHED DATA TABLE POPULATED'
 
 
+################################### WE ARE ONLY RUNNING THIS FIX FOR CHECKS FROM LAST 2 MONTHS #######################
 ######## Get CardNumber
-mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(CardNumber) FROM CardActivity_squashed WHERE CardNumber IS NOT NULL ORDER BY CardNumber ASC" | while read -r CardNumber;
+mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(CardNumber) FROM CardActivity_squashed WHERE CardNumber IS NOT NULL AND TransactionDate > DATE_SUB(CURDATE(), INTERVAL 2 MONTH) ORDER BY CardNumber ASC" | while read -r CardNumber;
 do
 	######### GET DATA IF CHECK FROM BETWEEN MIDNIGHT AND 4 AM
 	mysql  --login-path=local -DSRG_Dev -N -e "SELECT POSkey, TransactionDate, CheckNo FROM CardActivity_squashed where cardnumber like $CardNumber

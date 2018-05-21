@@ -16,8 +16,11 @@ set -e
 
 ### what if more than one transaction per day
 #### ONLY GOING 3 MONTHS BACK SINCE EARLIER CARDS SHOULD HAVE ALREADY BEEN FIXED
+# mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(CardNumber) FROM Master WHERE DOB > DATE_SUB(CURDATE(), INTERVAL 3 MONTH) ORDER BY CardNumber ASC" | while read -r CardNumber;
 
-mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(CardNumber) FROM Master WHERE DOB > DATE_SUB(CURDATE(), INTERVAL 3 MONTH) ORDER BY CardNumber ASC" | while read -r CardNumber;
+
+################ We Do a full reload of Master table from Master Temp should just update
+mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(CardNumber) FROM Master ORDER BY CardNumber ASC" | while read -r CardNumber;
 do
 	
 	######## GET FIRST TRANSACTION
