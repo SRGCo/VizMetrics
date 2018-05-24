@@ -1,6 +1,6 @@
 #! //bin/bash
 # NEXT for echo
-set -x
+# set -x
 
 ############################################################################################
 ################## THIS SCRIPT SHOULD DO FILE HANDLING IN A NON PRODUCTION DIRECTORY !!!!!
@@ -52,9 +52,14 @@ set -e
 ###### -e is the 'read statement and quit'
 
 
+##################################### THIS CALCULATES ALL VISITS FOR ALL CARDS SO Px_monthly SHOULD BE TRUNCATED BEFORE THIS RUNS 
+
+mysql  --login-path=local -DSRG_Dev -N -e "TRUNCATE table Px_monthly"
+echo 'Px Monthly truncated'
+
+
+
 ####### GET ONLY NON-EXCLUDED CARDNUMBERS
-
-
 mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(CardNumber), MAX(Vm_VisitsBalance)
 					FROM Master
 					WHERE CardNumber > '0'
@@ -229,11 +234,11 @@ do
 										LastName = '${LastName//\'/''}',
 										EnrollDate = '$EnrollDate',
 										Zip = '$Zip',
-										DollarsSpentMonth = '$DollarsSpentMonth',
+										DollarsSpentMonth = ROUND('$DollarsSpentMonth',2),
 										PointsRedeemedMonth = '$PointsRedeemedMonth',
 										PointsAccruedMonth = '$PointsAccruedMonth',
 										VisitsAccruedMonth = '$VisitsAccruedMonth',
-										LifetimeSpendBalance = '$DollarsSpentLife',
+										LifetimeSpendBalance = ROUND('$DollarsSpentLife',2),
 										LifetimePointsBalance = '$PointsAccruedLife',
 										LifetimeVisitsBalance = '$VisitsAccruedLife',
 										LifetimePointsRedeemed = '$PointsRedeemedLife',
