@@ -1,6 +1,6 @@
 #! //bin/bash
 # NEXT for echo
-set -x
+# set -x
 
 ############################################################################################
 ################## THIS SCRIPT SHOULD DO FILE HANDLING IN A NON PRODUCTION DIRECTORY !!!!!
@@ -54,17 +54,23 @@ set -e
 
 ##################################### THIS CALCULATES ALL VISITS FOR ALL CARDS SO Px_monthly SHOULD BE TRUNCATED BEFORE THIS RUNS 
 
-# mysql  --login-path=local -DSRG_Dev -N -e "TRUNCATE table Px_monthly"
-# echo 'Px Monthly truncated'
+mysql  --login-path=local -DSRG_Dev -N -e "TRUNCATE table Px_monthly"
+echo 'Px Monthly truncated'
 
 
 
 ####### GET ONLY NON-EXCLUDED CARDNUMBERS
 mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(CardNumber), MAX(Vm_VisitsBalance)
 					FROM Master
-					WHERE CardNumber > '6000227902200968' 
+					WHERE CardNumber > '0'
 					GROUP BY CardNumber	
 					ORDER BY CardNumber ASC" | while read -r CardNumber VisitBalance;
+
+			###### FIND LAST FOCUS DATE FOR THIS CARD ACCOUNT IN px_monthly TABLE FOR INCREMENTAL #######
+			# "Select MAX(
+
+	
+
 do
 	
 	##### WE WILL ITERATE EACH CARD UP UNTIL MOST RECENT FOCUSDATE (FOCUSDATE CLOSEST TO CURDATE)
