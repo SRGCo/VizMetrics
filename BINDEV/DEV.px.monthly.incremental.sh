@@ -67,7 +67,7 @@ mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(CardNumber), MAX(Vm_V
 					ORDER BY CardNumber ASC" | while read -r CardNumber VisitBalance;
 
 			###### FIND LAST FOCUS DATE FOR THIS CARD ACCOUNT IN px_monthly TABLE FOR INCREMENTAL #######
-			# "Select MAX(
+	mysql  --login-path=local -DSRG_Dev -N -e "Select MAX(FocusDate) from Px-monthly
 
 	
 
