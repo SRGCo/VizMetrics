@@ -17,13 +17,16 @@ do
 	######## GET FY FOR THIS TransactionDate (DOB)
 	FY=$(mysql  --login-path=local -DSRG_Prod -N -e "SELECT FY from Lunas WHERE Lunas.DOB = '$TransactionDate'")
 
-	######## GET FY FOR THIS TransactionDate (DOB)
+	######## GET YLUNA FOR THIS TransactionDate (DOB)
 	YLuna=$(mysql  --login-path=local -DSRG_Prod -N -e "SELECT YLuna from Lunas WHERE Lunas.DOB = '$TransactionDate'")
+
+	######## GET LUNA FOR THIS TransactionDate (DOB)
+	Luna=$(mysql  --login-path=local -DSRG_Prod -N -e "SELECT Luna from Lunas WHERE Lunas.DOB = '$TransactionDate'")
 
 
 			##### UPDATE FISCAL YEAR FROM TRANSACTIONDATE
-			mysql  --login-path=local -DSRG_Prod -N -e "UPDATE Master SET FY = '$FY',YLuna = '$YLuna' WHERE Master.DOB = '$TransactionDate'"
-			echo $TransactionDate updated FY= $FY YLuna = $YLuna
+			mysql  --login-path=local -DSRG_Prod -N -e "UPDATE Master SET FY = '$FY',YLuna = '$YLuna', Luna = '$Luna' WHERE Master.DOB = '$TransactionDate'"
+			echo $TransactionDate updated FY= $FY YLuna = $YLuna Luna = $Luna
 done
 echo FY YLUNA CALCD POPULATED
 
