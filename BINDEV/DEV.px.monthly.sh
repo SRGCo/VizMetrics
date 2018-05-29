@@ -27,19 +27,19 @@ set -e
 #11.	LifetimeSpendBalance = Lifetime Dollars spent (as of FocusDate)
 #12.	LifetimePointsBalance = Lifetime points accrued (as of FocusDate)
 #13.	LifetimeVisistsBalance = Lifetime visits accrued  (as of FocusDate)
-#14.    LifetimePointsRedeemed = Lifetime points redeemed (as of FocusDate) 
+#14.?   LifetimePointsRedeemed = Lifetime points redeemed (as of FocusDate) 
 #15	LastVisit = Last visit date (ever)
 #16.*	FreqCurrent = Current Freq (1st day of focus month - last visit date) 
-#17.	FreqRecent = Recent Freq  (1st day of focus month - previous last visit date, 2 visits back)
+#17.X	FreqRecent = Recent Freq  (1st day of focus month - previous last visit date, 2 visits back)
 #18.*	Freq12mos = 12Mo Freq (Count visits over 12 months previous to 1st day of focus month)
-#19.	HistFreqCurrent = Historical current freq (current freq as of FocusDate)
-#20.	Lifetimefrequency = Count visits since enrollment (as of FocusDate)
-#21.	LifetimeFreqSeg = LifeTime Freq segmentation 
-#22.	12MoFreqSeg = 12mo freq segmentation
-#23.	RecentFreqSeg = Recent freq segmentation
-#24.	CurFreqSeg = Current freq segmentation
+#19.X	HistFreqCurrent = Historical current freq (current freq as of FocusDate)
+#20.X	Lifetimefrequency = Count visits since enrollment (as of FocusDate)
+#21.X	LifetimeFreqSeg = LifeTime Freq segmentation 
+#22.X	12MoFreqSeg = 12mo freq segmentation
+#23.X	RecentFreqSeg = Recent freq segmentation
+#24.X	CurFreqSeg = Current freq segmentation
 #25.*	ProgramAge = months since enrollment month as of focusdate [+1 for MM calcs]
-#26.	VisitBalance = Visit Balance (at visit date segmentation)
+#26.X	VisitBalance = Visit Balance (at visit date segmentation)
 
 
 ########## the excludes
@@ -80,6 +80,8 @@ do
 	FocusDateEnd=$(date +%Y-%m-%d -d "$FocusDate + 1 Month -1 day")
 	FocusDateEndUnix=$(date +%s -d "$FocusDateEnd") 
 
+
+########## NEED TO ACCOUNT FOR EXCHANGES
 	######## GET FIRST NAME
 	FirstName=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT FirstName FROM Guests WHERE CardNumber = '$CardNumber'  LIMIT 1")
 	######## GET LAST NAME
@@ -155,6 +157,19 @@ do
 									FROM Master
 									WHERE CardNumber = '$CardNumber' LIMIT 1")	
 
+					##### GET RECENT FREQ (2 visits back) AS OF FOCUS DATE
+						2VisitsBack=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT MAX(TransactionDate) FROM Master
+						           	WHERE TransactionDate < '$FocusDate' 
+								AND CardNumber = '$CardNumber' 
+								AND VisitsAccrued > '0'
+								ORDER BY TransactionDate DESC LIMIT 1 , 1")
+
+					###### BASH COULD DO THIS EQUATION AND SAVE OVERHEAD !!!!!!!!!!
+
+					FreqRecent=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT DATEDIFF('$FocusDate' ,'$2VisitsBack') FROM Master")
+
+
+
 					####### ADD blanks FOR NULLs 
 					if [ $CurrentFreq == 'NULL' ]	
 					then	
@@ -217,14 +232,19 @@ do
 					if [ $ProgAge == 'NULL' ]
 					then
 					ProgAge=0
-					fi		
+					fi	
+					if [ $FreqRecent == 'NULL' ]
+					then
+					FreqRecent=0
+					fi	
 
 					####### ECHO DATA FOR DEBUG
 					echo "FirstName"$FirstName" LastName"$LastName" Enrolled"$EnrollDate" Zip"$Zip" FocDate"$FocusDate" FocDateEnd"$FocusDateEnd 
 					echo "DolSpentMo"$DollarsSpentMonth" PtsRedeemMo"$PointsRedeemed " PtsAccrMo"$PointsAccrued" VisAccrMo"$VisitsAccrued"DolSpentLife"$DollarsSpentLife
 					echo "PAL"$PointsAccruedLife " VisAcrLife"$VisitsAccruedLife" PtsredeemedLife"$PointsRedeemedLife
-					echo "LastVisitever"$MaxDate" CurrentFreqMo"$CurrentFreq" 12MO"$PrevYear" ProgAge".$ProgAge
+					echo "LastVisitever"$MaxDate" CurrentFreqMo"$CurrentFreq" 12MO"$PrevYear" ProgAge"$ProgAge
 					echo "================================="
+					echo "RecentFrequency"$FreqRecent
 
 
 					#UPDATE TABLE
@@ -244,6 +264,7 @@ do
 										LifetimePointsRedeemed = '$PointsRedeemedLife',
 										LastVisit = '$MaxDate',
 										FreqCurrent = '$CurrentFreq',
+										FreqRecent = '$FreqRecent',
 										Freq12mos = '$PrevYear',
 										ProgramAge = '$ProgAge'";
 												
