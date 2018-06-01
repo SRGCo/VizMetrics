@@ -54,15 +54,15 @@ set -e
 
 ##################################### THIS CALCULATES ALL VISITS FOR ALL CARDS SO Px_monthly SHOULD BE TRUNCATED BEFORE THIS RUNS 
 
-mysql  --login-path=local -DSRG_Dev -N -e "TRUNCATE table Px_monthly"
-echo 'Px Monthly truncated'
+# mysql  --login-path=local -DSRG_Dev -N -e "TRUNCATE table Px_monthly"
+echo 'Px Monthly NOT truncated'
 
 
 
 ####### GET ONLY NON-EXCLUDED CARDNUMBERS
 mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(CardNumber), MAX(Vm_VisitsBalance)
 					FROM Master
-					WHERE CardNumber > '0'
+					WHERE CardNumber > '6000227902461850'
 					GROUP BY CardNumber	
 					ORDER BY CardNumber ASC" | while read -r CardNumber VisitBalance;
 do
@@ -157,16 +157,18 @@ do
 									FROM Master
 									WHERE CardNumber = '$CardNumber' LIMIT 1")	
 
+					# OFF UNTIL NEXT VERSION
 					##### GET RECENT FREQ (2 visits back) AS OF FOCUS DATE
-						2VisitsBack=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT MAX(TransactionDate) FROM Master
-						           	WHERE TransactionDate < '$FocusDate' 
-								AND CardNumber = '$CardNumber' 
-								AND VisitsAccrued > '0'
-								ORDER BY TransactionDate DESC LIMIT 1 , 1")
+				#	TwoVisitsBack=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT MAX(TransactionDate) FROM Master
+				#		           	WHERE TransactionDate < '$FocusDate' 
+				#				AND CardNumber = '$CardNumber' 
+				#				AND VisitsAccrued > '0'
+				#				ORDER BY TransactionDate DESC LIMIT 1 , 1")
 
+
+					# OFF UNTIL NEXT VERSION
 					###### BASH COULD DO THIS EQUATION AND SAVE OVERHEAD !!!!!!!!!!
-
-					FreqRecent=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT DATEDIFF('$FocusDate' ,'$2VisitsBack') FROM Master")
+					#FreqRecent=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT DATEDIFF('$FocusDate' ,'$2VisitsBack') FROM Master")
 
 
 
@@ -264,10 +266,12 @@ do
 										LifetimePointsRedeemed = '$PointsRedeemedLife',
 										LastVisit = '$MaxDate',
 										FreqCurrent = '$CurrentFreq',
-										FreqRecent = '$FreqRecent',
+										
 										Freq12mos = '$PrevYear',
 										ProgramAge = '$ProgAge'";
-												
+										# FreqRecent = '$FreqRecent',												
+
+
 				done		 
 
 
