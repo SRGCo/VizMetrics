@@ -234,7 +234,8 @@ do
 					if [ $ProgAge == 'NULL' ]
 					then
 					ProgAge=0
-					fi	
+					fi
+					# this is failing?  prob because variable doesnt exist in this version
 					if [ $FreqRecent == 'NULL' ]
 					then
 					FreqRecent=0
