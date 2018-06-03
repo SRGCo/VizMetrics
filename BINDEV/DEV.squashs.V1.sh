@@ -20,7 +20,7 @@ echo 'SQUASHED TABLE DROPPED, CREATING SQUASHED TABLE FROM STRUCTURE'
 
 # Create a empty copy of CardActivity table from CardActivityStructure table
 mysql  --login-path=local --silent -DSRG_Dev -N -e "CREATE TABLE CardActivity_squashed LIKE CardActivity_squashed_structure"
-echo 'SQUASHED TABLE CREATED, SQUASHING AND LOADING DATA FILE TO SQUASHED TABLE'
+echo 'SQUASHED TABLE CREATED, SQUASHING AND INSERTING DATA TO SQUASHED TABLE'
 
 ############## SQUASH AND INSERT DATA FROM LIVE CardActivity ###############
 ####### should we do the FY and luna inserts here
@@ -78,7 +78,7 @@ SUM(CompbucksAccrued),SUM(CompbucksRedeemed),MAX(CompbucksBalance),
 SUM(SereniteeGiftCardAccrued),SUM(SereniteeGiftCardRedeemed),MAX(SereniteeGiftCardBalance),
 SUM(NewsletterAccrued),SUM(NewsletterRedeemed),MAX(NewsletterBalance),
 SUM(SVDiscountTrackingAccrued),SUM(SVDiscountTrackingRedeemed),MAX(SVDiscountTrackingBalance),
-'0','0','0','0','0','0','0','0','0','0',''
+'0','0','0','0','0','0','0','0','0','0','0',''
 
 FROM CardActivity_Live
 
@@ -89,13 +89,13 @@ GROUP by POSKey, LocationID, CardNumber, CardTemplate, TransactionDate"
 echo 'SQUASHED DATA TABLE POPULATED'
 
 
-################################### WE ARE ONLY RUNNING THIS FIX FOR CHECKS FROM LAST 2 MONTHS #######################
+################################### WE ARE ONLY RUNNING THIS FIX ON CARDS USED IN LAST 2 MONTHS #######################
 ######## Get CardNumber
 mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(CardNumber) FROM CardActivity_squashed WHERE CardNumber IS NOT NULL AND TransactionDate > DATE_SUB(CURDATE(), INTERVAL 2 MONTH) ORDER BY CardNumber ASC" | while read -r CardNumber;
 do
-	######### GET DATA IF CHECK FROM BETWEEN MIDNIGHT AND 4 AM
+	######### GET DATA IF CHECK FROM BETWEEN MIDNIGHT AND 4 AM (LAST 2 MONTHS ONLY)
 	mysql  --login-path=local -DSRG_Dev -N -e "SELECT POSkey, TransactionDate, CheckNo FROM CardActivity_squashed where cardnumber like $CardNumber
-	AND TransactionTime > '00:00' and TransactionTime < '04:00'"| while read -r POSkey TransactionDate CheckNo;
+	AND TransactionDate > DATE_SUB(CURDATE(), INTERVAL 2 MONTH) AND TransactionTime > '00:00' and TransactionTime < '04:00'"| while read -r POSkey TransactionDate CheckNo;
 	do
 		
 		########## GET THE POSkey FOR SAME CHECK FROM PREVIOUS DAY IF IT EXISTS
@@ -114,11 +114,11 @@ done
 
 ########### DROP AND RECREATE THE 2ND 'squashed' TABLE to READY FOR RELOAD
 mysql  --login-path=local --silent -DSRG_Dev -N -e "DROP TABLE IF EXISTS CardActivity_squashed_2"
-echo '2ND SQUASHED TABLE DROPPED, CREATING SQUASHED TABLE FROM STRUCTURE'
+echo 'EXISTING 2ND SQUASHED TABLE DROPPED, CREATING SQUASHED TABLE FROM STRUCTURE'
 
 # Create a empty copy of CardActivity table from CardActivityStructure table
 mysql  --login-path=local --silent -DSRG_Dev -N -e "CREATE TABLE CardActivity_squashed_2 LIKE CardActivity_squashed_structure"
-echo '2ND SQUASHED TABLE CREATED, SQUASHING 1ST SQUASHED TABLE'
+echo 'NEW 2ND SQUASHED TABLE CREATED, SQUASHING 1ST SQUASHED TABLE'
 
 ############## SQUASH AND INSERT DATA FROM FIRST SQUASHED TABLE ###############
 mysql  --login-path=local --silent -DSRG_Dev -N -e "INSERT INTO CardActivity_squashed_2
@@ -175,13 +175,13 @@ SUM(CompbucksAccrued),SUM(CompbucksRedeemed),MAX(CompbucksBalance),
 SUM(SereniteeGiftCardAccrued),SUM(SereniteeGiftCardRedeemed),MAX(SereniteeGiftCardBalance),
 SUM(NewsletterAccrued),SUM(NewsletterRedeemed),MAX(NewsletterBalance),
 SUM(SVDiscountTrackingAccrued),SUM(SVDiscountTrackingRedeemed),MAX(SVDiscountTrackingBalance),
-'0','0','0','0','0','0','0','0','0','0',''
+'0','0','0','0','0','0','0','0','0','0','0',''
 
 FROM CardActivity_squashed
 
 GROUP by POSKey, LocationID, CardNumber, CardTemplate"
 
-echo 'SQUASHED DATA TABLE    2    POPULATED'
+echo 'NEW SQUASHED DATA TABLE    2    POPULATED'
 
 ### INDEX SQUASHED TABLE POSkey
 mysql  --login-path=local --silent -DSRG_Dev -N -e "ALTER TABLE CardActivity_squashed_2 ADD INDEX(POSkey)"

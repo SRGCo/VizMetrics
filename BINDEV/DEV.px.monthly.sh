@@ -62,7 +62,7 @@ echo 'Px Monthly NOT truncated'
 ####### GET ONLY NON-EXCLUDED CARDNUMBERS
 mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(CardNumber), MAX(Vm_VisitsBalance)
 					FROM Master
-					WHERE CardNumber > '6000227902461850'
+					WHERE CardNumber > '0'
 					GROUP BY CardNumber	
 					ORDER BY CardNumber ASC" | while read -r CardNumber VisitBalance;
 do

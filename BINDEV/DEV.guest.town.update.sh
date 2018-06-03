@@ -13,14 +13,15 @@ set -x
 ##### HALT AND CATCH FIRE AT SINGLE ITERATION LEVEL
 set -e
 
+## TRUNCATE GUESTS TABLE BEFORE LOADING W NEW
+# Delete Temp table if it exists
+mysql  --login-path=local --silent -DSRG_Dev -N -e "TRUNCATE TABLE Guests_Master"
+echo 'Guests_Master Emptied'
+
+
 # Add Population, avg income, Town to Guests_Master table joined from MA_Zips table
-
-
-
 mysql  --login-path=local -DSRG_Dev -N -e "INSERT INTO Guests_Master SELECT G.*, MZ.Population, MZ.AvgIncome, MZ.Town FROM Guests AS G 
 						LEFT JOIN MA_Zips as MZ ON G.Zip = MZ.Zip"
 
-
-
-echo Guest Info Updated
+echo 'Guests_Master Updated w town data'
 

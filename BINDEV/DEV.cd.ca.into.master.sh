@@ -20,9 +20,9 @@ echo 'MASTER TEST CREATED STARTING JOIN'
 
 #### Double check UNION !!!!!!!!!!!!!!!!
 mysql  --login-path=local -DSRG_Dev -N -e "INSERT INTO Master_temp SELECT CD.*, CA.* FROM CheckDetail_Live AS CD 
-						LEFT JOIN CardActivity_squashed_2 AS CA ON CD.POSkey = CA.POSkey 
+						LEFT JOIN CardActivity_squashed_2 AS CA ON CD.POSkey = CA.POSkey WHERE CA.TransactionDate <= '2018-05-19' 
 						UNION SELECT CD.*, CA.* FROM .CheckDetail_Live as CD 
-						RIGHT JOIN CardActivity_squashed_2 AS CA ON CD.POSkey = CA.POSkey"
+						RIGHT JOIN CardActivity_squashed_2 AS CA ON CD.POSkey = CA.POSkey WHERE CA.TransactionDate <= '2018-05-19' "
 # echo 'UBER JOIN COMPLETED, /outfiles/joined.cd.ca.csv CREATED'
 echo 'Uber join data inserted into Master_temp'
 
@@ -47,10 +47,13 @@ do
 	######## GET FY FOR THIS TransactionDate (DOB)
 	YLuna=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT YLuna from Lunas WHERE DOB = '$TransactionDate'")
 
+	######## GET FY FOR THIS TransactionDate (DOB)
+	Luna=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT Luna from Lunas WHERE DOB = '$TransactionDate'")
+
 
 			##### UPDATE FISCAL YEAR FROM TRANSACTIONDATE
-			mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_temp SET FY = '$FY',YLuna = '$YLuna' WHERE Master_temp.DOB = '$TransactionDate'"
-			echo $TransactionDate updated FY= $FY YLuna = $YLuna
+			mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_temp SET FY = '$FY',YLuna = '$YLuna', Luna='$Luna' WHERE Master_temp.DOB = '$TransactionDate'"
+			echo $TransactionDate updated FY= $FY YLuna = $YLuna  Luna = $Luna
 done
 echo FY YLUNA CALCD POPULATED
 
@@ -79,6 +82,13 @@ mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_temp SET GrossSalesCoDe
 						AND Master_temp.Account_status <> 'Exchanged' AND Master_temp.Account_status <> 'Exchange' 
 						AND Master_temp.Account_status <> 'Exclude'"
 echo 'Empty GrossSalesCoDefined-s Populated (PROMOS OR COMPS COULD NOT BE ADD, LOWBALL FIGURES)'
+
+## TRUNCATE GUESTS TABLE BEFORE LOADING W NEW
+# Delete Temp table if it exists
+
+mysql  --login-path=local --silent -DSRG_Dev -N -e "TRUNCATE TABLE Master"
+echo 'Guests_Master Emptied'
+
 
 ####### COPY TEMP DATA INTO MASTER
 mysql  --login-path=local --silent -DSRG_Dev -N -e "INSERT INTO Master SELECT * FROM Master_temp"
