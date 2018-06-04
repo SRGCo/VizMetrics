@@ -27,7 +27,7 @@ set -e
 #11.	LifetimeSpendBalance = Lifetime Dollars spent (as of FocusDate)
 #12.	LifetimePointsBalance = Lifetime points accrued (as of FocusDate)
 #13.	LifetimeVisistsBalance = Lifetime visits accrued  (as of FocusDate)
-#14.?   LifetimePointsRedeemed = Lifetime points redeemed (as of FocusDate) 
+#14.    LifetimePointsRedeemed = Lifetime points redeemed (as of FocusDate) 
 #15	LastVisit = Last visit date (ever)
 #16.*	FreqCurrent = Current Freq (1st day of focus month - last visit date) 
 #17.X	FreqRecent = Recent Freq  (1st day of focus month - previous last visit date, 2 visits back)
@@ -44,7 +44,7 @@ set -e
 
 ########## the excludes
 ## CardNumber IS NOT NULL AND (Account_status <> 'TERMIN' AND Account_status <> 'SUSPEN' AND Account_status <> 'Exchanged'
-## 	AND Account_status <> 'Exchange' AND Account_status <> 'Exclude') OR (Account_status IS NULL)
+## 	AND Account_status <> 'Exchange' AND Account_status <> 'Exclude') 
 
 
 ##################### ITERATE ON CardNumber TO CALCULATE 
@@ -54,7 +54,8 @@ set -e
 
 ##################################### THIS CALCULATES ALL VISITS FOR ALL CARDS SO Px_monthly SHOULD BE TRUNCATED BEFORE THIS RUNS 
 
-# mysql  --login-path=local -DSRG_Dev -N -e "TRUNCATE table Px_monthly"
+mysql  --login-path=local -DSRG_Dev -N -e "TRUNCATE table Px_monthly"
+echo 'Px_Monthly TRUNCATED FOR FULL RUN!!!!!!'
 echo 'Px Monthly NOT truncated'
 
 
@@ -63,6 +64,13 @@ echo 'Px Monthly NOT truncated'
 mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(CardNumber), MAX(Vm_VisitsBalance)
 					FROM Master
 					WHERE CardNumber > '0'
+					AND CardNumber = '390000000141745'
+					AND CardNumber IS NOT NULL 
+					AND (Account_status <> 'TERMIN' 
+						AND Account_status <> 'SUSPEN' 
+						AND Account_status <> 'Exchanged'
+ 						AND Account_status <> 'Exchange' 
+						AND Account_status <> 'Exclude') 
 					GROUP BY CardNumber	
 					ORDER BY CardNumber ASC" | while read -r CardNumber VisitBalance;
 do
@@ -81,16 +89,10 @@ do
 	FocusDateEndUnix=$(date +%s -d "$FocusDateEnd") 
 
 
-########## NEED TO ACCOUNT FOR EXCHANGES
+########## WE EXCLUDE EXCHANGES ETC (SEE ABOVE)
 	######## GET FIRST NAME
-	FirstName=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT FirstName FROM Guests WHERE CardNumber = '$CardNumber'  LIMIT 1")
-	######## GET LAST NAME
-	LastName=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT LastName FROM Guests WHERE CardNumber = '$CardNumber' LIMIT 1")
-	######## GET ENROLL DATE
-	EnrollDate=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT EnrollDate FROM Guests WHERE CardNumber = '$CardNumber' LIMIT 1")
-	######## GET ZIP
-	Zip=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT Zip FROM Guests WHERE CardNumber = '$CardNumber' LIMIT 1")
-
+	mysql  --login-path=local -DSRG_Dev -N -e "SELECT FirstName, LastName, EnrollDate, Zip FROM Guests WHERE CardNumber = '$CardNumber'  LIMIT 1" | while read -r "FirstName" "LastName" "EnrollDate" "Zip"
+	do
 	while [ $FocusDateUnix -le $TodayDateUnix ]
 	do	
 		###### DO THE MONTHLY CALCULATION QUERIES HERE
@@ -124,18 +126,8 @@ do
 					PointsAccruedMonth=0 
 					VisitsAccruedMonth=0
 					fi	
-					######## VISITS ACCRUED 12 MONTHS PREVIOUS TO FOCUSDATE
-					PrevYear=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT COUNT(TransactionDate) FROM Master 
-												WHERE CardNumber = '$CardNumber' 
-												AND TransactionDate >= DATE_SUB('$FocusDate',INTERVAL 1 YEAR) 
-												AND TransactionDate < '$FocusDate'												
-												AND VisitsAccrued > '0'")
-			
-				
-					
-			
+						
 #################### FREQUENCY STARTS HERE  - - WRITE TO VARIABLES INSTEAD OF MASTER TABLE			
-
 
 					
 					#################### FREQUENCY STARTS HERE  - - WRITE TO VARIABLES INSTEAD OF MASTER TABLE			
@@ -236,10 +228,10 @@ do
 					ProgAge=0
 					fi
 					# this is failing?  prob because variable doesnt exist in this version
-					if [ $FreqRecent == 'NULL' ]
-					then
-					FreqRecent=0
-					fi	
+					#if [ $FreqRecent == 'NULL' ]
+					#then
+					#FreqRecent=0
+					#fi	
 
 					####### ECHO DATA FOR DEBUG
 					echo "FirstName"$FirstName" LastName"$LastName" Enrolled"$EnrollDate" Zip"$Zip" FocDate"$FocusDate" FocDateEnd"$FocusDateEnd 
@@ -285,6 +277,7 @@ do
 
 
 
+	done
 	done
 
 done
