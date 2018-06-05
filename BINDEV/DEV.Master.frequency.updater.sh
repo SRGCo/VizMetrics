@@ -24,7 +24,7 @@ mysql  --login-path=local -DSRG_Dev -N -e "SELECT CardNumber FROM Master WHERE C
 do
 
 	######## COUNT VISITS OVER PREVIOUS 12 MONTHS AND LIFETIME
-	PrevYear=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT COUNT(*) from Master WHERE CardNumber = '$CardNumber' 
+	PrevYear=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT COUNT(*) from Master WHERE CardNumber = '$CardNumber' AND TransactionDate <> EnrollDate  
 								AND Vm_VisitsAccrued = '1' AND TransactionDate >= DATE_SUB(NOW(),INTERVAL 1 YEAR)")
 	######## MINIMUM VISITBALNCE
 	MinBal=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT MIN(Vm_Visitsbalance) from Master WHERE CardNumber = '$CardNumber'")
