@@ -56,7 +56,7 @@ set -e
 
 mysql  --login-path=local -DSRG_Dev -N -e "TRUNCATE table Px_monthly"
 echo 'Px_Monthly TRUNCATED FOR FULL RUN!!!!!!'
-echo 'Px Monthly NOT truncated'
+# echo 'Px Monthly NOT truncated'
 
 
 
@@ -64,13 +64,7 @@ echo 'Px Monthly NOT truncated'
 mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(CardNumber), MAX(Vm_VisitsBalance)
 					FROM Master
 					WHERE CardNumber > '0'
-					AND CardNumber = '390000000141745'
 					AND CardNumber IS NOT NULL 
-					AND (Account_status <> 'TERMIN' 
-						AND Account_status <> 'SUSPEN' 
-						AND Account_status <> 'Exchanged'
- 						AND Account_status <> 'Exchange' 
-						AND Account_status <> 'Exclude') 
 					GROUP BY CardNumber	
 					ORDER BY CardNumber ASC" | while read -r CardNumber VisitBalance;
 do
@@ -91,7 +85,10 @@ do
 
 ########## WE EXCLUDE EXCHANGES ETC (SEE ABOVE)
 	######## GET FIRST NAME
-	mysql  --login-path=local -DSRG_Dev -N -e "SELECT FirstName, LastName, EnrollDate, Zip FROM Guests WHERE CardNumber = '$CardNumber'  LIMIT 1" | while read -r "FirstName" "LastName" "EnrollDate" "Zip"
+	
+	FirstName=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT FirstName FROM Guests WHERE CardNumber = '$CardNumber' LIMIT 1")
+	LastName=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT LastName FROM Guests WHERE CardNumber = '$CardNumber' LIMIT 1")
+	mysql  --login-path=local -DSRG_Dev -N -e "SELECT EnrollDate, Zip FROM Guests WHERE CardNumber = '$CardNumber'  LIMIT 1" | while read -r "EnrollDate" "Zip"
 	do
 	while [ $FocusDateUnix -le $TodayDateUnix ]
 	do	
