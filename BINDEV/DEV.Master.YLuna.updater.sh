@@ -12,7 +12,7 @@ set -x
 ##################### ITERATE ON POSkey 
 ###### -N is the No Headers in Output option
 ###### -e is the 'read statement and quit'
-mysql  --login-path=local -DSRG_Dev -N -e "SELECT Master.DOB FROM Master WHERE Master.DOB > '2017-12-30' GROUP BY Master.DOB ORDER BY Master.DOB ASC" | while read -r TransactionDate;
+mysql  --login-path=local -DSRG_Dev -N -e "SELECT Master.DOB FROM Master GROUP BY Master.DOB ORDER BY Master.DOB ASC" | while read -r TransactionDate;
 do
 	######## GET FY FOR THIS TransactionDate (DOB)
 	FY=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT FY from Lunas WHERE Lunas.DOB = '$TransactionDate'")
@@ -29,4 +29,6 @@ do
 			echo $TransactionDate updated FY= $FY YLuna = $YLuna Luna = $Luna
 done
 echo FY YLUNA CALCD POPULATED
+
+
 

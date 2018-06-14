@@ -20,9 +20,9 @@ echo 'MASTER TEST CREATED STARTING JOIN'
 
 #### Double check UNION !!!!!!!!!!!!!!!!
 mysql  --login-path=local -DSRG_Dev -N -e "INSERT INTO Master_temp SELECT CD.*, CA.* FROM CheckDetail_Live AS CD 
-						LEFT JOIN CardActivity_squashed_2 AS CA ON CD.POSkey = CA.POSkey WHERE CA.TransactionDate <= '2018-05-19' 
+						LEFT JOIN CardActivity_squashed_2 AS CA ON CD.POSkey = CA.POSkey 
 						UNION SELECT CD.*, CA.* FROM .CheckDetail_Live as CD 
-						RIGHT JOIN CardActivity_squashed_2 AS CA ON CD.POSkey = CA.POSkey WHERE CA.TransactionDate <= '2018-05-19' "
+						RIGHT JOIN CardActivity_squashed_2 AS CA ON CD.POSkey = CA.POSkey"
 # echo 'UBER JOIN COMPLETED, /outfiles/joined.cd.ca.csv CREATED'
 echo 'Uber join data inserted into Master_temp'
 
@@ -41,6 +41,7 @@ echo 'Added enroll_date and account status to Master_temp'
 ###### -e is the 'read statement and quit'
 mysql  --login-path=local -DSRG_Dev -N -e "SELECT Master_temp.DOB FROM Master_temp WHERE Master_temp.DOB > DATE_SUB(CURDATE(), INTERVAL 3 MONTH) GROUP BY Master_temp.DOB ORDER BY Master_temp.DOB DESC" | while read -r TransactionDate;
 do
+
 	######## GET FY FOR THIS TransactionDate (DOB)
 	FY=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT FY from Lunas WHERE DOB = '$TransactionDate'")
 
@@ -51,9 +52,10 @@ do
 	Luna=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT Luna from Lunas WHERE DOB = '$TransactionDate'")
 
 
-			##### UPDATE FISCAL YEAR FROM TRANSACTIONDATE
-			mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_temp SET FY = '$FY',YLuna = '$YLuna', Luna='$Luna' WHERE Master_temp.DOB = '$TransactionDate'"
-			echo $TransactionDate updated FY= $FY YLuna = $YLuna  Luna = $Luna
+		##### UPDATE FISCAL YEAR FROM TRANSACTIONDATE
+		mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_temp SET FY = '$FY',YLuna = '$YLuna', Luna='$Luna' WHERE Master_temp.DOB = '$TransactionDate'"
+		echo $TransactionDate updated FY= $FY YLuna = $YLuna  Luna = $Luna
+
 done
 echo FY YLUNA CALCD POPULATED
 
@@ -65,12 +67,9 @@ echo 'EXCHANGED accounts account status updated from px_exchanges table'
 mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_temp JOIN Excludes ON Master_temp.CardNumber = Excludes.CardNumber SET Master_temp.Account_status = 'Exclude'"
 echo 'EXCLUDED accounts account status updated from Excludes table'
 
-
 ######## UPDATE THE EMPTY CHECKDETAIL FIELDS WITH PX DATA
-
 mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_temp SET CheckNumber = CheckNo WHERE CheckNumber IS NULL"
 echo Empty CheckNumber-s populated from CheckNo
-
 mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_temp SET DOB = TransactionDate WHERE DOB IS NULL"
 echo Empty DOB-s populated from TransactionDate
 mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_temp SET LocationID = LocationID_px WHERE LocationID IS NULL"
