@@ -32,14 +32,14 @@ set -e
 #16.*	FreqCurrent = Current Freq (1st day of focus month - last visit date) 
 #17.X	FreqRecent = Recent Freq  (1st day of focus month - previous last visit date, 2 visits back)
 #18.*	Freq12mos = 12Mo Freq (Count visits over 12 months previous to 1st day of focus month)
-#19.X	HistFreqCurrent = Historical current freq (current freq as of FocusDate)
-#20.X	Lifetimefrequency = Count visits since enrollment (as of FocusDate)
-#21.X	LifetimeFreqSeg = LifeTime Freq segmentation 
-#22.X	12MoFreqSeg = 12mo freq segmentation
-#23.X	RecentFreqSeg = Recent freq segmentation
-#24.X	CurFreqSeg = Current freq segmentation
+#19.-	HistFreqCurrent = Historical current freq (current freq as of FocusDate)
+#20.-	Lifetimefrequency = Count visits since enrollment (as of FocusDate)
+#21.-	LifetimeFreqSeg = LifeTime Freq segmentation 
+#22.-+*	12MoFreqSeg = 12mo freq segmentation
+#23.-	RecentFreqSeg = Recent freq segmentation
+#24.-	CurFreqSeg = Current freq segmentation
 #25.*	ProgramAge = months since enrollment month as of focusdate [+1 for MM calcs]
-#26.X	VisitBalance = Visit Balance (at visit date segmentation)
+#26.XXXX	VisitBalance = Visit Balance (at visit date segmentation)
 
 
 ########## the excludes
