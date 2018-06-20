@@ -14,10 +14,7 @@ set -e
 ###### -e is the 'read statement and quit'
 ###### { encapulates the while loop so variables do not disappear
 
-### what if more than one transaction per day
-#### ONLY GOING 3 MONTHS BACK SINCE EARLIER CARDS SHOULD HAVE ALREADY BEEN FIXED
-# mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(CardNumber) FROM Master WHERE DOB > DATE_SUB(CURDATE(), INTERVAL 3 MONTH) ORDER BY CardNumber ASC" | while read -r CardNumber;
-
+### how do we do from a date not that dar in past without missing ca or cd side?
 
 ################ We Do a full reload of Master table from Master Temp should just update
 mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(CardNumber) FROM Master ORDER BY CardNumber ASC" | while read -r CardNumber;

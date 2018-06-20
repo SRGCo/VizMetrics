@@ -1,6 +1,6 @@
 #! //bin/bash
 # NEXT for echo
-set -x
+# set -x
 
 ############################################################################################
 ################## THIS SCRIPT SHOULD DO FILE HANDLING IN A NON PRODUCTION DIRECTORY !!!!!

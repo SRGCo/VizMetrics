@@ -17,18 +17,17 @@ set -e
 
 #### USE PX REPORT Guest Analysis Report
 #### WITH FILTER ~ALL rewards accounts (all statuses) use for VM
-#### ADD "Email Failed", "Account Status", "Phone number", "birthday" fields ON Guest Analysis Report - Customize Output PAGE 
-#### REPLACE " with {nothing}
+#### ADD "Email Failed", "Account Status", "Phone number", "date of birth" fields ON Guest Analysis Report - Customize Output PAGE (run report)
+#### download csv, REPLACE " with {nothing}
 ############# there are commas in fields like address etc... fucking things up... alternate delimiter only 200 accounts
 
 
 # DELETE THE PREVIOUS INFILE FILE
 rm -f /home/ubuntu/db_files/incoming/px/guests.infile.csv
-### need to remove another line?
 
    for file in /home/ubuntu/db_files/incoming/px/guests.csv
   do
-      tail -n+2 "$file"  >> /home/ubuntu/db_files/incoming/px/guests.infile.csv
+      tail -n+3 "$file"  >> /home/ubuntu/db_files/incoming/px/guests.infile.csv
   done
  echo 'INCOMING guest DATA FILES CLEANED AND MERGED'
 

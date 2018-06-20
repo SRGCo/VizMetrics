@@ -3,7 +3,7 @@
 # exec 1> >(logger -s -t $(basename $0)) 2>&1
 
 # UNCOMMENT NEXT FOR VERBOSE
-set -x
+# set -x
 ##### HALT AND CATCH FIRE IF ANY COMMAND FAILS
 set -e
 
@@ -16,7 +16,7 @@ echo 'TEMP TABLE DROPPED, STARTING NEW TEMP TABLE CREATION'
 
 # Create a empty copy of CardActivity table from CardActivityStructure table
 mysql  --login-path=local --silent -DSRG_Dev -N -e "CREATE TABLE Master_temp LIKE Master_structure"
-echo 'MASTER TEST CREATED STARTING JOIN'
+echo 'MASTER TEMP CREATED STARTING JOIN'
 
 #### Double check UNION !!!!!!!!!!!!!!!!
 mysql  --login-path=local -DSRG_Dev -N -e "INSERT INTO Master_temp SELECT CD.*, CA.* FROM CheckDetail_Live AS CD 
