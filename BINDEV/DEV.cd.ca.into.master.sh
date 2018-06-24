@@ -39,7 +39,9 @@ echo 'Added enroll_date and account status to Master_temp'
 ##################### ITERATE ON POSkey 
 ###### -N is the No Headers in Output option
 ###### -e is the 'read statement and quit'
-mysql  --login-path=local -DSRG_Dev -N -e "SELECT Master_temp.DOB FROM Master_temp WHERE Master_temp.DOB > DATE_SUB(CURDATE(), INTERVAL 3 MONTH) GROUP BY Master_temp.DOB ORDER BY Master_temp.DOB DESC" | while read -r TransactionDate;
+###################### This was going to only go 3 months back but we rebuild master every time so that is not possible in this build ###########
+
+mysql  --login-path=local -DSRG_Dev -N -e "SELECT Master_temp.DOB FROM Master_temp GROUP BY Master_temp.DOB ORDER BY Master_temp.DOB DESC" | while read -r TransactionDate;
 do
 
 	######## GET FY FOR THIS TransactionDate (DOB)
@@ -82,11 +84,11 @@ mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_temp SET GrossSalesCoDe
 						AND Master_temp.Account_status <> 'Exclude'"
 echo 'Empty GrossSalesCoDefined-s Populated (PROMOS OR COMPS COULD NOT BE ADD, LOWBALL FIGURES)'
 
-## TRUNCATE GUESTS TABLE BEFORE LOADING W NEW
+## TRUNCATE Master TABLE BEFORE LOADING W NEW
 # Delete Temp table if it exists
 
 mysql  --login-path=local --silent -DSRG_Dev -N -e "TRUNCATE TABLE Master"
-echo 'Guests_Master Emptied'
+echo 'Table Master Emptied'
 
 
 ####### COPY TEMP DATA INTO MASTER
