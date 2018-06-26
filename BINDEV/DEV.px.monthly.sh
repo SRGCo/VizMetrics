@@ -127,13 +127,14 @@ do
 #################### FREQUENCY STARTS HERE  - - WRITE TO VARIABLES INSTEAD OF MASTER TABLE			
 
 					
-					#################### FREQUENCY STARTS HERE  - - WRITE TO VARIABLES INSTEAD OF MASTER TABLE			
-					######## VISITS ACCRUED 12 MONTHS PREVIOUS TO FOCUSDATE
+					# FREQUENCY STARTS HERE  - - WRITE TO VARIABLES INSTEAD OF MASTER TABLE			
+					######## VISITS ACCRUED 12 MONTHS PREVIOUS TO FOCUSDATE (otherwise same query as master freq updater)
 					PrevYear=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT COUNT(TransactionDate) FROM Master 
-								WHERE CardNumber = '$CardNumber' 
+								WHERE CardNumber = '$CardNumber'
+								AND TransactionDate <> EnrollDate  
 								AND TransactionDate >= DATE_SUB('$FocusDate',INTERVAL 1 YEAR) 
 								AND TransactionDate < '$FocusDate'																	
-								AND VisitsAccrued > '0'")
+								AND Vm_VisitsAccrued = '1'")
 
 					##### GET CURRENT FREQ AS OF FOCUS DATE
 					CurrentFreq=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT DATEDIFF('$FocusDate' ,MAX(TRANSACTIONDATE)) FROM Master
