@@ -17,6 +17,10 @@ set -e
 ### how do we do from a date not that dar in past without missing ca or cd side?
 
 ################ We Do a full reload of Master table from Master Temp should just update
+
+########################### 	THIS NEEDS TO BE RUN ON THE CARDACTIVITY_TEMP TABLE BEFORE DATA IS PROCESSED. #############################
+##########################         WHAT IF IT IS AN EXCHANGED CARD ???????????? ############################
+
 mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(CardNumber) FROM Master ORDER BY CardNumber ASC" | while read -r CardNumber;
 do
 	
