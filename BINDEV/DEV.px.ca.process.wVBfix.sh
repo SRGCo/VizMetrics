@@ -58,16 +58,16 @@ fi
 
 		### They did not accrue on activation day because card was pre-activated, but they did accrue on the day they got the card
 	NoExchange=$[$NoExchange +1]
+	else
+
+	echo $CardNumber' What is this case? Activation date= '$ActivDate' Minimum transaction date= '$Min_dob
+	OddCase=$[$OddCase +1]
 	
 	fi
 
 
 
 
-
-
-	echo 'What is this case and how many are there?'
-	OddCase=$[$OddCase +1]
 
 
 
