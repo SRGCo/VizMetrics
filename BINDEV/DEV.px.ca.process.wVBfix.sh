@@ -72,10 +72,10 @@ fi
 
 
 
-
+echo "Exch="$ExchangeCounter
+echo "NotExch="$NoExchange
+echo "OddCase="$OddCase
 
 done
 
-echo "Exch="$ExchangeCounter
-echo "NotExch="$NoExchange
 
