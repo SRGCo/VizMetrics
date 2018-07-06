@@ -13,33 +13,9 @@
 ##### HALT AND CATCH FIRE AT SINGLE ITERATION LEVEL
 set -e
 
-######### Px_monthly_small FIELDS
-#1.	CardNumber
-#2.	FocusDate = 1st day of focus month
-#3.	FirstName = Guest firstname from 'Guests' table (should be Px_guests table) 
-#4.	LastName = Guest lastname (same every record for this account)
-#5	EnrollDate = Guest enroll date (from guests table ?????)
-#6	Zip = Guests' zipcode from guests table
-#7	DollarsSpentMonth = Dollars spent during focus month [DollarsSpentAccrued]
-#8.	PointsRedeemedMonth = Points redeemed during focus month [SereniteePointsRedeemed]
-#9.	PointsAccruedMonth = Points acrrued during focus month [SereniteePointsAccrued]
-#10.	VisitsAccruedMonth = Visits accrued during focus month [VisitsAccrued]
-#11.	LifetimeSpendBalance = Lifetime Dollars spent (as of FocusDate)
-#12.	LifetimePointsBalance = Lifetime points accrued (as of FocusDate)
-#13.	LifetimeVisistsBalance = Lifetime visits accrued  (as of FocusDate)
-#14.    LifetimePointsRedeemed = Lifetime points redeemed (as of FocusDate) 
-#15	LastVisit = Last visit date (ever)
-#16.*	FreqCurrent = Current Freq (1st day of focus month - last visit date) 
-#17.X	FreqRecent = Recent Freq  (1st day of focus month - previous last visit date, 2 visits back)
-#18.*	Freq12mos = 12Mo Freq (Count visits over 12 months previous to 1st day of focus month)
-#19.-	HistFreqCurrent = Historical current freq (current freq as of FocusDate)
-#20.-	Lifetimefrequency = Count visits since enrollment (as of FocusDate)
-#21.-	LifetimeFreqSeg = LifeTime Freq segmentation (visitbalance / months in program) 
-#22.-+*	12MoFreqSeg = 12mo freq segmentation
-#23.-	RecentFreqSeg = Recent freq segmentation
-#24.-	CurFreqSeg = Current freq segmentation
-#25.*	ProgramAge = months since enrollment month as of focusdate [+1 for MM calcs]
-#26.XXXX	VisitBalance = Visit Balance (at visit date segmentation)
+######### Px_monthly_small ################################
+###### SEE THE 'VM CALCULATED FIELDS' SPREADSHEET #########
+
 
 
 ########## the excludes
@@ -256,7 +232,7 @@ do
 										LastVisit = '$MaxDate',
 										FreqCurrent = '$CurrentFreq',
 										FreqRecent = '$FreqRecent',
-										Freq12mos = '$PrevYear',
+										12MoVisitBal = '$PrevYear',
 										ProgramAge = '$ProgAge'";
 										# FreqRecent = '$FreqRecent',												
 
