@@ -8,17 +8,17 @@
 
 define ('DB_USER', 'root');
 define ('DB_PASSWORD','s3r3n1t33');
-define ('DB_HOST','localhost');
+define ('DB_HOST','ec2-35-169-137-209.compute-1.amazonaws.com');
 define ('DB_NAME','SRG_Dev');
 
 # Make the connection and then select the database
 # display errors if fail
 
 
-$dbc = @mysql_connect(DB_HOST, DB_USER, DB_PASSWORD)
-	or die('Could not connect to mysql:'.MYSQL_ERROR() );
-@mysql_select_db(DB_NAME)
-	OR die('Could not connect to the database:'.MYSQL_ERROR());
+$dbc = mysqli_connect(DB_HOST, DB_USER, DB_PASSWORD)
+	or die('Could not connect to mysql:'.MYSQLI_ERROR($dbc) );
+mysqli_select_db(DB_NAME)
+	OR die('Could not connect to the database:'.MYSQLI_ERROR($dbc));
 
 // TRUNCATE table Px_monthly_small"
 ECHO 'Px_monthly_small TRUNCATED FOR FULL RUN!!!!!!';
@@ -31,9 +31,9 @@ $Query1 = "SELECT DISTINCT(CardNumber), MAX(Vm_VisitsBalance), CURDATE()
 					AND MOD(CardNumber, 8000) = '0'
 					GROUP BY CardNumber	
 					ORDER BY CardNumber ASC";
-$result1 = mysql_query($query1);
-ECHO MYSQL_ERROR();
-while($row1 = mysql_fetch_array($result1, MYSQL_ASSOC)){
+$result1 = mysqli_query($query1);
+ECHO MYSQLI_ERROR();
+while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	$CardNumber_db = $row1['CardNumber'];
 	$VisitBalance_db = $row1['Vm_VisitsBalance'];
 	$CurrentDate_db = $row1['TodayDate'];
@@ -42,9 +42,9 @@ while($row1 = mysql_fetch_array($result1, MYSQL_ASSOC)){
 	$Query2 = "SELECT MAX(TransactionDate) as MaxDate, YEAR(MIN(TransactionDate)) as MinDateYear,
 					 MONTH(MIN(TransactionDate)) as MinDateMonth, 
 				FROM Master WHERE CardNumber = '$CardNumber_db'";
-	$result2 = mysql_query($query2);	
-	ECHO MYSQL_ERROR();
-	while($row1 = mysql_fetch_array($result2, MYSQL_ASSOC)){	
+	$result2 = mysqli_query($query2);	
+	ECHO MYSQLI_ERROR();
+	while($row1 = mysqli_fetch_array($result2, MYSQLI_ASSOC)){	
 		$MaxDate_db = $row1['MaxDate'];
 		$MinDateMonth_db = $row1['MinDateMonth'];
 		$MinDateYear_db = $row1['MinDateYear'];
@@ -52,14 +52,14 @@ while($row1 = mysql_fetch_array($result1, MYSQL_ASSOC)){
 	}
 // FORMAT FOCUSDATE
 	$FocusDate = $MinDateYear_db."-".$MinDateMonth_db."-01"; 
-	$FocusDateEnd = strtotime($FocusDate '+1months -1 days');
+	$FocusDateEnd = strtotime($FocusDate, '+1months -1 days');
 
 
 	$Query3 = "SELECT FirstName, LastName, EnrollDate, Zip
 				FROM Guests WHERE CardNumber = '$CardNumber_db'";
-	$result3 = mysql_query($query3);	
-	ECHO MYSQL_ERROR();
-	while($row1 = mysql_fetch_array($result3, MYSQL_ASSOC)){	
+	$result3 = mysqli_query($query3);	
+	ECHO MYSQLI_ERROR();
+	while($row1 = mysqli_fetch_array($result3, MYSQLI_ASSOC)){	
 		$FirstName_db = $row1['FirstName'];
 		$LastName_db = $row1['LastName'];
 		$EnrollDate_db = $row1['EnrollDate'];		
@@ -78,9 +78,9 @@ WHILE ($FocusDate <= $CurrentDate_db){
 			AND VisitsAccrued > '0'
 			AND TransactionDate >= '$FocusDate'
 			AND TransactionDate <= '$FocusDateEnd'";
-	$result4 = mysql_query($query4);	
-	ECHO MYSQL_ERROR();
-	while($row1 = mysql_fetch_array($result4, MYSQL_ASSOC)){
+	$result4 = mysqli_query($query4);	
+	ECHO MYSQLI_ERROR();
+	while($row1 = mysqli_fetch_array($result4, MYSQLI_ASSOC)){
 		$TransMonth_db = $row1['TransMonth'];	
 		$DollarsSpentMonth_db = $row1['DollarsSpentMonth'];
 		$PointsRedeemedMonth_db = $row1['PointsRedeemedMonth'];
@@ -95,8 +95,8 @@ ECHO $CardNumber_db;
 
 // END OF WHILE FOCUSDATE LESS THAN TODAY
 }
-$FocusDate=strtotime($FocusDate' + 1 month');
-$FocusDateEnd=strtotime($FocusDate' +1 month - 1 day');
+$FocusDate=strtotime($FocusDate, '+ 1 month');
+$FocusDateEnd=strtotime($FocusDate, ' +1 month - 1 day');
 // END OF CARD NUMBER WHILE LOOP
 }
 ?>
