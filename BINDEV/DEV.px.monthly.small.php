@@ -27,7 +27,7 @@ ECHO 'Px_monthly_small TRUNCATED FOR FULL RUN!!!!!!';
 $query1 = "SELECT DISTINCT(CardNumber) as CardNumber FROM Master
 					WHERE CardNumber > '0'
 					AND CardNumber IS NOT NULL 
-					AND MOD(CardNumber, 8000) = '0'
+					AND MOD(CardNumber, 1000) = '0'
 					GROUP BY CardNumber	
 					ORDER BY CardNumber ASC";
 $result1 = mysqli_query($dbc, $query1);
@@ -53,9 +53,9 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 
 		// FORMAT FOCUSDATE
 		$FocusDate = $MinDateYear_db."-".$MinDateMonth_db."-01"; 
-		ECHO $FocusDate;
-		$FocusDateEnd = date("m",strtotime($FocusDate."+1 month -1 day"));
-		ECHO 'FDend:'.$FocusDateEnd;
+		ECHO 'FocusDate: '. $FocusDate;
+		$FocusDateEnd = date("Y-m-d",strtotime($FocusDate."+1 month -1 day"));
+		ECHO 'FDend:'.$FocusDateEnd.PHP_EOL;
 		ECHO $MaxDate_db.' '.$MinDateMonth_db.' '.$MinDateYear_db.' '.$VisitBalance_db.' '.$CurrentDate_db.' '.$FocusDate;
 
 		$query3 = "SELECT FirstName, LastName, EnrollDate, Zip
@@ -67,10 +67,11 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 			$LastName_db = $row1['LastName'];
 			$EnrollDate_db = $row1['EnrollDate'];		
 			$Zip_db = $row1['Zip'];
-	
+		ECHO 'Query 3 Completed'.$FirstName_db.' '.$EnrollDate_db.PHP_EOL;
+		ECHO 'focus:'.$FocusDate.'focusend'.$FocusDateEnd.'curdate'.$CurrentDate_db.PHP_EOL;	
 			// WHILE FOCUSDATE IS LESS THAN TODAYS DATE REPEAT QUERIES
 			WHILE ($FocusDate <= $CurrentDate_db){
-
+				
 				$query4 = "SELECT MIN(TransactionDate) as TransMonth, 
 				SUM(DollarsSpentAccrued) as DollarsSpentMonth,
 				SUM(SereniteePointsRedeemed) as PointsRedeemedMonth,
@@ -88,15 +89,74 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 				$DollarsSpentMonth_db = $row1['DollarsSpentMonth'];
 				$PointsRedeemedMonth_db = $row1['PointsRedeemedMonth'];
 				$PointsAccruedMonth_db = $row1['PointsAccruedMonth'];
-				$VisitsAccruedMonth_db = $row1['TransMonth'];
+				$VisitsAccruedMonth_db = $row1['VisitsAccruedMonth'];
 
+# FREQUENCY STARTS HERE  - - WRITE TO VARIABLES INSTEAD OF MASTER TABLE			
+######## VISITS ACCRUED 12 MONTHS PREVIOUS TO FOCUSDATE (otherwise same query as master freq updater)
+				$query5= "SELECT COUNT(TransactionDate) as PrevYear FROM Master 
+						WHERE CardNumber = '$CardNumber_db'
+							AND TransactionDate <> EnrollDate  
+							AND TransactionDate >= DATE_SUB('$FocusDate',INTERVAL 1 YEAR) 
+							AND TransactionDate < '$FocusDate'				
+							AND Vm_VisitsAccrued = '1'";
+				$result5 = mysqli_query($dbc, $query5);	
+				ECHO MYSQLI_ERROR($dbc);
+				while($row1 = mysqli_fetch_array($result5, MYSQLI_ASSOC)){
+				$PrevYear_db = $row1['PrevYear'];	
+
+
+
+
+
+
+
+#### GET CURRENT FREQ AS OF FOCUS DATE
+				$query6= "SELECT DATEDIFF('$FocusDate' ,MAX(TRANSACTIONDATE)) as CurrentFreq FROM Master
+						           	WHERE TransactionDate < '$FocusDate' 
+								AND CardNumber = '$CardNumber_db' 
+								AND VisitsAccrued > '0'";
+				$result6 = mysqli_query($dbc, $query6);	
+				ECHO MYSQLI_ERROR($dbc);
+				while($row1 = mysqli_fetch_array($result6, MYSQLI_ASSOC)){
+				$CurrentFreq_db = $row1['CurrentFreq'];	
+
+
+
+
+
+
+
+
+
+##### GET CURRENT FREQ AS OF FOCUS DATE PLUS 1 FOR MM CALCS
+				$query7= "SELECT (PERIOD_DIFF(EXTRACT(YEAR_MONTH FROM '$FocusDate'), EXTRACT(YEAR_MONTH FROM '$EnrollDate_db')) + 1) AS ProgAge
+									FROM Master
+									WHERE CardNumber = '$CardNumber_db' LIMIT 1";
+				$result7 = mysqli_query($dbc, $query7);	
+				ECHO MYSQLI_ERROR($dbc);
+				while($row1 = mysqli_fetch_array($result7, MYSQLI_ASSOC)){
+				$ProgAge_db = $row1['ProgAge'];		
+			#ECHO 'transmonth'.$TransMonth_db.'VisitsAccruedMonth'.$VisitsAccruedMonth_db.PHP_EOL;
+			ECHO 'Focus'.$FocusDate.' less than Current Date'.$CurrentDate_db.PHP_EOL;
+
+// END OF WHILE FOCUSDATE LESS THAN TODAY
+
+$FocusDate = date("Y-m-d",strtotime($FocusDate." +1 month "));
+$FocusDateEnd = date("Y-m-d",strtotime($FocusDate." +2 month - 1 day "));
+
+
+
+
+}
+}
+}
 }
 
 	}
 }
+
 		}
-$FocusDate=strtotime($FocusDate, '+ 1 month');
-$FocusDateEnd=strtotime($FocusDate, ' +1 month - 1 day');
 // END OF CARD NUMBER WHILE LOOP
 }
+
 ?>
