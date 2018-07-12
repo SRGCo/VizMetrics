@@ -34,6 +34,7 @@ ECHO 'Px_monthly_small TRUNCATED FOR FULL RUN!!!!!!';
 $query1 = "SELECT DISTINCT(CardNumber) as CardNumber FROM Master
 					WHERE CardNumber > '0'
 					AND CardNumber IS NOT NULL 
+					AND MOD(CardNumber, 2000) = '0'
 					GROUP BY CardNumber	
 					ORDER BY CardNumber ASC";
 $result1 = mysqli_query($dbc, $query1);
@@ -59,14 +60,16 @@ $PointsAccruedLife_db = '0';
 $VisitsAccruedLife_db = '0';
 #### INIT VARS
 $TransMonth_db = '';	
-$DollarsSpentMonth_db = '0';
-$PointsRedeemedMonth_db = '0';
-$PointsAccruedMonth_db = '0';
-$VisitsAccruedMonth_db = '0';
-$PrevYear_db = '0';	
-$CurrentFreq_db = '0';	
-$CurrentFreq_db = '0';
-$ProgAge_db = '0';		
+$DollarsSpentMonth_db = '';
+$PointsRedeemedMonth_db = '';
+$PointsAccruedMonth_db = '';
+$VisitsAccruedMonth_db = '';
+$PrevYear_db = '';	
+$CurrentFreq_db = '';	
+$CurrentFreq_db = '';
+$ProgAge_db = '';
+$FreqRecent_db ='';		
+$TwoVisitsBack_db = '';
 
 
 ECHO $counter++.'  card:';
@@ -106,7 +109,7 @@ ECHO $CardNumber_db;
 			$EnrollDate_db = $row1['EnrollDate'];		
 			$Zip_db = $row1['Zip'];
 			}
-echo 'FirstName'.$FirstName_db.' LastName'.$LastName_db.' Enrolled'.$EnrollDate_db.'Zip'.$Zip_db.PHP_EOL; 
+echo ' FirstName:'.$FirstName_db.' LastName:'.$LastName_db.' Enrolled:'.$EnrollDate_db.' Zip:'.$Zip_db;
 #### One off query, close loop.
 		############## GET LIFETIME VALUES (up until this FocusDate)
 		$query3a ="SELECT SUM(DollarsSpentAccrued) as DollarsSpentLife, 
@@ -153,7 +156,8 @@ echo 'FirstName'.$FirstName_db.' LastName'.$LastName_db.' Enrolled'.$EnrollDate_
 #### One off query, close loop.
 			# FREQUENCY STARTS HERE  - - WRITE TO VARIABLES INSTEAD OF MASTER TABLE			
 			######## VISITS ACCRUED 12 MONTHS PREVIOUS TO FOCUSDATE (otherwise same query as master freq updater)
-			$query5= "SELECT COUNT(TransactionDate) as PrevYear FROM Master 
+			$query5= "SELECT COUNT(TransactionDate) as PrevYear
+					FROM Master 
 					WHERE CardNumber = '$CardNumber_db'
 					AND TransactionDate <> EnrollDate  
 					AND TransactionDate >= DATE_SUB('$FocusDate',INTERVAL 1 YEAR) 
@@ -163,7 +167,28 @@ echo 'FirstName'.$FirstName_db.' LastName'.$LastName_db.' Enrolled'.$EnrollDate_
 			ECHO MYSQLI_ERROR($dbc);
 			while($row1 = mysqli_fetch_array($result5, MYSQLI_ASSOC)){
 			$PrevYear_db = $row1['PrevYear'];
-			}	
+			}
+
+
+			$query5a= "SELECT MAX(TransactionDate) as LastVisitDate 
+					FROM Master 
+					WHERE CardNumber = '$CardNumber_db'
+					AND TransactionDate < '$FocusDate'				
+					AND Vm_VisitsAccrued = '1'";
+			$result5a = mysqli_query($dbc, $query5a);	
+			ECHO MYSQLI_ERROR($dbc);
+			while($row1 = mysqli_fetch_array($result5a, MYSQLI_ASSOC)){
+			$LastVisitDate_db = $row1['LastVisitDate'];
+			}
+		### IF THERE IS NO LAST VISIT
+			IF (EMPTY($LastVisitDate_db)){$LastVisitDate_db = $EnrollDate_db;} 
+
+
+
+
+ECHO ' PrevYR:'.$PrevYear_db.' LastVisitDate_db'.$LastVisitDate_db.PHP_EOL;
+
+	
 #### One off query, close loop.
 			#### GET CURRENT FREQ AS OF FOCUS DATE
 			$query6= "SELECT DATEDIFF('$FocusDate' ,MAX(TRANSACTIONDATE)) as CurrentFreq FROM Master
@@ -185,14 +210,36 @@ echo 'FirstName'.$FirstName_db.' LastName'.$LastName_db.' Enrolled'.$EnrollDate_
 			while($row1 = mysqli_fetch_array($result7, MYSQLI_ASSOC)){
 			$ProgAge_db = $row1['ProgAge'];		
 			}
+			##### GET RECENT FREQ (2 visits back) AS OF FOCUS DATE
+			$query7a = "SELECT TransactionDate FROM Master
+					WHERE TransactionDate < '$FocusDate' 
+					AND CardNumber = '$CardNumber_db' 
+					AND VisitsAccrued > '0'
+					ORDER BY TransactionDate DESC LIMIT 1 , 1";
+			$result7a = mysqli_query($dbc, $query7a);	
+			ECHO MYSQLI_ERROR($dbc);
+			while($row1 = mysqli_fetch_array($result7a, MYSQLI_ASSOC)){
+			$TwoVisitsBack_db = $row1['TransactionDate'];		
+			}
+			
+			# CALC NUMBER OF DAYS BETWEEN FOCUSDATE AND 2 VISITS BACK IF THERE WAS A 2 VISITS BACK VISIT
+			IF (EMPTY($TwoVisitsBack_db)){$FreqRecent = '';
+			} ELSE {
+			$FreqRecent_db = date_diff($FocusDate ,$TwoVisitsBack_db);
+			}
+
+			# CALC VISITBALANCE DIVIDED BY COUNT OF MONTHS BETWEEN ENROLLDATE AND FOCUSDATE
+		#	$LifetimeFreqSeg = ($VisitsAccruedLife_db / date_diff($FocusDate, $EnrollDate_db));
+
 		
 			####### ECHO DATA FOR DEBUG
 #			echo ' VisAccrMo'.$VisitsAccruedMonth_db.' DolSpentLife'.$DollarsSpentLife_db.PHP_EOL;
-#			echo 'PAL'.$PointsAccruedLife_db.' VisAcrLife'.$VisitsAccruedLife_db.' PtsredeemedLife'.$PointsRedeemedLife_db.PHP_EOL;
+#			echo 'PAL'.$PointsAccruedLife_db. PtsredeemedLife'.$PointsRedeemedLife_db.PHP_EOL;
 #			echo 'LastVisitever'.$MaxDate_db.' CurrentFreqMo'.$CurrentFreq_db.' 12MO'.$PrevYear_db.' ProgAge'.$ProgAge_db.PHP_EOL;
 #			echo '================================='.PHP_EOL;
 		#	echo 'RecentFrequency'.$FreqRecent.PHP_EOL;
-
+		#	echo ' VisAcrLife'.$VisitsAccruedLife_db.PHP_EOL;
+		#	echo 'FocusDate:'.$FocusDate.' EnrollDate:'.$EnrollDate_db.' LIFEFREQSEG:'.$LifetimeFreqSeg.PHP_EOL;
 
 /////// INSERT VALUES INTO THE TABLE HERE
 			$query8= "INSERT INTO Px_monthly_small SET CardNumber = '$CardNumber_db',
@@ -209,8 +256,9 @@ echo 'FirstName'.$FirstName_db.' LastName'.$LastName_db.' Enrolled'.$EnrollDate_
 					LifetimePointsBalance = '$PointsAccruedLife_db',
 					LifetimeVisitsBalance = '$VisitsAccruedLife_db',
 					LifetimePointsRedeemed = '$PointsRedeemedLife_db',
-					LastVisit = '$MaxDate_db',
+					LastVisitDate = '$LastVisitDate_db',
 					FreqCurrent = '$CurrentFreq_db',
+					FreqRecent = '$FreqRecent_db',
 					12MoVisitBal = '$PrevYear_db',
 					ProgramAge = '$ProgAge_db'";
 // ECHO $query8.PHP_EOL;
