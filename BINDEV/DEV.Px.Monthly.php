@@ -21,13 +21,13 @@ mysqli_select_db($dbc, DB_NAME)
 $counter = 0;
 
 
-// TRUNCATE table Px_monthly"
+// TRUNCATE table Px_Monthly"
 
 
-$query_table= "TRUNCATE table Px_monthly";
+$query_table= "TRUNCATE table Px_Monthly";
 $result_table = mysqli_query($dbc, $query_table);	
 ECHO MYSQLI_ERROR($dbc);
-ECHO 'Px_monthly TRUNCATED FOR FULL RUN!!!!!!';
+ECHO 'Px_Monthly TRUNCATED FOR FULL RUN!!!!!!';
 
 //QUERY MASTER FOR CARDNUMBER
 # NOT USING -- 	AND MOD(CardNumber, 200) = '0'
@@ -409,7 +409,7 @@ echo ' FirstName:'.$FirstName_db.' LastName:'.$LastName_db.' Enrolled:'.$EnrollD
 
 
 /////// INSERT VALUES INTO THE TABLE HERE
-			$query8= "INSERT INTO Px_monthly SET CardNumber = '$CardNumber_db',
+			$query8= "INSERT INTO Px_Monthly SET CardNumber = '$CardNumber_db',
 					FocusDate = '$FocusDate',
 					FirstName = '$FirstName_db',
 					LastName = '$LastName_db',
@@ -439,7 +439,7 @@ echo ' FirstName:'.$FirstName_db.' LastName:'.$LastName_db.' Enrolled:'.$EnrollD
 
 ##### RETRIEVE PRIOR VALUES
 			#### ONE MONTH BACK
-			$query13 = "SELECT 12MoVisitBal FROM Px_monthly 
+			$query13 = "SELECT 12MoVisitBal FROM Px_Monthly 
 				WHERE CardNumber = '$CardNumber_db'
 				AND FocusDate = DATE_SUB('$FocusDate',INTERVAL 1 MONTH)";
 			$result13 = mysqli_query($dbc, $query13);	
@@ -449,7 +449,7 @@ echo ' FirstName:'.$FirstName_db.' LastName:'.$LastName_db.' Enrolled:'.$EnrollD
 		#	ECHO 'DaysEnrolled_db='.$DaysEnrolled.PHP_EOL;	
 			}
 			#### THREE MONTHS BACK
-			$query14 = "SELECT 12MoVisitBal FROM Px_monthly 
+			$query14 = "SELECT 12MoVisitBal FROM Px_Monthly 
 				WHERE CardNumber = '$CardNumber_db'
 				AND FocusDate >= DATE_SUB('$FocusDate', INTERVAL 3 MONTH)";
 			$result14 = mysqli_query($dbc, $query14);	
@@ -459,7 +459,7 @@ echo ' FirstName:'.$FirstName_db.' LastName:'.$LastName_db.' Enrolled:'.$EnrollD
 		#	ECHO 'DaysEnrolled_db='.$DaysEnrolled.PHP_EOL;	
 			}
 			#### TWELVE MONTHS BACK
-			$query15 = "SELECT 12MoVisitBal FROM Px_monthly 
+			$query15 = "SELECT 12MoVisitBal FROM Px_Monthly 
 				WHERE CardNumber = '$CardNumber_db'
 				AND FocusDate >= DATE_SUB('$FocusDate', INTERVAL 1 YEAR)";
 			$result15 = mysqli_query($dbc, $query15);	
@@ -503,7 +503,7 @@ if ($YrMoVisitBal_1MoBack_db >= '26') {$YrMoFreqSeg_1MoBack_txt = '26+';}
 ECHO '12mo:'.$YrMoFreqSeg_1MoBack_txt.' 3mo:'.$YrMoFreqSeg_3MoBack_txt.' 1mo:'.$YrMoFreqSeg_12MoBack_txt.PHP_EOL;
 
 /////// INSERT VALUES INTO THE TABLE HERE
-	$query16= "UPDATE Px_monthly SET
+	$query16= "UPDATE Px_Monthly SET
 			12MoVisitBal_1MoBack = '$YrMoVisitBal_1MoBack_db',
 			12MoVisitBal_3MoBack = '$YrMoVisitBal_3MoBack_db',
 			12MoVisitBal_12MoBack = '$YrMoVisitBal_12MoBack_db',
@@ -527,5 +527,16 @@ $FocusDateEnd = date("Y-m-d",strtotime($FocusDate." +2 month - 1 day "));
 
 // END OF CARD NUMBER WHILE LOOP
 }
+
+// CLEAN UP THE ENTRIES THAT COULD NOT HAVE BEEN CALC'D CORRECTLY
+$Query17 = "DELETE FROM Px_Monthly WHERE EnrollDate = ''";
+$result17 = mysqli_query($dbc, $Query17);
+ECHO MYSQLI_ERROR($dbc);
+
+// CLEAN UP THE ENTRIES THAT COULD NOT HAVE BEEN CALC'D CORRECTLY
+$Query18 = "DELETE FROM Px_Monthly WHERE LastName = 'Test' or LastName = 'test'";
+$result18 = mysqli_query($dbc, $Query18);
+ECHO MYSQLI_ERROR($dbc);
+
 
 ?>
