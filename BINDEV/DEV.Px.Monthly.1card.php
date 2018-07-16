@@ -31,8 +31,9 @@ ECHO 'Px_Monthly TRUNCATED FOR FULL RUN!!!!!!';
 
 //QUERY MASTER FOR CARDNUMBER
 # NOT USING -- 	AND MOD(CardNumber, 200) = '0'
+// THIS CARD HAS NEGATIVE 12MOFREQ
 $query1 = "SELECT DISTINCT(CardNumber) as CardNumber FROM Master
-					WHERE CardNumber > '0'
+					WHERE CardNumber = '6000227903358105'
 					AND CardNumber IS NOT NULL
 					AND Account_status IS NOT NULL 
 					GROUP BY CardNumber	
@@ -451,7 +452,7 @@ echo ' FirstName:'.$FirstName_db.' LastName:'.$LastName_db.' Enrolled:'.$EnrollD
 			#### THREE MONTHS BACK
 			$query14 = "SELECT 12MoVisitBalance FROM Px_Monthly 
 				WHERE CardNumber = '$CardNumber_db'
-				AND FocusDate = DATE_SUB('$FocusDate', INTERVAL 3 MONTH)";
+				AND FocusDate >= DATE_SUB('$FocusDate', INTERVAL 3 MONTH)";
 			$result14 = mysqli_query($dbc, $query14);	
 			ECHO MYSQLI_ERROR($dbc);
 			while($row1 = mysqli_fetch_array($result14, MYSQLI_ASSOC)){
@@ -461,7 +462,7 @@ echo ' FirstName:'.$FirstName_db.' LastName:'.$LastName_db.' Enrolled:'.$EnrollD
 			#### TWELVE MONTHS BACK
 			$query15 = "SELECT 12MoVisitBalance FROM Px_Monthly 
 				WHERE CardNumber = '$CardNumber_db'
-				AND FocusDate = DATE_SUB('$FocusDate', INTERVAL 1 YEAR)";
+				AND FocusDate >= DATE_SUB('$FocusDate', INTERVAL 1 YEAR)";
 			$result15 = mysqli_query($dbc, $query15);	
 			ECHO MYSQLI_ERROR($dbc);
 			while($row1 = mysqli_fetch_array($result15, MYSQLI_ASSOC)){
