@@ -545,7 +545,7 @@ $result17 = mysqli_query($dbc, $Query17);
 ECHO MYSQLI_ERROR($dbc);
 
 // CLEAN UP THE ENTRIES THAT COULD NOT HAVE BEEN CALC'D CORRECTLY
-$Query18 = "DELETE FROM Px_Monthly WHERE LastName = 'Test' or LastName = 'test'";
+$Query18 = "DELETE FROM Px_Monthly WHERE LastName = 'Test' or LastName = 'test' or FirstName = 'Serenitee'";
 $result18 = mysqli_query($dbc, $Query18);
 ECHO MYSQLI_ERROR($dbc);
 
