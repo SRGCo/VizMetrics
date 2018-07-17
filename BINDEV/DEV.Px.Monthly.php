@@ -34,7 +34,8 @@ ECHO 'Px_Monthly TRUNCATED FOR FULL RUN!!!!!!';
 $query1 = "SELECT DISTINCT(CardNumber) as CardNumber FROM Master
 					WHERE CardNumber > '0'
 					AND CardNumber IS NOT NULL
-					AND Account_status IS NOT NULL 
+					AND Account_status IS NOT NULL
+					AND Account_status <> 'Exclude' 
 					GROUP BY CardNumber	
 					ORDER BY CardNumber ASC";
 $result1 = mysqli_query($dbc, $query1);
@@ -101,6 +102,8 @@ $YrMoVisitBal_12MoBack_db = '';
 $YrMoFreqSeg_12MoBack_txt = '';
 $YrMoFreqSeg_3MoBack_txt = '';
 $YrMoFreqSeg_1MoBack_txt = '';
+$YrMoFreq_1MoBack_txt = '';
+
 
 ECHO PHP_EOL.$counter++.'  card:';
 ECHO $CardNumber_db;
@@ -130,7 +133,7 @@ ECHO $CardNumber_db;
 #### One off query, close loop.
 		####### GET GUEST INFO
 		$query3 = "SELECT FirstName, LastName, EnrollDate, Zip
-				FROM Guests WHERE CardNumber = '$CardNumber_db'";
+				FROM Guests_Master WHERE CardNumber = '$CardNumber_db'";
 		$result3 = mysqli_query($dbc, $query3);	
 		ECHO MYSQLI_ERROR($dbc);
 		while($row1 = mysqli_fetch_array($result3, MYSQLI_ASSOC)){	
@@ -232,9 +235,7 @@ echo ' FirstName:'.$FirstName_db.' LastName:'.$LastName_db.' Enrolled:'.$EnrollD
 			}
 #### One off query, close loop.
 		##### GET CURRENT FREQ AS OF FOCUS DATE PLUS 1 FOR MM CALCS
-			$query7= "SELECT (PERIOD_DIFF(EXTRACT(YEAR_MONTH FROM '$FocusDate'), EXTRACT(YEAR_MONTH FROM '$EnrollDate_db')) + 1) AS ProgAge
-					FROM Master
-					WHERE CardNumber = '$CardNumber_db' LIMIT 1";
+			$query7= "SELECT (PERIOD_DIFF(EXTRACT(YEAR_MONTH FROM '$FocusDate'), EXTRACT(YEAR_MONTH FROM '$EnrollDate_db')) + 1) AS ProgAge";
 			$result7 = mysqli_query($dbc, $query7);	
 			ECHO MYSQLI_ERROR($dbc);
 			while($row1 = mysqli_fetch_array($result7, MYSQLI_ASSOC)){
