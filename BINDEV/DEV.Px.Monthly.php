@@ -55,31 +55,29 @@ $FirstName_db = '';
 $LastName_db = '';
 $EnrollDate_db = '';		
 $Zip_db = '';	
+
 $DollarsSpentLife_db = '0'; 
 $PointsRedeemedLife_db = '0'; 
 $PointsAccruedLife_db = '0'; 
 $VisitsAccruedLife_db = '0';
-$TransMonth_db = '';	
 $DollarsSpentMonth_db = '';
 $PointsRedeemedMonth_db = '';
 $PointsAccruedMonth_db = '';
 $VisitsAccruedMonth_db = '';
-$DollarsSpentLife_db = '';
-$PointsAccruedLife_db = '';
-$VisitsAccruedLife_db = '';
-$PointsRedeemedLife_db = '';
+
+
 $LastVisitDate_db = '';
 $PrevYearVisitBal_db = '';	
-$CurrentFreqDays_db = '';
+$LapseDays_db = '';
 $RecentFreqDays_db = '';
 $ProgAge_db = '';	
 $TwoVisitsBack_db = '';
 $FocusDate_php = '';
 $TwoVisitsBack_php = '';
+$MonthsEnrolled_db =
 $LifetimeFreq = '';
 $YearFreqSeg = '';
-$RecentFreq_db = '';
-$CurFreq_db = '';
+$RecentFreqMonths_db = '';
 $TwoVisitsBack_php = '';
 $YrAgoFreq = '';
 $LastVisitBalance_db = '';
@@ -134,10 +132,6 @@ ECHO $CardNumber_db;
 	IF ($FocusDate_php <= $EnrollDate_db_php){
 		$FocusDate = date("Y-m-d",strtotime($FocusDate."+1 month"));
 		$FocusDateEnd = date("Y-m-d",strtotime($FocusDateEnd."+1 month"));
-	ECHO 'FocusDate: '. $FocusDate;
-	ECHO ' FDend:'.$FocusDateEnd.' MaxDate'.$MaxDate_db;
-	ECHO ' MinDateMo'.$MinDateMonth_db.' MinDateYr '.$MinDateYear_db.' VisitBal';
-	ECHO $VisitBalance_db.' CurDate'.$CurrentDate_db.' Focusdate '.$FocusDate;
 	}
 	# ECHO 'FocusDate: '. $FocusDate;
 	# ECHO ' FDend:'.$FocusDateEnd.' MaxDate'.$MaxDate_db.';
@@ -145,8 +139,7 @@ ECHO $CardNumber_db;
 	# ECHO $VisitBalance_db.' CurDate'.$CurrentDate_db.' Focusdate '.$FocusDate.PHP_EOL;
 
 
-
-		# GET DOLLARSSPENTLIFE, POINTSREDEEMEDLIFE, POINTSACCRUEDLIFE, VISITSACCRUEDLIFE
+		#FIELDS = LIFETIMESPENDBALANCE, LIFETIMEPOINTSREDEEMED, LIFETIMEPOINTSBALANCE, LIFETIMEVISITBALANCE
 		$query3a ="SELECT SUM(DollarsSpentAccrued) as DollarsSpentLife, 
 				SUM(SereniteePointsRedeemed) as PointsRedeemedLife, 
 				SUM(SereniteePointsAccrued) as PointsAccruedLife, 
@@ -166,7 +159,8 @@ ECHO $CardNumber_db;
 		WHILE ($FocusDate <= $CurrentDate_db){
 		
 			#####GET NUMBERS FOR FOCUSMONTH
-			$query4 = "SELECT MIN(TransactionDate) as TransMonth, 
+			#FIELDS = DOLLARSSPENTMONTH, POINTSREDEEMEDMONTH, POINTSACCRUEDMONTH, VISITSACCRUEDMONTH
+			$query4 = "SELECT
 				SUM(DollarsSpentAccrued) as DollarsSpentMonth,
 				SUM(SereniteePointsRedeemed) as PointsRedeemedMonth,
 				SUM(SereniteePointsAccrued) as PointsAccruedMonth,
@@ -179,7 +173,6 @@ ECHO $CardNumber_db;
 			$result4 = mysqli_query($dbc, $query4);	
 			ECHO MYSQLI_ERROR($dbc);
 			while($row1 = mysqli_fetch_array($result4, MYSQLI_ASSOC)){
-				$TransMonth_db = $row1['TransMonth'];	
 				$DollarsSpentMonth_db = $row1['DollarsSpentMonth'];
 				$PointsRedeemedMonth_db = $row1['PointsRedeemedMonth'];
 				$PointsAccruedMonth_db = $row1['PointsAccruedMonth'];
@@ -188,7 +181,7 @@ ECHO $CardNumber_db;
 				#echo ' DolSpentMo'.$DollarsSpentMonth_db.' PtsRedeemMo'.$PointsRedeemedMonth_db;
 				#echo ' PtsAccrMo'.$PointsAccruedMonth_db.' TranMo'.$TransMonth_db.PHP_EOL;
 
-			######## VISITS ACCRUED 12 MONTHS PREVIOUS TO FOCUSDATE (otherwise same query as master freq updater)
+			#FIELDS = 12MOVISITBALANCE (PHP=PREVYEARVISITBALANCE)
 			$query5= "SELECT COUNT(TransactionDate) as PrevYearVisitBal
 					FROM Master 
 					WHERE CardNumber = '$CardNumber_db'
@@ -202,7 +195,7 @@ ECHO $CardNumber_db;
 				$PrevYearVisitBal_db = $row1['PrevYearVisitBal'];
 			}
 
-
+			#FIELD = LASTVISITDATE
 			$query5a= "SELECT MAX(TransactionDate) as LastVisitDate 
 					FROM Master 
 					WHERE CardNumber = '$CardNumber_db'
@@ -213,31 +206,26 @@ ECHO $CardNumber_db;
 			while($row1 = mysqli_fetch_array($result5a, MYSQLI_ASSOC)){
 				$LastVisitDate_db = $row1['LastVisitDate'];
 			}
-			### IF THERE IS NO LAST VISIT
+			### IF THERE IS NO LAST VISIT LASTVISITDATE SET TO ENROLLDATE
 			IF (EMPTY($LastVisitDate_db)){$LastVisitDate_db = $EnrollDate_db;} 
-			
-			#### GET CURRENT FREQ AS OF FOCUS DATE
-			# FreqCurrentDays
-			$query6= "SELECT DATEDIFF('$FocusDate' ,MAX(TRANSACTIONDATE)) as CurrentFreqDays FROM Master
+		
+			#FIELD = LAPSEDAYS
+			$query6= "SELECT DATEDIFF('$FocusDate', MAX(TransactionDate)) as LapseDays
+					FROM Master
 			           	WHERE TransactionDate < '$FocusDate' 
 					AND CardNumber = '$CardNumber_db' 
 					AND Vm_VisitsAccrued > '0'";
 			$result6 = mysqli_query($dbc, $query6);	
 			ECHO MYSQLI_ERROR($dbc);
 			while($row1 = mysqli_fetch_array($result6, MYSQLI_ASSOC)){
-				$CurrentFreqDays_db = $row1['CurrentFreqDays'];	
+				$LapseDays_db = $row1['LapseDays'];	
 			}
-
-	##### GET CURRENT FREQ AS OF FOCUS DATE PLUS 1 FOR MM CALCS
-			$query7= "SELECT (PERIOD_DIFF(EXTRACT(YEAR_MONTH FROM '$FocusDate'), EXTRACT(YEAR_MONTH FROM '$EnrollDate_db')) + 1) AS ProgAge";
-			$result7 = mysqli_query($dbc, $query7);	
-			ECHO MYSQLI_ERROR($dbc);
-			while($row1 = mysqli_fetch_array($result7, MYSQLI_ASSOC)){
-				$ProgAge_db = $row1['ProgAge'];		
+			IF (EMPTY($LapseDays_db)){
+				$LapseDays_db = '0';
 			}
-
 
 			##### GET RECENT FREQ (2 visits back) AS OF FOCUS DATE
+			#FIELD = FREQRECENTDAYS
 			$query7a = "SELECT TransactionDate FROM Master
 					WHERE TransactionDate < '$FocusDate' 
 					AND CardNumber = '$CardNumber_db' 
@@ -254,71 +242,94 @@ ECHO $CardNumber_db;
 			# ECHO 'NO 2 VISITS BACK'.PHP_EOL;
 			}ELSE{
 				##### GET COUNT OF DAYS BETWEEN FOCUS DATE AND TWO VISITS BACK
-				$query7b = "SELECT DATEDIFF('$FocusDate', '$TwoVisitsBack_db') AS FreqRecent";
+				$query7b = "SELECT DATEDIFF('$FocusDate', '$TwoVisitsBack_db') AS FreqRecentDays";
 				$result7b = mysqli_query($dbc, $query7b);	
 				ECHO MYSQLI_ERROR($dbc);
 				while($row1 = mysqli_fetch_array($result7b, MYSQLI_ASSOC)){
-					$RecentFreqDays_db = $row1['FreqRecent'];	
-			# ECHO 'FreqRecent_db='.$RecentFreqDays_db.PHP_EOL;	
+					$RecentFreqDays_db = $row1['FreqRecentDays'];	
+			# ECHO 'RecentFrequencyDays_db='.$RecentFreqDays_db.PHP_EOL;	
 				}
 			}
-			
-#### LifeTime Freq SEGMENTED
-			$query7c = "SELECT DATEDIFF('$FocusDate', '$EnrollDate_db')as DaysEnrolled";
-			$result7c = mysqli_query($dbc, $query7c);	
+
+			##### GET NUMBER OF MONTHS BETWEEN ENROLLDATE AND FOCUSDATE  (+1 for marks numbers)
+			#PROGRAMAGE
+			$query7= "SELECT (PERIOD_DIFF(EXTRACT(YEAR_MONTH FROM '$FocusDate'), EXTRACT(YEAR_MONTH FROM '$EnrollDate_db')) + 1) AS ProgAge";
+			$result7 = mysqli_query($dbc, $query7);	
 			ECHO MYSQLI_ERROR($dbc);
-			while($row1 = mysqli_fetch_array($result7c, MYSQLI_ASSOC)){
-				$DaysEnrolled_db = $row1['DaysEnrolled'];	
-			# ECHO 'DaysEnrolled_db='.$DaysEnrolled_db.PHP_EOL;	
+			while($row1 = mysqli_fetch_array($result7, MYSQLI_ASSOC)){
+				$ProgAge_db = $row1['ProgAge'];		
 			}
-			
 
-
-
-# CALC VISITBALANCE DIVIDED BY COUNT OF MONTHS BETWEEN ENROLLDATE AND ONE YEAR PRIOR TO FOCUSDATE
-			IF (($DaysEnrolled_db == '0') OR ($DaysEnrolled_db == '')){
+			##### GET NUMBER OF MONTHS BETWEEN ENROLLDATE AND FOCUSDATE 
+			#FIELD = LIFETIMEFREQ
+			$query7x= "SELECT PERIOD_DIFF(EXTRACT(YEAR_MONTH FROM '$FocusDate'), EXTRACT(YEAR_MONTH FROM '$EnrollDate_db')) AS MonthsEnrolled";
+			$result7x = mysqli_query($dbc, $query7x);	
+			ECHO MYSQLI_ERROR($dbc);
+			while($row1 = mysqli_fetch_array($result7x, MYSQLI_ASSOC)){
+				$MonthsEnrolled_db = $row1['MonthsEnrolled'];		
+			}
+			# ECHO 'DaysEnrolled_db='.$DaysEnrolled_db.PHP_EOL;	
+			IF (($MonthsEnrolled_db == '0') OR ($MonthsEnrolled_db == '')){
 				$LifetimeFreq = '';
 			} ELSE {
-				
-			# CALC VISITBALANCE DIVIDED BY COUNT OF MONTHS BETWEEN ENROLLDATE AND FOCUSDATE
-				$MonthsEnrolled = ($DaysEnrolled_db / 12);
-				$LifetimeFreq = ($VisitsAccruedLife_db / $MonthsEnrolled);			
+				$LifetimeFreq = ($VisitsAccruedLife_db / $MonthsEnrolled_db);			
 			}
 
-			#### VISITBALANCE 12MONTHS PRIOR TO FOCUSDATE
-			# 12MoVisitBalance
-			$query5= "SELECT COUNT(TransactionDate) as PrevYearVisitBalVisitBal
-				FROM Master 
-				WHERE CardNumber = '$CardNumber_db'
-				AND TransactionDate <> EnrollDate  
-				AND TransactionDate >= DATE_SUB('$FocusDate',INTERVAL 1 YEAR) 
-				AND TransactionDate < '$FocusDate'				
-				AND Vm_VisitsAccrued = '1'";
-			$result5 = mysqli_query($dbc, $query5);	
+
+			#FIELD RECENTFREQMONTHS
+			$query7e= "SELECT PERIOD_DIFF(EXTRACT(YEAR_MONTH FROM '$FocusDate'), EXTRACT(YEAR_MONTH FROM '$TwoVisitsBack_db')) AS RecentFreqMonths";
+			$result7e = mysqli_query($dbc, $query7e);	
 			ECHO MYSQLI_ERROR($dbc);
-			while($row1 = mysqli_fetch_array($result5, MYSQLI_ASSOC)){
-				$PrevYearVisitBalVisitBal_db = $row1['PrevYearVisitBalVisitBal'];
-			# ECHO 'Prev yr visit bal'.$PrevYearVisitBalVisitBal_db.PHP_EOL;
+			while($row1 = mysqli_fetch_array($result7e, MYSQLI_ASSOC)){
+				$RecentFreqMonths_db = $row1['RecentFreqMonths'];
+			# ECHO 'RecentFreqMonths_db'.$RecentFreqMonths_db.PHP_EOL;
 			}
+
+			#FIELD LAPSEMONTHS
+			$query7e= "SELECT PERIOD_DIFF(EXTRACT(YEAR_MONTH FROM '$FocusDate'), EXTRACT(YEAR_MONTH FROM MAX(TransactionDate))) AS LapseMonths FROM Master
+					WHERE TransactionDate < '$FocusDate' 
+					AND CardNumber = '$CardNumber_db' 
+					AND Vm_VisitsAccrued > '0'";
+			$result7e = mysqli_query($dbc, $query7e);	
+			ECHO MYSQLI_ERROR($dbc);
+			while($row1 = mysqli_fetch_array($result7e, MYSQLI_ASSOC)){
+				$LapseMonths_db = $row1['LapseMonths'];
+			# ECHO 'LapseMonths_db'.$LapseMonths_db.PHP_EOL;
+			}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 ### 12 MONTH Freq SEGMENTED
-			$query7d = "SELECT DATEDIFF(DATE_SUB('$FocusDate', INTERVAL 1 YEAR), '$EnrollDate_db')as DaysEnrolledYrAgo";
-			$result7d = mysqli_query($dbc, $query7d);	
-			ECHO MYSQLI_ERROR($dbc);
-			while($row1 = mysqli_fetch_array($result7d, MYSQLI_ASSOC)){
-				$DaysEnrolledYrAgo_db = $row1['DaysEnrolledYrAgo'];	
-			# ECHO 'DaysEnrolledYrAgo_db='.$DaysEnrolledYrAgo_db.PHP_EOL;	
-			}
+#			$query7d = "SELECT DATEDIFF(DATE_SUB('$FocusDate', INTERVAL 1 YEAR), '$EnrollDate_db')as DaysEnrolledYrAgo";
+#			$result7d = mysqli_query($dbc, $query7d);	
+#			ECHO MYSQLI_ERROR($dbc);
+#			while($row1 = mysqli_fetch_array($result7d, MYSQLI_ASSOC)){
+#				$DaysEnrolledYrAgo_db = $row1['DaysEnrolledYrAgo'];	
+#			# ECHO 'DaysEnrolledYrAgo_db='.$DaysEnrolledYrAgo_db.PHP_EOL;	
+#			}
 
 			# CALC VISITBALANCE DIVIDED BY COUNT OF MONTHS BETWEEN ENROLLDATE AND ONE YEAR PRIOR TO FOCUSDATE
-			IF (($DaysEnrolledYrAgo_db == '0') OR ($DaysEnrolledYrAgo_db == '')){
-				$YrAgoFreq = '';
-			} ELSE {
-				$MonthsEnrolledYrAgo = ($DaysEnrolledYrAgo_db / 12);
-				$YrAgoFreq = ($PrevYearVisitBalVisitBal_db / $MonthsEnrolledYrAgo);
+#			IF (($DaysEnrolledYrAgo_db == '0') OR ($DaysEnrolledYrAgo_db == '')){
+#				$YrAgoFreq = '';
+#			} ELSE {
+#				$MonthsEnrolledYrAgo = ($DaysEnrolledYrAgo_db / 12);
+#				$YrAgoFreq = ($PrevYearVisitBalVisitBal_db / $MonthsEnrolledYrAgo);
 			# ECHO 'YrAgoFreq='.$YrAgoFreq.PHP_EOL;
-			}
+#			}
 
 
 
@@ -326,85 +337,63 @@ ECHO $CardNumber_db;
 
 ##########################
 #### VISITBALANCE 2 VISITS PRIOR TO FOCUSDATE
-			$query7e= "SELECT COUNT(TransactionDate) as TwoBackVisitBal
-				FROM Master 
-				WHERE CardNumber = '$CardNumber_db'
-				AND TransactionDate <> EnrollDate  
-				AND TransactionDate < '$TwoVisitsBack_db'				
-				AND Vm_VisitsAccrued = '1'";
-			$result7e = mysqli_query($dbc, $query7e);	
-			ECHO MYSQLI_ERROR($dbc);
-			while($row1 = mysqli_fetch_array($result7e, MYSQLI_ASSOC)){
-				$TwoBackVisitBal_db = $row1['TwoBackVisitBal'];
-		#	ECHO 'TwoBackVisitBal'.$TwoBackVisitBal_db.PHP_EOL;
-			}
-			#### 12 MONTH Freq SEGMENTED
-			$query7f = "SELECT DATEDIFF('$TwoVisitsBack_db', '$EnrollDate_db')as DaysEnrolledTwoBack";
-			$result7f = mysqli_query($dbc, $query7f);	
-			ECHO MYSQLI_ERROR($dbc);
-			while($row1 = mysqli_fetch_array($result7f, MYSQLI_ASSOC)){
-				$DaysEnrolledTwoBack_db = $row1['DaysEnrolledTwoBack'];	
+
+#			#### 12 MONTH Freq SEGMENTED
+#			$query7f = "SELECT DATEDIFF('$TwoVisitsBack_db', '$EnrollDate_db')as DaysEnrolledTwoBack";
+#			$result7f = mysqli_query($dbc, $query7f);	
+#			ECHO MYSQLI_ERROR($dbc);
+#			while($row1 = mysqli_fetch_array($result7f, MYSQLI_ASSOC)){
+#				$DaysEnrolledTwoBack_db = $row1['DaysEnrolledTwoBack'];	
 		#	ECHO 'DaysEnrolledTwoBack_db='.$DaysEnrolledTwoBack_db.PHP_EOL;	
-			}
+#			}
 
 			# CALC VISITBALANCE DIVIDED BY COUNT OF MONTHS BETWEEN ENROLLDATE AND ONE YEAR PRIOR TO FOCUSDATE
-			IF (($DaysEnrolledTwoBack_db == '0') OR ($DaysEnrolledTwoBack_db == '')){
-				$TwoBackFreq = '';
-			} ELSE {
-				$MonthsEnrolledTwoBack = ($DaysEnrolledTwoBack_db / 12);
-				$TwoBackFreq = ($PrevYearVisitBalVisitBal_db / $MonthsEnrolledTwoBack);
+#			IF (($DaysEnrolledTwoBack_db == '0') OR ($DaysEnrolledTwoBack_db == '')){
+#				$TwoBackFreq = '';
+#			} ELSE {
+#				$MonthsEnrolledTwoBack = ($DaysEnrolledTwoBack_db / 12);
+#				$TwoBackFreq = ($PrevYearVisitBalVisitBal_db / $MonthsEnrolledTwoBack);
 		#	ECHO 'TwoBackFreq='.$TwoBackFreqSeg.PHP_EOL;
-			}
+#			}
 
 
 
 
 ##########################
 #### VISITBALANCE LAST VISITS PRIOR TO FOCUSDATE
-			$query10= "SELECT COUNT(TransactionDate) as LastVisitBal
-				FROM Master 
-				WHERE CardNumber = '$CardNumber_db'
-				AND TransactionDate <> EnrollDate  
-				AND TransactionDate < '$LastVisitDate_db'				
-				AND Vm_VisitsAccrued = '1'";
-			$result10 = mysqli_query($dbc, $query10);	
-			ECHO MYSQLI_ERROR($dbc);
-			while($row1 = mysqli_fetch_array($result10, MYSQLI_ASSOC)){
-				$LastVisitBal_db = $row1['LastVisitBal'];
+#			$query10= "SELECT COUNT(TransactionDate) as LastVisitBal
+#				FROM Master 
+#				WHERE CardNumber = '$CardNumber_db'
+#				AND TransactionDate <> EnrollDate  
+#				AND TransactionDate < '$LastVisitDate_db'				
+#				AND Vm_VisitsAccrued = '1'";
+#			$result10 = mysqli_query($dbc, $query10);	
+#			ECHO MYSQLI_ERROR($dbc);
+#			while($row1 = mysqli_fetch_array($result10, MYSQLI_ASSOC)){
+#				$LastVisitBal_db = $row1['LastVisitBal'];
 		#	ECHO 'LastVisitBalance'.$LastVisitBal_db.PHP_EOL;
-			}
+#			}
 			####  Freq SEGMENTED
-			$query11 = "SELECT DATEDIFF('$LastVisitDate_db', '$EnrollDate_db')as DaysEnrolledLastVisit";
-			$result11 = mysqli_query($dbc, $query11);	
-			ECHO MYSQLI_ERROR($dbc);
-			while($row1 = mysqli_fetch_array($result11, MYSQLI_ASSOC)){
-				$DaysEnrolledLastVisit_db = $row1['DaysEnrolledLastVisit'];	
+#			$query11 = "SELECT DATEDIFF('$LastVisitDate_db', '$EnrollDate_db')as DaysEnrolledLastVisit";
+#			$result11 = mysqli_query($dbc, $query11);	
+#			ECHO MYSQLI_ERROR($dbc);
+#			while($row1 = mysqli_fetch_array($result11, MYSQLI_ASSOC)){
+#				$DaysEnrolledLastVisit_db = $row1['DaysEnrolledLastVisit'];	
 		#	ECHO 'DaysEnrolledTwoBack_db='.$DaysEnrolledTwoBack_db.PHP_EOL;	
-			}
+#			}
 
-			# CALC VISITBALANCE DIVIDED BY COUNT OF MONTHS BETWEEN ENROLLDATE AND ONE YEAR PRIOR TO FOCUSDATE
-			IF (($DaysEnrolledLastVisit_db == '0') OR ($DaysEnrolledLastVisit_db == '')){
-				$LastVisitFreq = '';
-			} ELSE {
-				$MonthsEnrolledLastVisit = ($DaysEnrolledLastVisit_db / 12);
-				$LastVisitFreq = ($LastVisitBal_db / $MonthsEnrolledLastVisit);
-		#	ECHO 'LastVisitFreq='.$LastVisitFreq.PHP_EOL;
-			}
+			# LAPSE IN MONTHS
+#			IF (($DaysEnrolledLastVisit_db == '0') OR ($DaysEnrolledLastVisit_db == '')){
+#				$LapseMonths = '';
+#			} ELSE {
+#				$MonthsEnrolledLastVisit = ($DaysEnrolledLastVisit_db / 12);
+#				$LapseMonths = ($LastVisitBal_db / $MonthsEnrolledLastVisit);
+		#	ECHO 'LapseMonths='.$LapseMonths.PHP_EOL;
+#			}
 
-########### PROGRAM AGE	
-			$query12 = "SELECT DATEDIFF('$FocusDate', '$EnrollDate_db')as DaysEnrolled";
-			$result12 = mysqli_query($dbc, $query12);	
-			ECHO MYSQLI_ERROR($dbc);
-			while($row1 = mysqli_fetch_array($result12, MYSQLI_ASSOC)){
-				$DaysEnrolled_db = $row1['DaysEnrolled'];	
-		#	ECHO 'DaysEnrolled_db='.$DaysEnrolled.PHP_EOL;	
-			}
 			
 
-
-
-
-/////// INSERT VALUES INTO THE TABLE HERE
+			/////// INSERT VALUES INTO THE TABLE HERE
 			$query8= "INSERT INTO Px_Monthly SET CardNumber = '$CardNumber_db',
 					FocusDate = '$FocusDate',
 					FirstName = '$FirstName_db',
@@ -419,17 +408,19 @@ ECHO $CardNumber_db;
 					LifetimePointsBalance = '$PointsAccruedLife_db',
 					LifetimePointsRedeemed = '$PointsRedeemedLife_db',
 					LastVisitDate = '$LastVisitDate_db',
-					FreqCurrentDays = '$CurrentFreqDays_db',
+					LapseDays = '$LapseDays_db',
 					FreqRecentDays = '$RecentFreqDays_db',
 					12MoVisitBalance = '$PrevYearVisitBal_db',
 					ProgramAge = '$ProgAge_db',
 					LifetimeFreq = ROUND('$LifetimeFreq',8),
-					RecentFreq = ROUND('$TwoBackFreq',8),
-					CurFreq = ROUND('$LastVisitFreq',8),
+					RecentFreqMonths = '$RecentFreqMonths_db',
+					LapseMonths = '$LapseMonths_db',
 					LifetimeVisitBalance = '$VisitsAccruedLife_db'";
-// ECHO $query8.PHP_EOL;
+			// ECHO $query8.PHP_EOL;
 			$result8 = mysqli_query($dbc, $query8);	
 			ECHO MYSQLI_ERROR($dbc);
+
+
 
 
 ##### RETRIEVE PRIOR VALUES
@@ -503,15 +494,24 @@ ECHO $CardNumber_db;
 
 #echo '12mo:'.$YrMoVisitBal_12MoBack_db.' 3mo:'.$YrMoVisitBal_3MoBack_db.' 1mo:'.$YrMoVisitBal_1MoBack_db.PHP_EOL;
 ### TRY AS A CASE
-if ($YrMoVisitBal_12MoBack_db == '') {$YrMoFreqSeg_12MoBack_txt = 'Never Started';}
-if ($YrMoVisitBal_12MoBack_db == '0') {$YrMoFreqSeg_12MoBack_txt = 'Dropout';}
-if (($YrMoVisitBal_12MoBack_db >= '1') AND ($YrMoVisitBal_12MoBack_db <= '2'))  {$YrMoFreqSeg_12MoBack_txt = '1-2';}
-if (($YrMoVisitBal_12MoBack_db >= '3') AND ($YrMoVisitBal_12MoBack_db <= '4')) {$YrMoFreqSeg_12MoBack_txt = '3-4';}
-if (($YrMoVisitBal_12MoBack_db >= '5') AND ($YrMoVisitBal_12MoBack_db <= '7'))  {$YrMoFreqSeg_12MoBack_txt = '5-7';}
-if (($YrMoVisitBal_12MoBack_db >= '8') AND ($YrMoVisitBal_12MoBack_db <= '10'))  {$YrMoFreqSeg_12MoBack_txt = '8-10';}
-if (($YrMoVisitBal_12MoBack_db >= '11') AND ($YrMoVisitBal_12MoBack_db <= '14'))  {$YrMoFreqSeg_12MoBack_txt = '11-14';}
-if (($YrMoVisitBal_12MoBack_db >= '15') AND ($YrMoVisitBal_12MoBack_db <= '26'))  {$YrMoFreqSeg_12MoBack_txt = '15-26';}
-if ($YrMoVisitBal_12MoBack_db >= '26') {$YrMoFreqSeg_12MoBack_txt = '26+';}
+if (($YrMoVisitBal_12MoBack_db == '0') AND ($VisitsAccruedLife_db > '0')) {$YrMoFreqSeg_12MoBack_txt = 'Dropout';
+} ELSE {
+	if (($YrMoVisitBal_12MoBack_db == '0') AND ($VisitsAccruedLife_db == '0')) {$YrMoFreqSeg_12MoBack_txt = 'DOA';
+} ELSE {
+	if (($YrMoVisitBal_12MoBack_db >= '1') AND ($YrMoVisitBal_12MoBack_db <= '2'))  {$YrMoFreqSeg_12MoBack_txt = '1-2';
+} ELSE {
+	if (($YrMoVisitBal_12MoBack_db >= '3') AND ($YrMoVisitBal_12MoBack_db <= '4')) {$YrMoFreqSeg_12MoBack_txt = '3-4';
+} ELSE {
+	if (($YrMoVisitBal_12MoBack_db >= '5') AND ($YrMoVisitBal_12MoBack_db <= '7'))  {$YrMoFreqSeg_12MoBack_txt = '5-7';
+} ELSE {
+	if (($YrMoVisitBal_12MoBack_db >= '8') AND ($YrMoVisitBal_12MoBack_db <= '10'))  {$YrMoFreqSeg_12MoBack_txt = '8-10';
+} ELSE {
+	if (($YrMoVisitBal_12MoBack_db >= '11') AND ($YrMoVisitBal_12MoBack_db <= '14'))  {$YrMoFreqSeg_12MoBack_txt = '11-14';
+} ELSE {
+	if (($YrMoVisitBal_12MoBack_db >= '15') AND ($YrMoVisitBal_12MoBack_db <= '26'))  {$YrMoFreqSeg_12MoBack_txt = '15-26';
+} ELSE {
+	if ($YrMoVisitBal_12MoBack_db >= '26') {$YrMoFreqSeg_12MoBack_txt = '26+';	} 
+} } } } } } } } 
 
 #switch($YrMoVisitBal_3MoBack_db){
 
@@ -550,16 +550,24 @@ if ($YrMoVisitBal_12MoBack_db >= '26') {$YrMoFreqSeg_12MoBack_txt = '26+';}
 
 
 
-
-if ($YrMoVisitBal_3MoBack_db == '0'){$YrMoFreqSeg_3MoBack_txt = 'Dropout';}
-if ($YrMoVisitBal_3MoBack_db == '0'){$YrMoFreqSeg_3MoBack_txt = 'Dropout';}
-if (($YrMoVisitBal_3MoBack_db >= '1') AND ($YrMoVisitBal_3MoBack_db <= '2'))  {$YrMoFreqSeg_3MoBack_txt = '1-2';}
-if (($YrMoVisitBal_3MoBack_db >= '3') AND ($YrMoVisitBal_3MoBack_db <= '4'))  {$YrMoFreqSeg_3MoBack_txt = '3-4';}
-if (($YrMoVisitBal_3MoBack_db >= '5') AND ($YrMoVisitBal_3MoBack_db <= '7'))  {$YrMoFreqSeg_3MoBack_txt = '5-7';}
-if (($YrMoVisitBal_3MoBack_db >= '8') AND ($YrMoVisitBal_3MoBack_db <= '10'))  {$YrMoFreqSeg_3MoBack_txt = '8-10';}
-if (($YrMoVisitBal_3MoBack_db >= '11') AND ($YrMoVisitBal_3MoBack_db <= '14'))  {$YrMoFreqSeg_3MoBack_txt = '11-14';}
-if (($YrMoVisitBal_3MoBack_db >= '15') AND ($YrMoVisitBal_3MoBack_db <= '26'))  {$YrMoFreqSeg_3MoBack_txt = '15-26';}
-if ($YrMoVisitBal_3MoBack_db >= '26') {$YrMoFreqSeg_3MoBack_txt = '26+';}
+if (($YrMoVisitBal_3MoBack_db == '0') AND ($VisitsAccruedLife_db > '0')) {$YrMoFreqSeg_3MoBack_txt = 'Dropout';
+} ELSE {
+if (($YrMoVisitBal_3MoBack_db == '0') AND ($VisitsAccruedLife_db == '0')) {$YrMoFreqSeg_3MoBack_txt = 'DOA';
+} ELSE {
+if (($YrMoVisitBal_3MoBack_db >= '1') AND ($YrMoVisitBal_3MoBack_db <= '2'))  {$YrMoFreqSeg_3MoBack_txt = '1-2';
+} ELSE {
+if (($YrMoVisitBal_3MoBack_db >= '3') AND ($YrMoVisitBal_3MoBack_db <= '4'))  {$YrMoFreqSeg_3MoBack_txt = '3-4';
+} ELSE {
+if (($YrMoVisitBal_3MoBack_db >= '5') AND ($YrMoVisitBal_3MoBack_db <= '7'))  {$YrMoFreqSeg_3MoBack_txt = '5-7';
+} ELSE {
+if (($YrMoVisitBal_3MoBack_db >= '8') AND ($YrMoVisitBal_3MoBack_db <= '10'))  {$YrMoFreqSeg_3MoBack_txt = '8-10';
+} ELSE {
+if (($YrMoVisitBal_3MoBack_db >= '11') AND ($YrMoVisitBal_3MoBack_db <= '14'))  {$YrMoFreqSeg_3MoBack_txt = '11-14';
+} ELSE {
+if (($YrMoVisitBal_3MoBack_db >= '15') AND ($YrMoVisitBal_3MoBack_db <= '26'))  {$YrMoFreqSeg_3MoBack_txt = '15-26';
+} ELSE {
+if ($YrMoVisitBal_3MoBack_db >= '26') {$YrMoFreqSeg_3MoBack_txt = '26+';
+}}}}}}}}}
 
 #switch($YrMoVisitBal_1MoBack_db){
 
@@ -597,15 +605,24 @@ if ($YrMoVisitBal_3MoBack_db >= '26') {$YrMoFreqSeg_3MoBack_txt = '26+';}
 
 
 
-
-if ($YrMoVisitBal_1MoBack_db == '0'){$YrMoFreqSeg_1MoBack_txt = 'Dropout';}
-if (($YrMoVisitBal_1MoBack_db >= '1') AND ($YrMoVisitBal_1MoBack_db <= '2'))  {$YrMoFreqSeg_1MoBack_txt = '1-2';}
-if (($YrMoVisitBal_1MoBack_db >= '3') AND ($YrMoVisitBal_1MoBack_db <= '4'))  {$YrMoFreqSeg_1MoBack_txt = '3-4';}
-if (($YrMoVisitBal_1MoBack_db >= '5') AND ($YrMoVisitBal_1MoBack_db <= '7'))  {$YrMoFreqSeg_1MoBack_txt = '5-7';}
-if (($YrMoVisitBal_1MoBack_db >= '8') AND ($YrMoVisitBal_1MoBack_db <= '10'))  {$YrMoFreqSeg_1MoBack_txt = '8-10';}
-if (($YrMoVisitBal_1MoBack_db >= '11') AND ($YrMoVisitBal_1MoBack_db <= '14'))  {$YrMoFreqSeg_1MoBack_txt = '11-14';}
-if (($YrMoVisitBal_1MoBack_db >= '15') AND ($YrMoVisitBal_1MoBack_db <= '26'))  {$YrMoFreqSeg_1MoBack_txt = '15-26';}
-if ($YrMoVisitBal_1MoBack_db >= '26') {$YrMoFreqSeg_1MoBack_txt = '26+';}
+if (($YrMoVisitBal_1MoBack_db == '0') AND ($VisitsAccruedLife_db > '0')) {$YrMoFreqSeg_1MoBack_txt = 'Dropout';
+} ELSE {
+if (($YrMoVisitBal_1MoBack_db == '0') AND ($VisitsAccruedLife_db == '0')) {$YrMoFreqSeg_1MoBack_txt = 'DOA';
+} ELSE {
+if (($YrMoVisitBal_1MoBack_db >= '1') AND ($YrMoVisitBal_1MoBack_db <= '2'))  {$YrMoFreqSeg_1MoBack_txt = '1-2';
+} ELSE {
+if (($YrMoVisitBal_1MoBack_db >= '3') AND ($YrMoVisitBal_1MoBack_db <= '4'))  {$YrMoFreqSeg_1MoBack_txt = '3-4';
+} ELSE {
+if (($YrMoVisitBal_1MoBack_db >= '5') AND ($YrMoVisitBal_1MoBack_db <= '7'))  {$YrMoFreqSeg_1MoBack_txt = '5-7';
+} ELSE {
+if (($YrMoVisitBal_1MoBack_db >= '8') AND ($YrMoVisitBal_1MoBack_db <= '10'))  {$YrMoFreqSeg_1MoBack_txt = '8-10';
+} ELSE {
+if (($YrMoVisitBal_1MoBack_db >= '11') AND ($YrMoVisitBal_1MoBack_db <= '14'))  {$YrMoFreqSeg_1MoBack_txt = '11-14';
+} ELSE {
+if (($YrMoVisitBal_1MoBack_db >= '15') AND ($YrMoVisitBal_1MoBack_db <= '26'))  {$YrMoFreqSeg_1MoBack_txt = '15-26';
+} ELSE {
+if ($YrMoVisitBal_1MoBack_db >= '26') {$YrMoFreqSeg_1MoBack_txt = '26+';
+}}}}}}}}}
 
 
 #switch($PrevYearVisitBal_db){
@@ -643,15 +660,24 @@ if ($YrMoVisitBal_1MoBack_db >= '26') {$YrMoFreqSeg_1MoBack_txt = '26+';}
 
 #}
 
-
-#if ($YrAgoFreq == '0'){$YrMoFreq_1YrBack_txt = 'Dropout';}
-#if (($YrAgoFreq >= '1') AND ($YrAgoFreq <= '2'))  {$YrMoFreq_1YrBack_txt = '1-2';}
-#if (($YrAgoFreq >= '3') AND ($YrAgoFreq <= '4'))  {$YrMoFreq_1YrBack_txt = '3-4';}
-#if (($YrAgoFreq >= '5') AND ($YrAgoFreq <= '7'))  {$YrMoFreq_1YrBack_txt = '5-7';}
-#if (($YrAgoFreq >= '8') AND ($YrAgoFreq <= '10'))  {$YrMoFreq_1YrBack_txt = '8-10';}
-#if (($YrAgoFreq >= '11') AND ($YrAgoFreq <= '14'))  {$YrMoFreq_1YrBack_txt = '11-14';}
-#if (($YrAgoFreq >= '15') AND ($YrAgoFreq <= '26'))  {$YrMoFreq_1YrBack_txt = '15-26';}
-#if ($YrAgoFreq >= '26') {$YrMoFreq_1YrBack_txt = '26+';}
+if (($YrAgoFreq == '0') AND ($VisitsAccruedLife_db > '0')) {$YrAgoFreq_txt = 'Dropout';
+} ELSE {
+if (($YrAgoFreq == '0') AND ($VisitsAccruedLife_db == '0')) {$YrAgoFreq_txt = 'DOA';
+} ELSE {
+if (($YrAgoFreq >= '1') AND ($YrAgoFreq <= '2'))  {$YrMoFreq_1YrBack_txt = '1-2';
+} ELSE {
+if (($YrAgoFreq >= '3') AND ($YrAgoFreq <= '4'))  {$YrMoFreq_1YrBack_txt = '3-4';
+} ELSE {
+if (($YrAgoFreq >= '5') AND ($YrAgoFreq <= '7'))  {$YrMoFreq_1YrBack_txt = '5-7';
+} ELSE {
+if (($YrAgoFreq >= '8') AND ($YrAgoFreq <= '10'))  {$YrMoFreq_1YrBack_txt = '8-10';
+} ELSE {
+if (($YrAgoFreq >= '11') AND ($YrAgoFreq <= '14'))  {$YrMoFreq_1YrBack_txt = '11-14';
+} ELSE {
+if (($YrAgoFreq >= '15') AND ($YrAgoFreq <= '26'))  {$YrMoFreq_1YrBack_txt = '15-26';
+} ELSE {
+if ($YrAgoFreq >= '26') {$YrMoFreq_1YrBack_txt = '26+';
+}}}}}}}}}
 
 
 #echo '12mo:'.$YrMoFreqSeg_1MoBack_txt.' 3mo:'.$YrMoFreqSeg_3MoBack_txt.' 1mo:'.$YrMoFreqSeg_12MoBack_txt.PHP_EOL;
@@ -670,6 +696,7 @@ if ($YrMoVisitBal_1MoBack_db >= '26') {$YrMoFreqSeg_1MoBack_txt = '26+';}
 // ECHO $query8.PHP_EOL;
 	$result16 = mysqli_query($dbc, $query16);	
 	ECHO MYSQLI_ERROR($dbc);
+
 
 
 
