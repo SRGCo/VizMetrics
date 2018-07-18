@@ -123,27 +123,31 @@ ECHO $CardNumber_db;
 		$VisitBalance_db = $row1['Vm_VisitsBalance'];
 		$CurrentDate_db = $row1['TodayDate'];
 	}
-	
-	// FORMAT FOCUSDATE
-	$FocusDate = $MinDateYear_db."-".$MinDateMonth_db."-01"; 
-#	ECHO 'FocusDate: '. $FocusDate;
-	$FocusDateEnd = date("Y-m-d",strtotime($FocusDate."+1 month -1 day"));
-#	ECHO ' FDend:'.$FocusDateEnd.' MaxDate'.$MaxDate_db.' MinDateMo'.$MinDateMonth_db.' MinDateYr '.$MinDateYear_db.' VisitBal'.$VisitBalance_db.' CurDate'.$CurrentDate_db.' Focusdate '.$FocusDate.PHP_EOL;
 
-#### One off query, close loop.
-		####### GET GUEST INFO
-		$query3 = "SELECT FirstName, LastName, EnrollDate, Zip
-				FROM Guests_Master WHERE CardNumber = '$CardNumber_db'";
-		$result3 = mysqli_query($dbc, $query3);	
-		ECHO MYSQLI_ERROR($dbc);
-		while($row1 = mysqli_fetch_array($result3, MYSQLI_ASSOC)){	
+	####### GET GUEST INFO
+	$query3 = "SELECT FirstName, LastName, EnrollDate, Zip
+			FROM Guests_Master WHERE CardNumber = '$CardNumber_db'";
+	$result3 = mysqli_query($dbc, $query3);	
+	ECHO MYSQLI_ERROR($dbc);
+	while($row1 = mysqli_fetch_array($result3, MYSQLI_ASSOC)){	
 			$FirstName_db = addslashes($row1['FirstName']);
 			$LastName_db = addslashes($row1['LastName']);
 			$EnrollDate_db = $row1['EnrollDate'];		
 			$Zip_db = $row1['Zip'];
-		}
-echo ' FirstName:'.$FirstName_db.' LastName:'.$LastName_db.' Enrolled:'.$EnrollDate_db.' Zip:'.$Zip_db;
-#### One off query, close loop.
+	}
+	echo ' FirstName:'.$FirstName_db.' LastName:'.$LastName_db.' Enrolled:'.$EnrollDate_db.' Zip:'.$Zip_db;
+	
+
+
+	$FocusDate = $MinDateYear_db."-".$MinDateMonth_db."-01";
+	$FocusDateEnd = date("Y-m-d",strtotime($FocusDate."+1 month -1 day"));
+	# IF ENROLLMENT OCCURED DURING FOCUSMONTH SKIP TO NEXT MONTH
+	IF ($FocusDate < $EnrollDate_db){$CardNumber_db = '';}
+	
+	#ECHO ' FDend:'.$FocusDateEnd.' MaxDate'.$MaxDate_db.' MinDateMo'.$MinDateMonth_db.' 
+	#ECHO ' MinDateYr '.$MinDateYear_db.' VisitBal'.$VisitBalance_db.' CurDate'.$CurrentDate_db.' Focusdate '.$FocusDate.PHP_EOL;
+
+
 		############## GET LIFETIME VALUES (up until this FocusDate)
 		$query3a ="SELECT SUM(DollarsSpentAccrued) as DollarsSpentLife, 
 				SUM(SereniteePointsRedeemed) as PointsRedeemedLife, 
