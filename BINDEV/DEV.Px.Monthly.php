@@ -463,185 +463,185 @@ ECHO $CardNumber_db;
 				$YrMoVisitBal_12MoBack_db = $row1['12MoVisitBalance'];	
 		#	ECHO 'DaysEnrolled_db='.$DaysEnrolled.PHP_EOL;	
 			}
+######## SWITCH ACTUALLY SLOWER ????/
+#switch($YrMoVisitBal_12MoBack_db){
 
-switch($YrMoVisitBal_12MoBack_db){
-
-case NULL:
-	$YrMoFreqSeg_12MoBack_txt = 'Never Started';
-	break;
-case '':
-	$YrMoFreqSeg_12MoBack_txt = 'Never Started';
-	break;
-case '0':
-	$YrMoFreqSeg_12MoBack_txt = 'Dropout';
-	break;
-case ($YrMoVisitBal_12MoBack_db >= '1' && $YrMoVisitBal_12MoBack_db <= '2'):
-	$YrMoFreqSeg_12MoBack_txt = '1-2';
-	break;
-case ($YrMoVisitBal_12MoBack_db >= '3' && $YrMoVisitBal_12MoBack_db <= '4'):
-	$YrMoFreqSeg_12MoBack_txt = '3-4';
-	break;
-case ($YrMoVisitBal_12MoBack_db >= '5' && $YrMoVisitBal_12MoBack_db <= '7'):
-	$YrMoFreqSeg_12MoBack_txt = '5-7';
-	break;
-case ($YrMoVisitBal_12MoBack_db >= '8' && $YrMoVisitBal_12MoBack_db <= '10'):
-	$YrMoFreqSeg_12MoBack_txt = '8-10';
-	break;
-case ($YrMoVisitBal_12MoBack_db >= '11' && $YrMoVisitBal_12MoBack_db <= '14'):
-	$YrMoFreqSeg_12MoBack_txt = '11-14';
-	break;
-case ($YrMoVisitBal_12MoBack_db >= '15' && $YrMoVisitBal_12MoBack_db <= '26'):
-	$YrMoFreqSeg_12MoBack_txt = '15-26';
-	break;
-case ($YrMoVisitBal_12MoBack_db >= '26'):
-	$YrMoFreqSeg_12MoBack_txt = '26+';
-	break;
-}
+#case NULL:
+#	$YrMoFreqSeg_12MoBack_txt = 'Never Started';
+#	break;
+#case '':
+#	$YrMoFreqSeg_12MoBack_txt = 'Never Started';
+#	break;
+#case '0':
+#	$YrMoFreqSeg_12MoBack_txt = 'Dropout';
+#	break;
+#case ($YrMoVisitBal_12MoBack_db >= '1' && $YrMoVisitBal_12MoBack_db <= '2'):
+#	$YrMoFreqSeg_12MoBack_txt = '1-2';
+#	break;
+#case ($YrMoVisitBal_12MoBack_db >= '3' && $YrMoVisitBal_12MoBack_db <= '4'):
+#	$YrMoFreqSeg_12MoBack_txt = '3-4';
+#	break;
+#case ($YrMoVisitBal_12MoBack_db >= '5' && $YrMoVisitBal_12MoBack_db <= '7'):
+#	$YrMoFreqSeg_12MoBack_txt = '5-7';
+#	break;
+#case ($YrMoVisitBal_12MoBack_db >= '8' && $YrMoVisitBal_12MoBack_db <= '10'):
+#	$YrMoFreqSeg_12MoBack_txt = '8-10';
+#	break;
+#case ($YrMoVisitBal_12MoBack_db >= '11' && $YrMoVisitBal_12MoBack_db <= '14'):
+#	$YrMoFreqSeg_12MoBack_txt = '11-14';
+#	break;
+#case ($YrMoVisitBal_12MoBack_db >= '15' && $YrMoVisitBal_12MoBack_db <= '26'):
+#	$YrMoFreqSeg_12MoBack_txt = '15-26';
+#	break;
+#case ($YrMoVisitBal_12MoBack_db >= '26'):
+#	$YrMoFreqSeg_12MoBack_txt = '26+';
+#	break;
+#}
 
 
 
 
 #echo '12mo:'.$YrMoVisitBal_12MoBack_db.' 3mo:'.$YrMoVisitBal_3MoBack_db.' 1mo:'.$YrMoVisitBal_1MoBack_db.PHP_EOL;
 ### TRY AS A CASE
-#if ($YrMoVisitBal_12MoBack_db == '') {$YrMoFreqSeg_12MoBack_txt = 'Never Started';}
-#if ($YrMoVisitBal_12MoBack_db == '0') {$YrMoFreqSeg_12MoBack_txt = 'Dropout';}
-#if (($YrMoVisitBal_12MoBack_db >= '1') AND ($YrMoVisitBal_12MoBack_db <= '2'))  {$YrMoFreqSeg_12MoBack_txt = '1-2';}
-#if (($YrMoVisitBal_12MoBack_db >= '3') AND ($YrMoVisitBal_12MoBack_db <= '4')) {$YrMoFreqSeg_12MoBack_txt = '3-4';}
-#if (($YrMoVisitBal_12MoBack_db >= '5') AND ($YrMoVisitBal_12MoBack_db <= '7'))  {$YrMoFreqSeg_12MoBack_txt = '5-7';}
-#if (($YrMoVisitBal_12MoBack_db >= '8') AND ($YrMoVisitBal_12MoBack_db <= '10'))  {$YrMoFreqSeg_12MoBack_txt = '8-10';}
-#if (($YrMoVisitBal_12MoBack_db >= '11') AND ($YrMoVisitBal_12MoBack_db <= '14'))  {$YrMoFreqSeg_12MoBack_txt = '11-14';}
-#if (($YrMoVisitBal_12MoBack_db >= '15') AND ($YrMoVisitBal_12MoBack_db <= '26'))  {$YrMoFreqSeg_12MoBack_txt = '15-26';}
-#if ($YrMoVisitBal_12MoBack_db >= '26') {$YrMoFreqSeg_12MoBack_txt = '26+';}
+if ($YrMoVisitBal_12MoBack_db == '') {$YrMoFreqSeg_12MoBack_txt = 'Never Started';}
+if ($YrMoVisitBal_12MoBack_db == '0') {$YrMoFreqSeg_12MoBack_txt = 'Dropout';}
+if (($YrMoVisitBal_12MoBack_db >= '1') AND ($YrMoVisitBal_12MoBack_db <= '2'))  {$YrMoFreqSeg_12MoBack_txt = '1-2';}
+if (($YrMoVisitBal_12MoBack_db >= '3') AND ($YrMoVisitBal_12MoBack_db <= '4')) {$YrMoFreqSeg_12MoBack_txt = '3-4';}
+if (($YrMoVisitBal_12MoBack_db >= '5') AND ($YrMoVisitBal_12MoBack_db <= '7'))  {$YrMoFreqSeg_12MoBack_txt = '5-7';}
+if (($YrMoVisitBal_12MoBack_db >= '8') AND ($YrMoVisitBal_12MoBack_db <= '10'))  {$YrMoFreqSeg_12MoBack_txt = '8-10';}
+if (($YrMoVisitBal_12MoBack_db >= '11') AND ($YrMoVisitBal_12MoBack_db <= '14'))  {$YrMoFreqSeg_12MoBack_txt = '11-14';}
+if (($YrMoVisitBal_12MoBack_db >= '15') AND ($YrMoVisitBal_12MoBack_db <= '26'))  {$YrMoFreqSeg_12MoBack_txt = '15-26';}
+if ($YrMoVisitBal_12MoBack_db >= '26') {$YrMoFreqSeg_12MoBack_txt = '26+';}
 
-switch($YrMoVisitBal_3MoBack_db){
+#switch($YrMoVisitBal_3MoBack_db){
 
-case NULL:
-	$YrMoFreqSeg_3MoBack_txt = 'Never Started';
-	break;
-case '':
-	$YrMoFreqSeg_3MoBack_txt = 'Never Started';
-	break;
-case '0':
-	$YrMoFreqSeg_3MoBack_txt = 'Dropout';
-	break;
-case ($YrMoVisitBal_3MoBack_db >= '1' && $YrMoVisitBal_3MoBack_db <= '2'):
-	$YrMoFreqSeg_3MoBack_txt = '1-2';
-	break;
-case ($YrMoVisitBal_3MoBack_db >= '3' && $YrMoVisitBal_3MoBack_db <= '4'):
-	$YrMoFreqSeg_3MoBack_txt = '3-4';
-	break;
-case ($YrMoVisitBal_3MoBack_db >= '5' && $YrMoVisitBal_3MoBack_db <= '7'):
-	$YrMoFreqSeg_3MoBack_txt = '5-7';
-	break;
-case ($YrMoVisitBal_3MoBack_db >= '8' && $YrMoVisitBal_3MoBack_db <= '10'):
-	$YrMoFreqSeg_3MoBack_txt = '8-10';
-	break;
-case ($YrMoVisitBal_3MoBack_db >= '11' && $YrMoVisitBal_3MoBack_db <= '14'):
-	$YrMoFreqSeg_3MoBack_txt = '11-14';
-	break;
-case ($YrMoVisitBal_3MoBack_db >= '15' && $YrMoVisitBal_3MoBack_db <= '26'):
-	$YrMoFreqSeg_3MoBack_txt = '15-26';
-	break;
-case ($YrMoVisitBal_3MoBack_db >= '26'):
-	$YrMoFreqSeg_3MoBack_txt = '26+';
-	break;
-}
-
-
-
-
-
-#if ($YrMoVisitBal_3MoBack_db == '0'){$YrMoFreqSeg_3MoBack_txt = 'Dropout';}
-#if ($YrMoVisitBal_3MoBack_db == '0'){$YrMoFreqSeg_3MoBack_txt = 'Dropout';}
-#if (($YrMoVisitBal_3MoBack_db >= '1') AND ($YrMoVisitBal_3MoBack_db <= '2'))  {$YrMoFreqSeg_3MoBack_txt = '1-2';}
-#if (($YrMoVisitBal_3MoBack_db >= '3') AND ($YrMoVisitBal_3MoBack_db <= '4'))  {$YrMoFreqSeg_3MoBack_txt = '3-4';}
-#if (($YrMoVisitBal_3MoBack_db >= '5') AND ($YrMoVisitBal_3MoBack_db <= '7'))  {$YrMoFreqSeg_3MoBack_txt = '5-7';}
-#if (($YrMoVisitBal_3MoBack_db >= '8') AND ($YrMoVisitBal_3MoBack_db <= '10'))  {$YrMoFreqSeg_3MoBack_txt = '8-10';}
-#if (($YrMoVisitBal_3MoBack_db >= '11') AND ($YrMoVisitBal_3MoBack_db <= '14'))  {$YrMoFreqSeg_3MoBack_txt = '11-14';}
-#if (($YrMoVisitBal_3MoBack_db >= '15') AND ($YrMoVisitBal_3MoBack_db <= '26'))  {$YrMoFreqSeg_3MoBack_txt = '15-26';}
-#if ($YrMoVisitBal_3MoBack_db >= '26') {$YrMoFreqSeg_3MoBack_txt = '26+';}
-
-switch($YrMoVisitBal_1MoBack_db){
-
-case NULL:
-	$YrMoFreqSeg_1MoBack_txt = 'Never Started';
-	break;
-case '':
-	$YrMoFreqSeg_1MoBack_txt = 'Never Started';
-	break;
-case '0':
-	$YrMoFreqSeg_1MoBack_txt = 'Dropout';
-	break;
-case ($YrMoVisitBal_1MoBack_db >= '1' && $YrMoVisitBal_1MoBack_db <= '2'):
-	$YrMoFreqSeg_1MoBack_txt = '1-2';
-	break;
-case ($YrMoVisitBal_1MoBack_db >= '3' && $YrMoVisitBal_1MoBack_db <= '4'):
-	$YrMoFreqSeg_1MoBack_txt = '3-4';
-	break;
-case ($YrMoVisitBal_1MoBack_db >= '5' && $YrMoVisitBal_1MoBack_db <= '7'):
-	$YrMoFreqSeg_1MoBack_txt = '5-7';
-	break;
-case ($YrMoVisitBal_1MoBack_db >= '8' && $YrMoVisitBal_1MoBack_db <= '10'):
-	$YrMoFreqSeg_1MoBack_txt = '8-10';
-	break;
-case ($YrMoVisitBal_1MoBack_db >= '11' && $YrMoVisitBal_1MoBack_db <= '14'):
-	$YrMoFreqSeg_1MoBack_txt = '11-14';
-	break;
-case ($YrMoVisitBal_1MoBack_db >= '15' && $YrMoVisitBal_1MoBack_db <= '26'):
-	$YrMoFreqSeg_1MoBack_txt = '15-26';
-	break;
-case ($YrMoVisitBal_1MoBack_db >= '26'):
-	$YrMoFreqSeg_1MoBack_txt = '26+';
-	break;
-}
+#case NULL:
+#	$YrMoFreqSeg_3MoBack_txt = 'Never Started';
+#	break;
+#case '':
+#	$YrMoFreqSeg_3MoBack_txt = 'Never Started';
+#	break;
+#case '0':
+#	$YrMoFreqSeg_3MoBack_txt = 'Dropout';
+#	break;
+#case ($YrMoVisitBal_3MoBack_db >= '1' && $YrMoVisitBal_3MoBack_db <= '2'):
+#	$YrMoFreqSeg_3MoBack_txt = '1-2';
+#	break;
+#case ($YrMoVisitBal_3MoBack_db >= '3' && $YrMoVisitBal_3MoBack_db <= '4'):
+#	$YrMoFreqSeg_3MoBack_txt = '3-4';
+#	break;
+#case ($YrMoVisitBal_3MoBack_db >= '5' && $YrMoVisitBal_3MoBack_db <= '7'):
+#	$YrMoFreqSeg_3MoBack_txt = '5-7';
+#	break;
+#case ($YrMoVisitBal_3MoBack_db >= '8' && $YrMoVisitBal_3MoBack_db <= '10'):
+#	$YrMoFreqSeg_3MoBack_txt = '8-10';
+#	break;
+#case ($YrMoVisitBal_3MoBack_db >= '11' && $YrMoVisitBal_3MoBack_db <= '14'):
+#	$YrMoFreqSeg_3MoBack_txt = '11-14';
+#	break;
+#case ($YrMoVisitBal_3MoBack_db >= '15' && $YrMoVisitBal_3MoBack_db <= '26'):
+#	$YrMoFreqSeg_3MoBack_txt = '15-26';
+#	break;
+#case ($YrMoVisitBal_3MoBack_db >= '26'):
+#	$YrMoFreqSeg_3MoBack_txt = '26+';
+#	break;
+#}
 
 
 
 
-#if ($YrMoVisitBal_1MoBack_db == '0'){$YrMoFreqSeg_1MoBack_txt = 'Dropout';}
-#if (($YrMoVisitBal_1MoBack_db >= '1') AND ($YrMoVisitBal_1MoBack_db <= '2'))  {$YrMoFreqSeg_1MoBack_txt = '1-2';}
-#if (($YrMoVisitBal_1MoBack_db >= '3') AND ($YrMoVisitBal_1MoBack_db <= '4'))  {$YrMoFreqSeg_1MoBack_txt = '3-4';}
-#if (($YrMoVisitBal_1MoBack_db >= '5') AND ($YrMoVisitBal_1MoBack_db <= '7'))  {$YrMoFreqSeg_1MoBack_txt = '5-7';}
-#if (($YrMoVisitBal_1MoBack_db >= '8') AND ($YrMoVisitBal_1MoBack_db <= '10'))  {$YrMoFreqSeg_1MoBack_txt = '8-10';}
-#if (($YrMoVisitBal_1MoBack_db >= '11') AND ($YrMoVisitBal_1MoBack_db <= '14'))  {$YrMoFreqSeg_1MoBack_txt = '11-14';}
-#if (($YrMoVisitBal_1MoBack_db >= '15') AND ($YrMoVisitBal_1MoBack_db <= '26'))  {$YrMoFreqSeg_1MoBack_txt = '15-26';}
-#if ($YrMoVisitBal_1MoBack_db >= '26') {$YrMoFreqSeg_1MoBack_txt = '26+';}
+
+if ($YrMoVisitBal_3MoBack_db == '0'){$YrMoFreqSeg_3MoBack_txt = 'Dropout';}
+if ($YrMoVisitBal_3MoBack_db == '0'){$YrMoFreqSeg_3MoBack_txt = 'Dropout';}
+if (($YrMoVisitBal_3MoBack_db >= '1') AND ($YrMoVisitBal_3MoBack_db <= '2'))  {$YrMoFreqSeg_3MoBack_txt = '1-2';}
+if (($YrMoVisitBal_3MoBack_db >= '3') AND ($YrMoVisitBal_3MoBack_db <= '4'))  {$YrMoFreqSeg_3MoBack_txt = '3-4';}
+if (($YrMoVisitBal_3MoBack_db >= '5') AND ($YrMoVisitBal_3MoBack_db <= '7'))  {$YrMoFreqSeg_3MoBack_txt = '5-7';}
+if (($YrMoVisitBal_3MoBack_db >= '8') AND ($YrMoVisitBal_3MoBack_db <= '10'))  {$YrMoFreqSeg_3MoBack_txt = '8-10';}
+if (($YrMoVisitBal_3MoBack_db >= '11') AND ($YrMoVisitBal_3MoBack_db <= '14'))  {$YrMoFreqSeg_3MoBack_txt = '11-14';}
+if (($YrMoVisitBal_3MoBack_db >= '15') AND ($YrMoVisitBal_3MoBack_db <= '26'))  {$YrMoFreqSeg_3MoBack_txt = '15-26';}
+if ($YrMoVisitBal_3MoBack_db >= '26') {$YrMoFreqSeg_3MoBack_txt = '26+';}
+
+#switch($YrMoVisitBal_1MoBack_db){
+
+#case NULL:
+#	$YrMoFreqSeg_1MoBack_txt = 'Never Started';
+#	break;
+#case '':
+#	$YrMoFreqSeg_1MoBack_txt = 'Never Started';
+#	break;
+#case '0':
+#	$YrMoFreqSeg_1MoBack_txt = 'Dropout';
+#	break;
+#case ($YrMoVisitBal_1MoBack_db >= '1' && $YrMoVisitBal_1MoBack_db <= '2'):
+#	$YrMoFreqSeg_1MoBack_txt = '1-2';
+#	break;
+#case ($YrMoVisitBal_1MoBack_db >= '3' && $YrMoVisitBal_1MoBack_db <= '4'):
+#	$YrMoFreqSeg_1MoBack_txt = '3-4';
+#	break;
+#case ($YrMoVisitBal_1MoBack_db >= '5' && $YrMoVisitBal_1MoBack_db <= '7'):
+#	$YrMoFreqSeg_1MoBack_txt = '5-7';
+#	break;
+#case ($YrMoVisitBal_1MoBack_db >= '8' && $YrMoVisitBal_1MoBack_db <= '10'):
+#	$YrMoFreqSeg_1MoBack_txt = '8-10';
+#	break;
+#case ($YrMoVisitBal_1MoBack_db >= '11' && $YrMoVisitBal_1MoBack_db <= '14'):
+#	$YrMoFreqSeg_1MoBack_txt = '11-14';
+#	break;
+#case ($YrMoVisitBal_1MoBack_db >= '15' && $YrMoVisitBal_1MoBack_db <= '26'):
+#	$YrMoFreqSeg_1MoBack_txt = '15-26';
+#	break;
+#case ($YrMoVisitBal_1MoBack_db >= '26'):
+#	$YrMoFreqSeg_1MoBack_txt = '26+';
+#	break;
+#}
 
 
-switch($PrevYearVisitBal_db){
 
-case NULL:
-	$YrMoFreq_1YrBack_txt = 'Never Started';
-	break;
-case '':
-	$YrMoFreq_1YrBack_txt = 'Never Started';
-	break;
-case '0':
-	$YrMoFreq_1YrBack_txt = 'Dropout';
-	break;
-case ($YrAgoFreq >= '1' && $YrAgoFreq <= '2'):
-	$YrMoFreq_1YrBack_txt = '1-2';
-	break;
-case ($YrAgoFreq >= '3' && $YrAgoFreq <= '4'):
-	$YrMoFreq_1YrBack_txt = '3-4';
-	break;
-case ($YrAgoFreq >= '5' && $YrAgoFreq <= '7'):
-	$YrMoFreq_1YrBack_txt = '5-7';
-	break;
-case ($YrAgoFreq >= '8' && $YrAgoFreq <= '10'):
-	$YrMoFreq_1YrBack_txt = '8-10';
-	break;
-case ($YrAgoFreq >= '11' && $YrAgoFreq <= '14'):
-	$YrMoFreq_1YrBack_txt = '11-14';
-	break;
-case ($YrAgoFreq >= '15' && $YrAgoFreq <= '26'):
-	$YrMoFreq_1YrBack_txt = '15-26';
-	break;
-case ($YrAgoFreq >= '26'):
-	$YrMoFreq_1YrBack_txt = '26+';
-	break;
 
-}
+if ($YrMoVisitBal_1MoBack_db == '0'){$YrMoFreqSeg_1MoBack_txt = 'Dropout';}
+if (($YrMoVisitBal_1MoBack_db >= '1') AND ($YrMoVisitBal_1MoBack_db <= '2'))  {$YrMoFreqSeg_1MoBack_txt = '1-2';}
+if (($YrMoVisitBal_1MoBack_db >= '3') AND ($YrMoVisitBal_1MoBack_db <= '4'))  {$YrMoFreqSeg_1MoBack_txt = '3-4';}
+if (($YrMoVisitBal_1MoBack_db >= '5') AND ($YrMoVisitBal_1MoBack_db <= '7'))  {$YrMoFreqSeg_1MoBack_txt = '5-7';}
+if (($YrMoVisitBal_1MoBack_db >= '8') AND ($YrMoVisitBal_1MoBack_db <= '10'))  {$YrMoFreqSeg_1MoBack_txt = '8-10';}
+if (($YrMoVisitBal_1MoBack_db >= '11') AND ($YrMoVisitBal_1MoBack_db <= '14'))  {$YrMoFreqSeg_1MoBack_txt = '11-14';}
+if (($YrMoVisitBal_1MoBack_db >= '15') AND ($YrMoVisitBal_1MoBack_db <= '26'))  {$YrMoFreqSeg_1MoBack_txt = '15-26';}
+if ($YrMoVisitBal_1MoBack_db >= '26') {$YrMoFreqSeg_1MoBack_txt = '26+';}
+
+
+#switch($PrevYearVisitBal_db){
+
+#case NULL:
+#	$YrMoFreq_1YrBack_txt = 'Never Started';
+#	break;
+#case '':
+#	$YrMoFreq_1YrBack_txt = 'Never Started';
+#	break;
+#case '0':
+#	$YrMoFreq_1YrBack_txt = 'Dropout';
+#	break;
+#case ($YrAgoFreq >= '1' && $YrAgoFreq <= '2'):
+#	$YrMoFreq_1YrBack_txt = '1-2';
+#	break;
+#case ($YrAgoFreq >= '3' && $YrAgoFreq <= '4'):
+#	$YrMoFreq_1YrBack_txt = '3-4';
+#	break;
+#case ($YrAgoFreq >= '5' && $YrAgoFreq <= '7'):
+#	$YrMoFreq_1YrBack_txt = '5-7';
+#	break;
+#case ($YrAgoFreq >= '8' && $YrAgoFreq <= '10'):
+#	$YrMoFreq_1YrBack_txt = '8-10';
+#	break;
+#case ($YrAgoFreq >= '11' && $YrAgoFreq <= '14'):
+#	$YrMoFreq_1YrBack_txt = '11-14';
+#	break;
+#case ($YrAgoFreq >= '15' && $YrAgoFreq <= '26'):
+#	$YrMoFreq_1YrBack_txt = '15-26';
+#	break;
+#case ($YrAgoFreq >= '26'):
+#	$YrMoFreq_1YrBack_txt = '26+';
+#	break;
+
+#}
 
 
 #if ($YrAgoFreq == '0'){$YrMoFreq_1YrBack_txt = 'Dropout';}
