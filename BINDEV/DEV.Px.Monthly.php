@@ -20,10 +20,7 @@ mysqli_select_db($dbc, DB_NAME)
 ### INIT Variables
 $counter = 0;
 
-
 // TRUNCATE table Px_Monthly"
-
-
 $query_table= "TRUNCATE table Px_Monthly";
 $result_table = mysqli_query($dbc, $query_table);	
 ECHO MYSQLI_ERROR($dbc);
@@ -65,7 +62,6 @@ $PointsRedeemedMonth_db = '';
 $PointsAccruedMonth_db = '';
 $VisitsAccruedMonth_db = '';
 
-
 $LastVisitDate_db = '';
 $PrevYearVisitBal_db = '';	
 $LapseDays_db = '';
@@ -74,7 +70,7 @@ $ProgAge_db = '';
 $TwoVisitsBack_db = '';
 $FocusDate_php = '';
 $TwoVisitsBack_php = '';
-$MonthsEnrolled_db =
+$MonthsEnrolled_db = '';
 $LifetimeFreq = '';
 $YearFreqSeg = '';
 $RecentFreqMonths_db = '';
@@ -89,9 +85,12 @@ $YrMoFreqSeg_3MoBack_txt = '';
 $YrMoFreqSeg_1MoBack_txt = '';
 $YrMoFreq_1YrBack_txt = '';
 
-
+$counter++;
+$printcount = fmod($counter, 500);
+IF ($printcount == '0'){
 ECHO PHP_EOL.$counter++.'  card:';
 ECHO $CardNumber_db;
+}
 	#### GET THE MIN AND MAX TRANSACTIONDATE AND THE MAX VISIT BALANCE
 	$query2 = "SELECT MAX(TransactionDate) as MaxDate, 
 				YEAR(MIN(TransactionDate)) as MinDateYear,
@@ -199,15 +198,17 @@ ECHO $CardNumber_db;
 			$query5a= "SELECT MAX(TransactionDate) as LastVisitDate 
 					FROM Master 
 					WHERE CardNumber = '$CardNumber_db'
-					AND TransactionDate < '$FocusDate'				
+					AND TransactionDate <= '$FocusDate'				
 					AND Vm_VisitsAccrued = '1'";
 			$result5a = mysqli_query($dbc, $query5a);	
 			ECHO MYSQLI_ERROR($dbc);
 			while($row1 = mysqli_fetch_array($result5a, MYSQLI_ASSOC)){
 				$LastVisitDate_db = $row1['LastVisitDate'];
 			}
-			### IF THERE IS NO LAST VISIT LASTVISITDATE SET TO ENROLLDATE
-			IF (EMPTY($LastVisitDate_db)){goto end;} 
+			### IF THERE IS NO LAST VISIT DATE SKIP THIS RECORD
+			IF (EMPTY($LastVisitDate_db)){
+				goto end;
+			} 
 		
 			#FIELD = LAPSEDAYS
 			$query6= "SELECT DATEDIFF('$FocusDate', MAX(TransactionDate)) as LapseDays
@@ -418,6 +419,7 @@ ECHO $CardNumber_db;
 					LifetimeVisitBalance = '$VisitsAccruedLife_db'";
 			// ECHO $query8.PHP_EOL;
 			$result8 = mysqli_query($dbc, $query8);	
+			if(!$result8){ECHO $query8.' ';}
 			ECHO MYSQLI_ERROR($dbc);
 
 
@@ -721,14 +723,10 @@ $FocusDateEnd = date("Y-m-d",strtotime($FocusDate." +2 month - 1 day "));
 }
 
 // CLEAN UP THE ENTRIES THAT COULD NOT HAVE BEEN CALC'D CORRECTLY
-$Query17 = "DELETE FROM Px_Monthly WHERE EnrollDate = ''";
-$result17 = mysqli_query($dbc, $Query17);
-ECHO MYSQLI_ERROR($dbc);
-
-// CLEAN UP THE ENTRIES THAT COULD NOT HAVE BEEN CALC'D CORRECTLY
 $Query18 = "DELETE FROM Px_Monthly WHERE LastName = 'Test' or LastName = 'test' or FirstName = 'Serenitee'";
 $result18 = mysqli_query($dbc, $Query18);
 ECHO MYSQLI_ERROR($dbc);
 
+ECHO PHP_EOL.'COUNTER'.$counter
 
 ?>
