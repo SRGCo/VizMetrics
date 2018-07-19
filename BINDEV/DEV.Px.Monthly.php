@@ -207,7 +207,7 @@ ECHO $CardNumber_db;
 				$LastVisitDate_db = $row1['LastVisitDate'];
 			}
 			### IF THERE IS NO LAST VISIT LASTVISITDATE SET TO ENROLLDATE
-			IF (EMPTY($LastVisitDate_db)){$LastVisitDate_db = $EnrollDate_db;} 
+			IF (EMPTY($LastVisitDate_db)){goto end;} 
 		
 			#FIELD = LAPSEDAYS
 			$query6= "SELECT DATEDIFF('$FocusDate', MAX(TransactionDate)) as LapseDays
@@ -454,6 +454,12 @@ ECHO $CardNumber_db;
 				$YrMoVisitBal_12MoBack_db = $row1['12MoVisitBalance'];	
 		#	ECHO 'DaysEnrolled_db='.$DaysEnrolled.PHP_EOL;	
 			}
+
+		IF ($YrMoVisitBal_12MoBack_db == ''){$YrMoVisitBal_12MoBack_db = '0';}
+		IF ($YrMoVisitBal_3MoBack_db == ''){$YrMoVisitBal_3MoBack_db = '0';}
+		IF ($YrMoVisitBal_1MoBack_db == ''){$YrMoVisitBal_1MoBack_db = '0';}
+		
+
 ######## SWITCH ACTUALLY SLOWER ????/
 #switch($YrMoVisitBal_12MoBack_db){
 
@@ -697,7 +703,7 @@ if ($YrAgoFreq >= '26') {$YrMoFreq_1YrBack_txt = '26+';
 	$result16 = mysqli_query($dbc, $query16);	
 	ECHO MYSQLI_ERROR($dbc);
 
-
+end:
 
 
 // END OF WHILE FOCUSDATE LESS THAN TODAY
