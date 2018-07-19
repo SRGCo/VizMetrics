@@ -90,8 +90,8 @@ $YrMoFreqSeg_1MoBack_txt = '';
 $YrMoFreq_1YrBack_txt = '';
 
 
-#ECHO PHP_EOL.$counter++.'  card:';
-#ECHO $CardNumber_db;
+ECHO PHP_EOL.$counter++.'  card:';
+ECHO $CardNumber_db;
 	#### GET THE MIN AND MAX TRANSACTIONDATE AND THE MAX VISIT BALANCE
 	$query2 = "SELECT MAX(TransactionDate) as MaxDate, 
 				YEAR(MIN(TransactionDate)) as MinDateYear,
@@ -319,7 +319,7 @@ $YrMoFreq_1YrBack_txt = '';
 #			ECHO MYSQLI_ERROR($dbc);
 #			while($row1 = mysqli_fetch_array($result7d, MYSQLI_ASSOC)){
 #				$DaysEnrolledYrAgo_db = $row1['DaysEnrolledYrAgo'];	
-#			# ECHO 'DaysEnrolledYrAgo_db='.$DaysEnrolledYrAgo_db.PHP_EOL;	
+			# ECHO 'DaysEnrolledYrAgo_db='.$DaysEnrolledYrAgo_db.PHP_EOL;	
 #			}
 
 			# CALC VISITBALANCE DIVIDED BY COUNT OF MONTHS BETWEEN ENROLLDATE AND ONE YEAR PRIOR TO FOCUSDATE
@@ -458,7 +458,7 @@ $YrMoFreq_1YrBack_txt = '';
 		IF ($YrMoVisitBal_12MoBack_db == ''){$YrMoVisitBal_12MoBack_db = '0';}
 		IF ($YrMoVisitBal_3MoBack_db == ''){$YrMoVisitBal_3MoBack_db = '0';}
 		IF ($YrMoVisitBal_1MoBack_db == ''){$YrMoVisitBal_1MoBack_db = '0';}
-		IF ($YrAgoFreq == ''){$YrAgoFreq = '0';}
+		IF ($PrevYearVisitBal_db == ''){$PrevYearVisitBal_db = '0';}
 		IF ($VisitsAccruedLife_db == ''){$VisitsAccruedLife_db = '0';}
 		
 
@@ -668,31 +668,26 @@ if ($YrMoVisitBal_1MoBack_db >= '26') {$YrMoFreqSeg_1MoBack_txt = '26+';
 
 #}
 
-if (($YrAgoFreq == '0') AND ($VisitsAccruedLife_db > '0')) {$YrMoFreq_1YrBack_txt = 'Dropout';
-} ELSE {
-if (($YrAgoFreq == '0') AND ($VisitsAccruedLife_db == '0')) {$YrMoFreq_1YrBack_txt = 'DOA';
-} ELSE {
-if (($YrAgoFreq >= '1') AND ($YrAgoFreq <= '2'))  {$YrMoFreq_1YrBack_txt = '1-2';
-} ELSE {
-if (($YrAgoFreq >= '3') AND ($YrAgoFreq <= '4'))  {$YrMoFreq_1YrBack_txt = '3-4';
-} ELSE {
-if (($YrAgoFreq >= '5') AND ($YrAgoFreq <= '7'))  {$YrMoFreq_1YrBack_txt = '5-7';
-} ELSE {
-if (($YrAgoFreq >= '8') AND ($YrAgoFreq <= '10'))  {$YrMoFreq_1YrBack_txt = '8-10';
-} ELSE {
-if (($YrAgoFreq >= '11') AND ($YrAgoFreq <= '14'))  {$YrMoFreq_1YrBack_txt = '11-14';
-} ELSE {
-if (($YrAgoFreq >= '15') AND ($YrAgoFreq <= '26'))  {$YrMoFreq_1YrBack_txt = '15-26';
-} ELSE {
-if ($YrAgoFreq >= '26') {$YrMoFreq_1YrBack_txt = '26+';
-} ELSE {
+if (($PrevYearVisitBal_db == '0') AND ($VisitsAccruedLife_db > '0')) {$YrMoFreq_1YrBack_txt = 'Dropout';
+} 
+if (($PrevYearVisitBal_db == '0') AND ($VisitsAccruedLife_db == '0')) {$YrMoFreq_1YrBack_txt = 'DOA';
+} 
+if (($PrevYearVisitBal_db >= '1') AND ($PrevYearVisitBal_db <= '2'))  {$YrMoFreq_1YrBack_txt = '1-2';
+} 
+if (($PrevYearVisitBal_db >= '3') AND ($PrevYearVisitBal_db <= '4'))  {$YrMoFreq_1YrBack_txt = '3-4';
+} 
+if (($PrevYearVisitBal_db >= '5') AND ($PrevYearVisitBal_db <= '7'))  {$YrMoFreq_1YrBack_txt = '5-7';
+} 
+if (($PrevYearVisitBal_db >= '8') AND ($PrevYearVisitBal_db <= '10'))  {$YrMoFreq_1YrBack_txt = '8-10';
+} 
+if (($PrevYearVisitBal_db >= '11') AND ($PrevYearVisitBal_db <= '14'))  {$YrMoFreq_1YrBack_txt = '11-14';
+} 
+if (($PrevYearVisitBal_db >= '15') AND ($PrevYearVisitBal_db <= '26'))  {$YrMoFreq_1YrBack_txt = '15-26';
+} 
+if ($PrevYearVisitBal_db >= '26') {$YrMoFreq_1YrBack_txt = '26+';}
 
-# ECHO PHP_EOL.$counter++.'  card:'.$CardNumber_db.' YrAgoFreq:'.$YrAgoFreq.' ODD CASE***'.$YrMoFreq_1YrBack_txt;
+#ECHO ' YrAgoFreq:'.$PrevYearVisitBal_db.' Vis life'.$VisitsAccruedLife_db.' Not oddball ? ? ? ?'.$YrMoFreq_1YrBack_txt;
 
-IF ($YrAgoFreq > '0'){ECHO PHP_EOL.$counter++.'  card:'.$CardNumber_db.' YrAgoFreq:'.$YrAgoFreq.' Vis life'.$VisitsAccruedLife_db.' Not oddball ? ? ? ?'.$YrMoFreq_1YrBack_txt;
-
-
-}}}}}}}}}}
 
 
 #echo '12mo:'.$YrMoFreqSeg_1MoBack_txt.' 3mo:'.$YrMoFreqSeg_3MoBack_txt.' 1mo:'.$YrMoFreqSeg_12MoBack_txt.PHP_EOL;
