@@ -90,8 +90,8 @@ $YrMoFreqSeg_1MoBack_txt = '';
 $YrMoFreq_1YrBack_txt = '';
 
 
-ECHO PHP_EOL.$counter++.'  card:';
-ECHO $CardNumber_db;
+#ECHO PHP_EOL.$counter++.'  card:';
+#ECHO $CardNumber_db;
 	#### GET THE MIN AND MAX TRANSACTIONDATE AND THE MAX VISIT BALANCE
 	$query2 = "SELECT MAX(TransactionDate) as MaxDate, 
 				YEAR(MIN(TransactionDate)) as MinDateYear,
@@ -121,7 +121,7 @@ ECHO $CardNumber_db;
 		$EnrollDate_db = $row1['EnrollDate'];		
 		$Zip_db = $row1['Zip'];
 	}
-	echo ' FirstName:'.$FirstName_db.' LastName:'.$LastName_db.' Enrolled:'.$EnrollDate_db.' Zip:'.$Zip_db;
+#	echo ' FirstName:'.$FirstName_db.' LastName:'.$LastName_db.' Enrolled:'.$EnrollDate_db.' Zip:'.$Zip_db;
 	
 	// FORMAT FOCUSDATE
 	$FocusDate = $MinDateYear_db."-".$MinDateMonth_db."-01"; 
@@ -458,6 +458,8 @@ ECHO $CardNumber_db;
 		IF ($YrMoVisitBal_12MoBack_db == ''){$YrMoVisitBal_12MoBack_db = '0';}
 		IF ($YrMoVisitBal_3MoBack_db == ''){$YrMoVisitBal_3MoBack_db = '0';}
 		IF ($YrMoVisitBal_1MoBack_db == ''){$YrMoVisitBal_1MoBack_db = '0';}
+		IF ($YrAgoFreq == ''){$YrAgoFreq = '0';}
+		IF ($VisitsAccruedLife_db == ''){$VisitsAccruedLife_db = '0';}
 		
 
 ######## SWITCH ACTUALLY SLOWER ????/
@@ -666,9 +668,9 @@ if ($YrMoVisitBal_1MoBack_db >= '26') {$YrMoFreqSeg_1MoBack_txt = '26+';
 
 #}
 
-if (($YrAgoFreq == '0') AND ($VisitsAccruedLife_db > '0')) {$YrAgoFreq_txt = 'Dropout';
+if (($YrAgoFreq == '0') AND ($VisitsAccruedLife_db > '0')) {$YrMoFreq_1YrBack_txt = 'Dropout';
 } ELSE {
-if (($YrAgoFreq == '0') AND ($VisitsAccruedLife_db == '0')) {$YrAgoFreq_txt = 'DOA';
+if (($YrAgoFreq == '0') AND ($VisitsAccruedLife_db == '0')) {$YrMoFreq_1YrBack_txt = 'DOA';
 } ELSE {
 if (($YrAgoFreq >= '1') AND ($YrAgoFreq <= '2'))  {$YrMoFreq_1YrBack_txt = '1-2';
 } ELSE {
@@ -683,7 +685,14 @@ if (($YrAgoFreq >= '11') AND ($YrAgoFreq <= '14'))  {$YrMoFreq_1YrBack_txt = '11
 if (($YrAgoFreq >= '15') AND ($YrAgoFreq <= '26'))  {$YrMoFreq_1YrBack_txt = '15-26';
 } ELSE {
 if ($YrAgoFreq >= '26') {$YrMoFreq_1YrBack_txt = '26+';
-}}}}}}}}}
+} ELSE {
+
+# ECHO PHP_EOL.$counter++.'  card:'.$CardNumber_db.' YrAgoFreq:'.$YrAgoFreq.' ODD CASE***'.$YrMoFreq_1YrBack_txt;
+
+IF ($YrAgoFreq > '0'){ECHO PHP_EOL.$counter++.'  card:'.$CardNumber_db.' YrAgoFreq:'.$YrAgoFreq.' Vis life'.$VisitsAccruedLife_db.' Not oddball ? ? ? ?'.$YrMoFreq_1YrBack_txt;
+
+
+}}}}}}}}}}
 
 
 #echo '12mo:'.$YrMoFreqSeg_1MoBack_txt.' 3mo:'.$YrMoFreqSeg_3MoBack_txt.' 1mo:'.$YrMoFreqSeg_12MoBack_txt.PHP_EOL;
