@@ -8,32 +8,23 @@
 # exec 1> >(logger -s -t $(basename $0)) 2>&1
 
 #UNCOMMENT NEXT FOR VERBOSE
-# set -x
+#set -x
 ##### HALT AND CATCH FIRE IF ANY COMMANd FAILS
 set -e
 
-##### BACK IT UP !!!!!!
-# SRG_Dev is getting backed up nightly 5-15-18
-# mysqldump  --login-path=local -uroot SRG_Dev > /home/ubuntu/db_files/SRG_Dev_bu.sql
 
-##### WE KEEP ARCHIVE OF ORIGINAL PX DATA FILES ON BERTHA, THEY SHOULD BE DUMPED AFTER PROCESSING
-# DELETE THE PREVIOUS INFILE FILE
-rm -f /home/ubuntu/db_files/incoming/px/Infile.CardActivity.csv
 
-#### YEARLY DATA FILES HAVE ONE HEADER ROW (tail -n+2)
-#### DAILY DATA FILES HAVE TWO HEADER ROWS (tail -n+3)
+##### BACK IT UP AFTER DUMPING OLD BACKUP (-f no error if file does not exist)
+
 ## REMOVE (1) HEADER ROW AND MERGE (IF NECCESSARY) INCOMING CARD ACTIVITY CSVs
 ## INTO SINGLE CARD ACTIVITY FILE IN DB_FILES
    for file in /home/ubuntu/db_files/incoming/px/CardActivity*.csv
   do
-      tail -n+2 "$file"  >> /home/ubuntu/db_files/incoming/px/Infile.CardActivity.csv
+#### MAKE A COPY OF THE FILE IN BACKUP DIR
+	# cp "$file" //home/ubuntu/db_files/incoming/px/backup/
+	tail -n+2 "$file"  >> /home/ubuntu/db_files/incoming/px/Infile.CardActivity.csv
   done
- echo 'INCOMING -dev- DATA FILES CLEANED AND MERGED, ARCHIVING ORIGINAL FILES'
-
-##### WE KEEP ARCHIVE OF ORIGINAL PX DATA FILES ON BERTHA, THEY SHOULD BE DUMPED AFTER PROCESSING
-# DELETE THE WORKING CARDACTIVITY CSV
-rm -f /home/ubuntu/db_files/incoming/px/CardActivity*.csv
-
+echo 'INCOMING -dev- DATA FILES CLEANED AND MERGED, ARCHIVING ORIGINAL FILES'
 
 
 # Delete Temp table if it exists
@@ -45,24 +36,29 @@ mysql  --login-path=local --silent -DSRG_Dev -N -e "CREATE TABLE CardActivity_Te
 echo 'TEMP TABLE CREATED, LOADING DATA FILE TO TEMP TABLE'
 
 # Load the data from the latest file into the (temp) CardActivity table
-
-mysql  --login-path=local --silent -DSRG_Dev -N -e "Load data local infile '/home/ubuntu/db_files/incoming/px/Infile.CardActivity.csv' into table CardActivity_Temp fields terminated by ',' lines terminated by '\n' (CardNumber,AccountCode,CustomerNo,CardTemplate,TransactionDate,TransactionType,StoreMerchant,StoreNumber,StoreName,WalletType,CheckNo,TerminalID,CashierID,IdentificationMethod,AccountStatus,Promotion,AuthCode,Sender,NewsletterAccrued,NewsletterRedeemed,NewsletterBalance,LifetimeSpendAccrued,LifetimeSpendRedeemed,LifetimeSpendBalance,3000BonusPointsAccrued,3000BonusPointsRedeemed,3000BonusPointsBalance,CoffeesBoughtAccrued,CoffeesBoughtRedeemed,CoffeesBoughtBalance,AddCoffeeAccrued,AddCoffeeRedeemed,AddCoffeeBalance,HappyBellyCoffeeAccrued,HappyBellyCoffeeRedeemed,HappyBellyCoffeeBalance,LTObucksAccrued,LTObucksRedeemed,LTObucksBalance,CheckSubtotalAccrued,CheckSubtotalRedeemed,CheckSubtotalBalance,DollarsSpentAccrued,DollarsSpentRedeemed,DollarsSpentBalance,KidsMenuTrackingAccrued,KidsMenuTrackingRedeemed,KidsMenuTrackingBalance,BeerTrackingAccrued,BeerTrackingRedeemed,BeerTrackingBalance,SushiTrackingAccrued,SushiTrackingRedeemed,SushiTrackingBalance,WineTrackingAccrued,WineTrackingRedeemed,WineTrackingBalance,StoreRegisteredAccrued,StoreRegisteredRedeemed,StoreRegisteredBalance,SereniteePointsAccrued,SereniteePointsRedeemed,SereniteePointsBalance,LifetimePointsAccrued,LifetimePointsRedeemed,LifetimePointsBalance,100PointsIncrementAccrued,100PointsIncrementRedeemed,100PointsIncrementBalance,FreeAppAccrued,FreeAppRedeemed,FreeAppBalance,FreeEntreeAccrued,FreeEntreeRedeemed,FreeEntreeBalance,FreeDessertAccrued,FreeDessertRedeemed,FreeDessertBalance,FreePizzaAccrued,FreePizzaRedeemed,FreePizzaBalance,FreeSushiAccrued,FreeSushiRedeemed,FreeSushiBalance,5500PointsAccrued,5500PointsRedeemed,5500PointsBalance,3500PointsAccrued,3500PointsRedeemed,3500PointsBalance,2500PointsAccrued,2500PointsRedeemed,2500PointsBalance,1Kpts5bksAccrued,1Kpts5bksRedeemed,1Kpts5bksBalance,VisitsAccrued,VisitsRedeemed,VisitsBalance,TWKTripAccrued,TWKTripRedeemed,TWKTripBalance,SpotTripAccrued,SpotTripRedeemed,SpotTripBalance,MagsTripAccrued,MagsTripRedeemed,MagsTripBalance,OpusTripAccrued,OpusTripRedeemed,OpusTripBalance,WalnutTripAccrued,WalnutTripRedeemed,WalnutTripBalance,HaleTripAccrued,HaleTripRedeemed,HaleTripBalance,CalasTripAccrued,CalasTripRedeemed,CalasTripBalance,LatTripAccrued,LatTripRedeemed,LatTripBalance,HBTripAccrued,HBTripRedeemed,HBTripBalance,SereniteeAccrued,SereniteeRedeemed,SereniteeBalance,BandCompAccrued,BandCompRedeemed,BandCompBalance,GreenDollarsAccrued,GreenDollarsRedeemed,GreenDollarsBalance,GreenLATAppAccrued,GreenLATAppRedeemed,GreenLATAppBalance,GreenALCAppAccrued,GreenALCAppRedeemed,GreenALCAppBalance,GreenOPUSAppAccrued,GreenOPUSAppRedeemed,GreenOPUSAppBalance,GreenCALAppAccrued,GreenCALAppRedeemed,GreenCALAppBalance,GreenSPOTAppAccrued,GreenSPOTAppRedeemed,GreenSPOTAppBalance,GreenHALEAppAccrued,GreenHALEAppRedeemed,GreenHALEAppBalance,GreenWINCAppAccrued,GreenWINCAppRedeemed,GreenWINCAppBalance,GreenMAGsAppAccrued,GreenMAGsAppRedeemed,GreenMAGsAppBalance,GreenWALAppAccrued,GreenWALAppRedeemed,GreenWALAppBalance,CompAccrued,CompRedeemed,CompBalance,SereniteeGiftCardAccrued,SereniteeGiftCardRedeemed,SereniteeGiftCardBalance,SVDiscountTrackingAccrued,SVDiscountTrackingRedeemed,SVDiscountTrackingBalance)"
-
+mysql  --login-path=local --silent -DSRG_Dev -N -e "Load data local infile '/home/ubuntu/db_files/incoming/px/Infile.CardActivity.csv' into table CardActivity_Temp fields terminated by ',' lines terminated by '\n'"
 echo 'CARDACTIVITY DATA LOADED INTO CardActivity_Temp'
 
 
 
-### DEV FOR YEARLY FILES
-#mv /home/ubuntu/db_files/incoming/px/*.csv /home/ubuntu/db_files/archive/
-#echo 'CARDACTIVITY -dev- DATA FILES DELETED'
- 
+############## WE can do an 
+
+
+
+# DELETE THE WORKING CARDACTIVITY CSVS
+#rm -f /home/ubuntu/db_files/incoming/px/CardActivity*.csv
+rm -f /home/ubuntu/db_files/incoming/px/Infile.CardActivity.csv
+
+
+
+
 ### INDEX CARD TEMPLATE AND TRANSACTIONTYPE, CardNumber
 mysql  --login-path=local --silent -DSRG_Dev -N -e "ALTER TABLE CardActivity_Temp ADD INDEX(TransactionType)"
 mysql  --login-path=local --silent -DSRG_Dev -N -e "ALTER TABLE CardActivity_Temp ADD INDEX(CardNumber)"
 echo 'CARDACTIVITY -dev- TransactionType and CardNumber indexed'
 
 
-
+echo 'DELETING EXTRANEOUS RECORDS BY TRANSACTION TYPES'
 ### REMOVE ANY/ALL RECORDS THAT ARE NOT WORTH PROCESSING ! ! ! !
 mysql  --login-path=local --silent -DSRG_Dev -N -e "DELETE FROM CardActivity_Temp WHERE CardTemplate != 'Serenitee Loyalty'"
 echo '10% deleted'
@@ -90,8 +86,6 @@ mysql  --login-path=local --silent -DSRG_Dev -N -e "DELETE FROM CardActivity_Tem
 echo '90% deleted'
 mysql  --login-path=local --silent -DSRG_Dev -N -e "DELETE FROM CardActivity_Temp WHERE CardNumber = '0'"
 echo '100% deleted, ADDING LOCATIONID FIELD'
-
-
 
 # CREATE LOCATIONID FIELD
 mysql  --login-path=local --silent -DSRG_Dev -N -e "ALTER TABLE CardActivity_Temp ADD LocationID INT( 3 ) first"
@@ -149,16 +143,25 @@ mysql  --login-path=local --silent -DSRG_Dev -N -e "UPDATE CardActivity_Temp SET
 done
 echo 'PX CHECKNUMBERS MISSING 100 FIXED, UPDATING POSKEYS IN TEMP TABLE'
 
-
 echo 'CORRELATING/FIXING PX CHECKNUMBERS MISSING 100'
 ##### Update POSkey field (location + TransactionDate[excel format][no decimal] + checknumber)
 mysql  --login-path=local --silent -DSRG_Dev -N -e "UPDATE CardActivity_Temp set POSkey = CONCAT_WS('', LocationID, Exceldate, CheckNo)"
-echo 'UPDATED POSKEYS IN TEMP TABLE, DROPPING EXCELDATE'
+echo 'UPDATED POSKEYS IN TEMP TABLE'
 
 ######## DROP UNNEEDED TEMP FIELDS
 mysql  --login-path=local --silent -DSRG_Dev -N -e "ALTER TABLE CardActivity_Temp DROP Exceldate"
 echo 'DROPPED Exceldate fields from temp table'
 
+
+
 ########### UPDATE THE CardActivitylive table
 mysql  --login-path=local --silent -DSRG_Dev -N -e "INSERT INTO CardActivity_Live SELECT * FROM CardActivity_Temp"
+
 echo 'Data inserted into CardActivity_Live, done.'
+
+
+echo 'Script Completed'
+
+
+
+

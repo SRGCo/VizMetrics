@@ -1,5 +1,5 @@
 #! /bin/bash
-
+### OK 7-23-18 #####
 
 # UNCOMMENT TO LOG IT TO SYSLOG
 # exec 1> >(logger -s -t $(basename $0)) 2>&1
