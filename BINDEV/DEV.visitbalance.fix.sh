@@ -32,34 +32,34 @@ OddCase=$'0'
 set -x
 
 ### VISIT BALANCE FIX ####################### WE WILL PROCESS EVERY CARD
-mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(CardNumber) FROM CardActivity_Live ORDER BY CardNumber ASC" | while read -r CardNumber;
+mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(CardNumber) FROM Master ORDER BY CardNumber ASC" | while read -r CardNumber;
 do
 	######## GET FIRST DATE
-	Min_dob=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT MIN(TransactionDate) from CardActivity_Live 
+	Min_dob=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT MIN(TransactionDate) from Master 
 									WHERE CardNumber = '$CardNumber'")
 
 	######## IF A BALANCE GREATER THAN 1 ON min_dob THEN THIS WAS AN EXCHANGED CARD
-	CarriedBal=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT MAX(VisitsBalance) from CardActivity_Live 
+	CarriedBal=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT MAX(VisitsBalance) from Master 
 									WHERE TransactionDate = '$Min_dob' AND CardNumber = '$CardNumber'")
 ####  AN EXCHANGE IF THE VISITBALANCE ON THE FIRST TRANSACTION
 if [ "$CarriedBal"  -gt "1" ]
 	then
 		echo $CardNumber"   First Day: "$Min_dob"    EXCHANGED!!! CARRIED "$CarriedBal" # Visits"
 		##### PX counts are correct
-		mysql  --login-path=local -DSRG_Dev -N -e "UPDATE CardActivity_Live SET Vm_VisitsBalance = VisitsBalance, 
+		mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET Vm_VisitsBalance = VisitsBalance, 
 								Vm_VisitsAccrued = VisitsAccrued WHERE CardNumber = '$CardNumber' "
 	ExchangeCounter=$[$ExchangeCounter +1]
 else
 	############## PROCESS CARDS THAT WERE NOT EXCHANGED
 	####### WHEN WAS THIS CARD ACTIVATED
-	ActivDate=$(mysql --login-path=local -DSRG_Dev -N -e "SELECT TransactionDate FROM CardActivity_Live WHERE CardNumber = '$CardNumber' AND TransactionType = 'Activate'")
+	ActivDate=$(mysql --login-path=local -DSRG_Dev -N -e "SELECT TransactionDate FROM Master WHERE CardNumber = '$CardNumber' AND TransactionType = 'Activate'")
 	
 	####### WAS THERE VISIT ACCRUED ON ACTIVATIONDATE
-	ActivVisit=$(mysql --login-path=local -DSRG_Dev -N -e "SELECT MAX(VisitsBalance) FROM CardActivity_Live WHERE CardNumber = '$CardNumber' AND TransactionDate = '$ActivDate'")
+	ActivVisit=$(mysql --login-path=local -DSRG_Dev -N -e "SELECT MAX(VisitsBalance) FROM Master WHERE CardNumber = '$CardNumber' AND TransactionDate = '$ActivDate'")
 	if [ "$ActivVisit" = "1" ]
 	then
 		# echo $CardNumber"  Should have earliest visit accrual deleted, they accrued on activation day."
-		mysql  --login-path=local -DSRG_Dev -N -e "UPDATE CardActivity_Live SET VisitsBalance = '0', VisitsAccrued = '0' WHERE CardNumber = '$CardNumber' AND TransactionDate = '$ActivDate' "
+		mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET VisitsBalance = '0', VisitsAccrued = '0' WHERE CardNumber = '$CardNumber' AND TransactionDate = '$ActivDate' "
 
 		### They did not accrue on activation day because card was pre-activated, but they did accrue on the day they got the card
 	NoExchange=$[$NoExchange +1]

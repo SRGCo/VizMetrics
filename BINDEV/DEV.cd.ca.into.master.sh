@@ -23,15 +23,16 @@ mysql  --login-path=local -DSRG_Dev -N -e "INSERT INTO Master_temp SELECT CD.*, 
 						LEFT JOIN CardActivity_squashed_2 AS CA ON CD.POSkey = CA.POSkey 
 						UNION SELECT CD.*, CA.* FROM .CheckDetail_Live as CD 
 						RIGHT JOIN CardActivity_squashed_2 AS CA ON CD.POSkey = CA.POSkey"
-# echo 'UBER JOIN COMPLETED, /outfiles/joined.cd.ca.csv CREATED'
-echo 'Uber join data inserted into Master_temp'
+
+# echo 'UBER JOIN COMPLETED'
+echo 'UBER JOIN DATA INSERTED INTO Master_temp'
 
 # Create enroll_date and Account_status fields
 mysql  --login-path=local --silent -DSRG_Dev -N -e "ALTER TABLE Master_temp ADD EnrollDate VARCHAR(11)"
 # Create POSkey field
 mysql  --login-path=local --silent -DSRG_Dev -N -e "ALTER TABLE Master_temp ADD Account_status VARCHAR(26)"
 mysql  --login-path=local --silent -DSRG_Dev -N -e "ALTER TABLE Master_temp ADD INDEX(Account_status)"
-echo 'Added enroll_date and account status to Master_temp'
+echo 'ADDED ENROLLDATE AND Account_status TO Master_temp'
 
 
 ##### CALC THE (non-dynamic) FREQUENCY FIELDS -FY Y-LUNA
@@ -41,7 +42,8 @@ echo 'Added enroll_date and account status to Master_temp'
 ###### -e is the 'read statement and quit'
 ###################### This was going to only go 3 months back but we rebuild master every time so that is not possible in this build ###########
 
-mysql  --login-path=local -DSRG_Dev -N -e "SELECT Master_temp.DOB FROM Master_temp GROUP BY Master_temp.DOB WHERE Master_temp.DOB IS NOT NULL ORDER BY Master_temp.DOB DESC" | while read -r TransactionDate;
+mysql  --login-path=local -DSRG_Dev -N -e "SELECT Master_temp.DOB FROM Master_temp WHERE Master_temp.DOB IS NOT NULL 
+				GROUP BY Master_temp.DOB ORDER BY Master_temp.DOB DESC" | while read -r TransactionDate;
 do
 
 	######## GET FY FOR THIS TransactionDate (DOB)
@@ -62,36 +64,43 @@ done
 echo FY YLUNA CALCD POPULATED
 
 ######## UPDATE ACCOUNT STATUS FROM GUEST TABLE
-mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_temp JOIN Guests ON Master_temp.CardNumber = Guests.CardNumber SET Master_temp.EnrollDate = Guests.EnrollDate, Master_temp.Account_status = Guests.AccountStatus"
-echo 'Account Status updated from Guests table'
+mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_temp JOIN Guests_Master ON Master_temp.CardNumber = Guests_Master.CardNumber 
+							SET Master_temp.EnrollDate = Guests_Master.EnrollDate, Master_temp.Account_status = Guests_Master.AccountStatus"
+echo 'ACCOUNT STATUSES UPDATED FROM Guests_Master TABLE'
+
 mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_temp JOIN Px_exchanges ON Master_temp.CardNumber = Px_exchanges.CurrentCardNumber SET Master_temp.Account_status = 'Exchange'"
-echo 'EXCHANGED accounts account status updated from px_exchanges table'
+echo 'EXCHANGED ACCOUNTS UPDATED FROM px_exchanges TABLE'
+
 mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_temp JOIN Excludes ON Master_temp.CardNumber = Excludes.CardNumber SET Master_temp.Account_status = 'Exclude'"
-echo 'EXCLUDED accounts account status updated from Excludes table'
+echo 'EXCLUDED ACCOUNTS USING Excludes TABLE'
 
 ######## UPDATE THE EMPTY CHECKDETAIL FIELDS WITH PX DATA
-mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_temp SET CheckNumber = CheckNo WHERE CheckNumber IS NULL"
-echo Empty CheckNumber-s populated from CheckNo
+mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_temp SET CheckNumber = CheckNo_px WHERE CheckNumber IS NULL"
+echo EMPTY CHECKNO POPULATED FROM PX DATA
+
 mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_temp SET DOB = TransactionDate WHERE DOB IS NULL"
-echo Empty DOB-s populated from TransactionDate
+echo Empty DOB-s POPULATED FROM PX DATA
+
 mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_temp SET LocationID = LocationID_px WHERE LocationID IS NULL"
-echo Empty LocationID-s populated form LocationID_px
+echo Empty LocationID-s POPULATED FROM PX DATA
+
 mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_temp SET POSkey = POSKey_px WHERE POSkey IS NULL"
-echo Empty POSkey-s populated from POSkey_px
+echo Empty POSkey-s POPULATED FROM PX DATA
+
 mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_temp SET GrossSalesCoDefined = DollarsSpentAccrued WHERE GrossSalesCoDefined IS NULL 
 						AND Master_temp.Account_status <> 'TERMIN' AND Master_temp.Account_status <> 'SUSPEN' 
 						AND Master_temp.Account_status <> 'Exchanged' AND Master_temp.Account_status <> 'Exchange' 
 						AND Master_temp.Account_status <> 'Exclude'"
-echo 'Empty GrossSalesCoDefined-s Populated (PROMOS OR COMPS COULD NOT BE ADD, LOWBALL FIGURES)'
+echo 'EMPTY GrossSalesCoDefined-s POPULATED (PROMOS OR COMPS COULD NOT BE ADD, LOWBALL FIGURES)'
 
 ## TRUNCATE Master TABLE BEFORE LOADING W NEW
 # Delete Temp table if it exists
 
 mysql  --login-path=local --silent -DSRG_Dev -N -e "TRUNCATE TABLE Master"
-echo 'Table Master Emptied'
+echo 'TABLE Master TRUNCATED'
 
 
 ####### COPY TEMP DATA INTO MASTER
 mysql  --login-path=local --silent -DSRG_Dev -N -e "INSERT INTO Master SELECT * FROM Master_temp"
-echo 'Data inserted into Master table'
+echo 'DATA INSERTED INTO Master TABLE'
 
