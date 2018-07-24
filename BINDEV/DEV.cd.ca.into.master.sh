@@ -3,7 +3,7 @@
 # exec 1> >(logger -s -t $(basename $0)) 2>&1
 
 # UNCOMMENT NEXT FOR VERBOSE
-# set -x
+#set -x
 ##### HALT AND CATCH FIRE IF ANY COMMAND FAILS
 set -e
 
@@ -41,7 +41,7 @@ echo 'Added enroll_date and account status to Master_temp'
 ###### -e is the 'read statement and quit'
 ###################### This was going to only go 3 months back but we rebuild master every time so that is not possible in this build ###########
 
-mysql  --login-path=local -DSRG_Dev -N -e "SELECT Master_temp.DOB FROM Master_temp GROUP BY Master_temp.DOB ORDER BY Master_temp.DOB DESC" | while read -r TransactionDate;
+mysql  --login-path=local -DSRG_Dev -N -e "SELECT Master_temp.DOB FROM Master_temp GROUP BY Master_temp.DOB WHERE Master_temp.DOB IS NOT NULL ORDER BY Master_temp.DOB DESC" | while read -r TransactionDate;
 do
 
 	######## GET FY FOR THIS TransactionDate (DOB)
