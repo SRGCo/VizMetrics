@@ -202,6 +202,7 @@ ECHO $CardNumber_db;
 			}
 			### IF THERE IS NO LAST VISIT DATE SKIP THIS RECORD
 			IF (EMPTY($LastVisitDate_db)){
+				ECHO 'Card '.$CardNumber_db.' Last transaction date '.$LastVisitDate_db.' is empty, no vm_visitaccrued, focusdate ='.$FocusDate.PHP_EOL;
 				goto end;
 			} 
 		
@@ -704,6 +705,7 @@ if ($PrevYearVisitBal_db >= '26') {$YrMoFreq_1YrBack_txt = '26+';}
 	$result16 = mysqli_query($dbc, $query16);	
 	ECHO MYSQLI_ERROR($dbc);
 
+// IF NO MAX TRANSACTIONDATE FOR THIS CARD END 
 end:
 
 
@@ -713,6 +715,9 @@ $FocusDate = date("Y-m-d",strtotime($FocusDate." +1 month "));
 $FocusDateEnd = date("Y-m-d",strtotime($FocusDate." +2 month - 1 day "));
 
 }
+
+
+
 
 // END OF CARD NUMBER WHILE LOOP
 }
