@@ -78,7 +78,7 @@ do
 
 	##### FIX THE MULTI TRANS ON DAY 1
 	############## AFTER WE FIGURE OUT WHY IT HAPPENS
-	# mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_test SET Vm_VisitsBalance = '0' WHERE Vm_VisitsBalance ='-1'"
+	mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_test SET Vm_VisitsBalance = '0' WHERE Vm_VisitsBalance ='-1'"
 
 
 done
