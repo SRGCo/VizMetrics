@@ -21,14 +21,16 @@ mysqli_select_db($dbc, DB_NAME)
 $counter = 0;
 
 // TRUNCATE table Px_Monthly"
-$query_table= "TRUNCATE table Px_Monthly";
-$result_table = mysqli_query($dbc, $query_table);	
-ECHO MYSQLI_ERROR($dbc);
-ECHO 'Px_Monthly TRUNCATED FOR FULL RUN!!!!!!';
+#$query_table= "TRUNCATE table Px_Monthly";
+#$result_table = mysqli_query($dbc, $query_table);	
+#ECHO MYSQLI_ERROR($dbc);
+#ECHO 'Px_Monthly TRUNCATED FOR FULL RUN!!!!!!';
+ECHO 'Px_Monthly ##NOT## TRUNCATED FOR Partial RUN!!!!!!';
 
 //QUERY MASTER FOR CARDNUMBER
 # NOT USING -- 	AND MOD(CardNumber, 200) = '0'
-$query1 = "SELECT DISTINCT(CardNumber) as CardNumber FROM Guests_Master	
+$query1 = "SELECT DISTINCT(CardNumber) as CardNumber FROM Guests_Master
+				WHERE CardNumber >= '6000227901380242'	
 					ORDER BY CardNumber ASC";
 $result1 = mysqli_query($dbc, $query1);
 ECHO MYSQLI_ERROR($dbc);
@@ -90,7 +92,7 @@ ECHO $CardNumber_db;
 	$query2 = "SELECT MAX(TransactionDate) as MaxDate, 
 				YEAR(MIN(TransactionDate)) as MinDateYear,
 				MONTH(MIN(TransactionDate)) as MinDateMonth, 
-				MAX(Vm_VisitsBalance) as Vm_VisitsBalance, 
+				MAX(VisitsBalance) as VisitsBalance, 
 				CURDATE() as TodayDate 
 				FROM Master WHERE CardNumber = '$CardNumber_db'";
 	$result2 = mysqli_query($dbc, $query2);	
@@ -99,7 +101,7 @@ ECHO $CardNumber_db;
 		$MaxDate_db = $row1['MaxDate'];
 		$MinDateMonth_db = $row1['MinDateMonth'];
 		$MinDateYear_db = $row1['MinDateYear'];
-		$VisitBalance_db = $row1['Vm_VisitsBalance'];
+		$VisitBalance_db = $row1['VisitsBalance'];
 		$CurrentDate_db = $row1['TodayDate'];
 	}
 
@@ -194,7 +196,7 @@ ECHO $CardNumber_db;
 					FROM Master 
 					WHERE CardNumber = '$CardNumber_db'
 					AND TransactionDate <= '$FocusDate'				
-					AND Vm_VisitsAccrued = '1'";
+					AND VisitsAccrued = '1'";
 			$result5a = mysqli_query($dbc, $query5a);	
 			ECHO MYSQLI_ERROR($dbc);
 			while($row1 = mysqli_fetch_array($result5a, MYSQLI_ASSOC)){
