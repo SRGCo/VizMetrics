@@ -1,3 +1,16 @@
+find the diference in cardnumbers between two tables
+
+
+ 
+        SELECT CardNumber FROM Master
+   WHERE (CardNumber) NOT IN 
+      (SELECT CardNumber FROM Px_Monthly);
+
+
+
+
+
+
 ####  AN EXCHANGE
 if [ "$CarriedBal"  -gt "1" ]
 	then
