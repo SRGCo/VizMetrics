@@ -21,7 +21,7 @@ set -e
    for file in /home/ubuntu/db_files/incoming/px/CardActivity*.csv
   do
 #### MAKE A COPY OF THE FILE IN BACKUP DIR
-	# cp "$file" //home/ubuntu/db_files/incoming/px/backup/
+	cp "$file" //home/ubuntu/db_files/incoming/px/backup/
 	tail -n+2 "$file"  >> /home/ubuntu/db_files/incoming/px/Infile.CardActivity.csv
   done
 echo 'INCOMING -dev- DATA FILES CLEANED AND MERGED, ARCHIVING ORIGINAL FILES'
@@ -32,7 +32,7 @@ mysql  --login-path=local --silent -DSRG_Dev -N -e "DROP TABLE IF EXISTS CardAct
 echo 'TEMP TABLE DROPPED, STARTING NEW TEMP TABLE CREATION'
 
 # Create a empty copy of CardActivity table from CardActivityStructure table
-mysql  --login-path=local --silent -DSRG_Dev -N -e "CREATE TABLE CardActivity_Temp LIKE CardActivity_Structure"
+mysql  --login-path=local --silent -DSRG_Dev -N -e "CREATE TABLE CardActivity_Temp LIKE CardActivity_Structure_new"
 echo 'TEMP TABLE CREATED, LOADING DATA FILE TO TEMP TABLE'
 
 # Load the data from the latest file into the (temp) CardActivity table
@@ -46,7 +46,7 @@ echo 'CARDACTIVITY DATA LOADED INTO CardActivity_Temp'
 
 
 # DELETE THE WORKING CARDACTIVITY CSVS
-#rm -f /home/ubuntu/db_files/incoming/px/CardActivity*.csv
+rm -f /home/ubuntu/db_files/incoming/px/CardActivity*.csv
 rm -f /home/ubuntu/db_files/incoming/px/Infile.CardActivity.csv
 
 
