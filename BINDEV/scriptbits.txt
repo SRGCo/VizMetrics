@@ -1,13 +1,7 @@
 find the diference in cardnumbers between two tables
 
 
- 
-        SELECT CardNumber FROM Master
-   WHERE (CardNumber) NOT IN 
-      (SELECT CardNumber FROM Px_Monthly);
-
-
-
+SELECT A.primary_key FROM A LEFT JOIN B ON A.primary_key=B.primary_key WHERE B.primary_key IS NULL
 
 
 
