@@ -30,6 +30,7 @@ ECHO 'Px_Monthly TRUNCATED FOR FULL RUN!!!!!!';
 //QUERY MASTER FOR CARDNUMBER
 # NOT USING -- 	AND MOD(CardNumber, 200) = '0'
 $query1 = "SELECT DISTINCT(CardNumber) as CardNumber FROM Guests_Master	
+					where CardNumber = '6000227900004413'
 					ORDER BY CardNumber ASC";
 $result1 = mysqli_query($dbc, $query1);
 ECHO MYSQLI_ERROR($dbc);
@@ -80,9 +81,6 @@ $YrMoFreqSeg_3MoBack_txt = '';
 $YrMoFreqSeg_1MoBack_txt = '';
 $YrMoFreq_1YrBack_txt = '';
 
-$Firstrun = 'Yup';
-
-
 $counter++;
 $printcount = fmod($counter, 500);
 IF ($printcount == '0'){
@@ -93,7 +91,7 @@ ECHO $CardNumber_db;
 	$query2 = "SELECT MAX(TransactionDate) as MaxDate, 
 				YEAR(MIN(TransactionDate)) as MinDateYear,
 				MONTH(MIN(TransactionDate)) as MinDateMonth, 
-				MAX(VM_VisitsBalance) as VisitsAccruedLife, 
+				MAX(Vm_VisitsBalance) as VisitsAccruedLife,
 				CURDATE() as TodayDate 
 				FROM Master WHERE CardNumber = '$CardNumber_db'";
 	$result2 = mysqli_query($dbc, $query2);	
@@ -102,8 +100,8 @@ ECHO $CardNumber_db;
 		$MaxDate_db = $row1['MaxDate'];
 		$MinDateMonth_db = $row1['MinDateMonth'];
 		$MinDateYear_db = $row1['MinDateYear'];
-		$VisitsAccruedLife_db = $row1['VisitsAccruedLife'];
 		$CurrentDate_db = $row1['TodayDate'];
+		$VisitsAccruedLife_db = $row1['VisitsAccruedLife'];
 	}
 
 	
@@ -132,14 +130,15 @@ ECHO $CardNumber_db;
 	}
 	# ECHO 'FocusDate: '. $FocusDate;
 	# ECHO ' FDend:'.$FocusDateEnd.' MaxDate'.$MaxDate_db.';
-	# ECHO ' MinDateMo'.$MinDateMonth_db.' MinDateYr '.$MinDateYear_db;
+	# ECHO ' MinDateMo'.$MinDateMonth_db.' MinDateYr '.$MinDateYear_db.;
 	# ECHO ' CurDate'.$CurrentDate_db.' Focusdate '.$FocusDate.PHP_EOL;
 
 
 		#FIELDS = LIFETIMESPENDBALANCE, LIFETIMEPOINTSREDEEMED, LIFETIMEPOINTSBALANCE, LIFETIMEVISITBALANCE
 		$query3a ="SELECT SUM(DollarsSpentAccrued) as DollarsSpentLife, 
 				SUM(SereniteePointsRedeemed) as PointsRedeemedLife, 
-				SUM(SereniteePointsAccrued) as PointsAccruedLife
+				SUM(SereniteePointsAccrued) as PointsAccruedLife, 
+				SUM(Vm_VisitsAccrued) as VisitsAccruedLife 
 				FROM Master WHERE CardNumber = '$CardNumber_db'
 				AND TransactionDate < '$FocusDate'";
 		$result3a = mysqli_query($dbc, $query3a);	
@@ -147,9 +146,9 @@ ECHO $CardNumber_db;
 		while($row1 = mysqli_fetch_array($result3a, MYSQLI_ASSOC)){
 			$DollarsSpentLife_db = $row1['DollarsSpentLife'];
 			$PointsRedeemedLife_db = $row1['PointsRedeemedLife'];
-			$PointsAccruedLife_db = $row1['PointsAccruedLife']; 
+			$PointsAccruedLife_db = $row1['PointsAccruedLife'];
 		}
-
+		ECHO '$VisitsAccruedLife_db='.$VisitsAccruedLife_db;
 		// WHILE FOCUSDATE IS LESS THAN TODAYS DATE REPEAT QUERIES
 		WHILE ($FocusDate <= $CurrentDate_db){
 		
@@ -203,11 +202,7 @@ ECHO $CardNumber_db;
 			}
 			### IF THERE IS NO LAST VISIT DATE SKIP THIS RECORD
 			IF (EMPTY($LastVisitDate_db)){
-				IF ($Firstrun <> 'Nope'){
-					ECHO 'Card '.$CardNumber_db.' Last transaction date '.$LastVisitDate_db;
-					ECHO ' is empty, no vm_visitaccrued, focusdate ='.$FocusDate.PHP_EOL;
-				}
-				$Firstrun = 'Nope';
+				ECHO 'Card '.$CardNumber_db.' Last transaction date '.$LastVisitDate_db.' is empty, no vm_visitaccrued, focusdate ='.$FocusDate.PHP_EOL;
 				goto end;
 			} 
 		
@@ -424,6 +419,7 @@ ECHO $CardNumber_db;
 			ECHO MYSQLI_ERROR($dbc);
 
 
+		ECHO 'post insert $VisitsAccruedLife_db='.$VisitsAccruedLife_db;
 
 
 ##### RETRIEVE PRIOR VALUES
