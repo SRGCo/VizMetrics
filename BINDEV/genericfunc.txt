@@ -1,0 +1,22 @@
+
+
+function yrseg ($historicalvisitbal, $lifetimevisitbal)
+{
+	if (($historicalvisitbal == '0') AND ($lifetimevisitbal > '0')) {$segement_txt = 'Dropout';
+} ELSE {
+	if (($historicalvisitbal == '0') AND ($lifetimevisitbal == '0')) {$segement_txt = 'DOA';
+} ELSE {
+	if (($historicalvisitbal >= '1') AND ($historicalvisitbal <= '2'))  {$segement_txt = '1-2';
+} ELSE {
+	if (($historicalvisitbal >= '3') AND ($historicalvisitbal <= '4')) {$segement_txt = '3-4';
+} ELSE {
+	if (($historicalvisitbal >= '5') AND ($historicalvisitbal <= '7'))  {$segement_txt = '5-7';
+} ELSE {
+	if (($historicalvisitbal >= '8') AND ($historicalvisitbal <= '10'))  {$segement_txt = '8-10';
+} ELSE {
+	if (($historicalvisitbal >= '11') AND ($historicalvisitbal <= '14'))  {$segement_txt = '11-14';
+} ELSE {
+	if (($historicalvisitbal >= '15') AND ($historicalvisitbal <= '26'))  {$segement_txt = '15-26';
+} ELSE {
+	if ($historicalvisitbal >= '26') {$segement_txt = '26+';	} 
+} } } } } } } } 
