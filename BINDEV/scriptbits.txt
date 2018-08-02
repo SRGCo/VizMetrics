@@ -1,5 +1,17 @@
 find the diference in cardnumbers between two tables
 
+SELECT CardNumber
+FROM (
+    SELECT CardNumber FROM Master
+UNION ALL
+    SELECT CardNummber FROM Px_Monthly
+    ) tbl
+GROUP BY CardNumber
+HAVING count(*) = 1
+ORDER BY CardNumber;
+
+
+
 
 SELECT A.primary_key FROM A LEFT JOIN B ON A.primary_key=B.primary_key WHERE B.primary_key IS NULL
 
