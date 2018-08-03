@@ -50,6 +50,7 @@ ECHO MYSQLI_ERROR($dbc);
 ECHO 'Px_Monthly TRUNCATED FOR FULL RUN!!!!!!';
 #ECHO 'Px_Monthly ##NOT## TRUNCATED FOR Partial RUN!!!!!!';
 
+
 //QUERY MASTER FOR CARDNUMBER
 # NOT USING -- 	AND MOD(CardNumber, 200) = '0'
 $query1 = "SELECT DISTINCT(CardNumber) as CardNumber FROM Guests_Master	
@@ -73,9 +74,11 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	$YrMoFreqSeg_12MoBack_txt = $YrMoFreqSeg_3MoBack_txt = $YrMoFreqSeg_1MoBack_txt = $YrMoFreq_1YrBack_txt = '';
 
 	$segment_txt = '';
+	$Carryover_LastVisitDate = '';
+
 	
-	# firstrun is for debugging
-	# $Firstrun = 'Yup';
+	#firstrun is for debugging
+	$Firstrun = 'Yup';
 
 	$counter++;
 	$printcount = fmod($counter, 500);
@@ -197,16 +200,18 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 			while($row1 = mysqli_fetch_array($result5a, MYSQLI_ASSOC)){
 				$LastVisitDate_db = $row1['LastVisitDate'];
 			}
-			### IF THERE IS NO LAST VISIT DATE SKIP THIS RECORD
+	### IF THERE IS NO LAST VISIT DATE SKIP THIS RECORD
 			IF (EMPTY($LastVisitDate_db)){
-				#IF ($Firstrun <> 'Nope'){
-				#	ECHO 'Card '.$CardNumber_db.' Last transaction date '.$LastVisitDate_db;
-				#	ECHO ' is empty, no vm_visitaccrued, focusdate ='.$FocusDate.PHP_EOL;
-				#}
-				# $Firstrun = 'Nope';
-				goto end;
-			} 
-		
+				IF ($Firstrun == 'Yup'){
+					$LastVisitDate_db = $EnrollDate_db;
+					$Firstrun = 'Nope';
+				} ELSE {
+					$LastVisitDate_db = $Carryover_LastVisitDate;
+					$Firstrun = 'Nope';
+				}
+			} ELSE { $Firstrun = 'Nope';}
+	ECHO 'Card: '.$CardNumber_db.'  Last Visit Date: '.$LastVisitDate_db. ' Firstrun:'.$Firstrun.PHP_EOL;
+	
 			#FIELD = LAPSEDAYS
 			$query6= "SELECT DATEDIFF('$FocusDate', MAX(TransactionDate)) as LapseDays
 					FROM Master
@@ -403,6 +408,8 @@ end:
 
 $FocusDate = date("Y-m-d",strtotime($FocusDate." +1 month "));
 $FocusDateEnd = date("Y-m-d",strtotime($FocusDate." +2 month - 1 day "));
+
+$Carryover_LastVisitDate = $LastVisitDate_db;
 
 }
 
