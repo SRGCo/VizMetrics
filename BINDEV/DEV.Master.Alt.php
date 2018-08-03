@@ -17,31 +17,43 @@ $dbc = mysqli_connect(DB_HOST, DB_USER, DB_PASSWORD)
 mysqli_select_db($dbc, DB_NAME)
 	OR die('Could not connect to the database:'.MYSQLI_ERROR($dbc));
 
-### INIT Variables
-$counter = 0;
-
-// TRUNCATE table Px_Monthly_alt"
-$query_table= "TRUNCATE table Master_Alt";
-$result_table = mysqli_query($dbc, $query_table);	
-ECHO MYSQLI_ERROR($dbc);
-ECHO 'Truncated Master_Alt';
 
 //QUERY FOR CARDNUMBER
 
 // WE COULD ALSO QUERY FOR POSkey (AFTER ADDING THE FIELD TO MONTHLY WHICH WOULD ALWAYS BE EMPTY)
 // THEN ONLY INSERT THE RECORDS THAT HAVE A POSksy VALUE IN Master_Alt
-$query1 = "SELECT CardNumber FROM 
-		(SELECT CardNumber FROM Master UNION ALL SELECT CardNumber FROM Px_Monthly) 
-			tbl GROUP BY CardNumber HAVING count(*) = 1 ORDER BY CardNumber";
+$query1 = "SELECT CardNumber FROM Master_Alt ORDER BY CardNumber"; 
 $result1 = mysqli_query($dbc, $query1);
 ECHO MYSQLI_ERROR($dbc);
 while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	$CardNumber_db = $row1['CardNumber'];
-	$query2 = "INSERT into Master_Alt
-			SELECT * FROM Master
+	$query4 = "SELECT MAX(POSkey) as POSkey from Master
 			WHERE CardNumber = '$CardNumber_db'";
-	$result2 = mysqli_query($dbc, $query2);
+	$result4 = mysqli_query($dbc, $query4);
 	ECHO MYSQLI_ERROR($dbc);
+	while($row1 = mysqli_fetch_array($result4, MYSQLI_ASSOC)){
+		$POSkey_db = $row1['POSkey'];
+		ECHO $CardNumber_db.' '.$POSkey_db.' '.PHP_EOL;
+		IF ($POSkey_db >= '1'){
+			$query3 = "UPDATE Master_Alt
+				SET LifetimeSpendBalance = 'MA'
+				WHERE CardNumber = '$CardNumber_db'";
+						
+		} ELSE {
+			$query3 = "UPDATE Master_Alt
+				SET LifetimeSpendBalance = 'PX'
+				WHERE CardNumber = '$CardNumber_db'";
+				echo 'PX'.PHP_EOL;
+
+	
+		}
+
+	$result3 = mysqli_query($dbc, $query3);
+	ECHO MYSQLI_ERROR($dbc);
+	
+
+	}
+
 
 
 
