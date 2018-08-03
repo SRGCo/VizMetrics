@@ -88,9 +88,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	}
 
 	#### GET THE MIN AND MAX TRANSACTIONDATE AND THE MAX VISIT BALANCE
-	$query2 = "SELECT MAX(TransactionDate) as MaxDate, 
-				YEAR(MIN(TransactionDate)) as MinDateYear,
-				MONTH(MIN(TransactionDate)) as MinDateMonth, 
+	$query2 = "SELECT MAX(TransactionDate) as MaxDate,  
 				MAX(VM_VisitsBalance) as VisitsAccruedLife, 
 				CURDATE() as TodayDate 
 				FROM Master WHERE CardNumber = '$CardNumber_db'";
@@ -98,19 +96,21 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	ECHO MYSQLI_ERROR($dbc);
 	while($row1 = mysqli_fetch_array($result2, MYSQLI_ASSOC)){	
 		$MaxDate_db = $row1['MaxDate'];
-		$MinDateMonth_db = $row1['MinDateMonth'];
-		$MinDateYear_db = $row1['MinDateYear'];
 		$VisitsAccruedLife_db = $row1['VisitsAccruedLife'];
 		$CurrentDate_db = $row1['TodayDate'];
 	}
 	IF ($VisitsAccruedLife_db == ''){$VisitsAccruedLife_db = '0';}
 	
 	# GET FIRSTNAME, LASTNAME, ENROLLDATE, ZIP
-	$query3 = "SELECT FirstName, LastName, EnrollDate, Zip
-			FROM Guests_Master WHERE CardNumber = '$CardNumber_db'";
+	$query3 = "SELECT FirstName, LastName, EnrollDate, Zip,
+				YEAR(EnrollDate) as MinDateYear,
+				MONTH(EnrollDate) as MinDateMonth
+				FROM Guests_Master WHERE CardNumber = '$CardNumber_db'";
 	$result3 = mysqli_query($dbc, $query3);	
 	ECHO MYSQLI_ERROR($dbc);
-	while($row1 = mysqli_fetch_array($result3, MYSQLI_ASSOC)){	
+	while($row1 = mysqli_fetch_array($result3, MYSQLI_ASSOC)){
+		$MinDateMonth_db = $row1['MinDateMonth'];
+		$MinDateYear_db = $row1['MinDateYear'];
 		$FirstName_db = addslashes($row1['FirstName']);
 		$LastName_db = addslashes($row1['LastName']);
 		$EnrollDate_db = $row1['EnrollDate'];		
@@ -210,7 +210,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 					$Firstrun = 'Nope';
 				}
 			} ELSE { $Firstrun = 'Nope';}
-	ECHO 'Card: '.$CardNumber_db.'  Last Visit Date: '.$LastVisitDate_db. ' Firstrun:'.$Firstrun.PHP_EOL;
+	ECHO 'Card: '.$CardNumber_db.'  FocusDate:'.$FocusDate.'  Last Visit Date: '.$LastVisitDate_db. ' Firstrun:'.$Firstrun.PHP_EOL;
 	
 			#FIELD = LAPSEDAYS
 			$query6= "SELECT DATEDIFF('$FocusDate', MAX(TransactionDate)) as LapseDays
