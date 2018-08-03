@@ -52,7 +52,8 @@ ECHO 'Px_Monthly TRUNCATED FOR FULL RUN!!!!!!';
 
 //QUERY MASTER FOR CARDNUMBER
 # NOT USING -- 	AND MOD(CardNumber, 200) = '0'
-$query1 = "SELECT DISTINCT(CardNumber) as CardNumber FROM Guests_Master	
+$query1 = "SELECT DISTINCT(CardNumber) as CardNumber FROM Guests_Master
+					WHERE LastGuestActivityDate >= '2016-06-01'	
 					ORDER BY CardNumber ASC";
 $result1 = mysqli_query($dbc, $query1);
 ECHO MYSQLI_ERROR($dbc);

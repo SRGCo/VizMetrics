@@ -4,7 +4,7 @@ SELECT CardNumber
 FROM (
     SELECT CardNumber FROM Master
 UNION ALL
-    SELECT CardNummber FROM Px_Monthly
+    SELECT CardNumber FROM Px_Monthly
     ) tbl
 GROUP BY CardNumber
 HAVING count(*) = 1
