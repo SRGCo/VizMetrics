@@ -69,10 +69,10 @@ mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_temp JOIN Guests_Master
 echo 'ACCOUNT STATUSES UPDATED FROM Guests_Master TABLE'
 
 mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_temp JOIN Px_exchanges ON Master_temp.CardNumber = Px_exchanges.CurrentCardNumber SET Master_temp.Account_status = 'Exchange'"
-echo 'EXCHANGED ACCOUNTS UPDATED FROM px_exchanges TABLE'
+echo 'EXCHANGED ACCOUNTS STATUSES UPDATED FROM px_exchanges TABLE'
 
 mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_temp JOIN Excludes ON Master_temp.CardNumber = Excludes.CardNumber SET Master_temp.Account_status = 'Exclude'"
-echo 'EXCLUDED ACCOUNTS USING Excludes TABLE'
+echo 'EXCLUDED ACCOUNTS STATUSES UPDATED USING Excludes TABLE'
 
 ######## UPDATE THE EMPTY CHECKDETAIL FIELDS WITH PX DATA
 mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_temp SET CheckNumber = CheckNo_px WHERE CheckNumber IS NULL"

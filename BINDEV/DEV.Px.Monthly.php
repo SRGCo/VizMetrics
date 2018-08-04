@@ -200,7 +200,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 			while($row1 = mysqli_fetch_array($result5a, MYSQLI_ASSOC)){
 				$LastVisitDate_db = $row1['LastVisitDate'];
 			}
-	### IF THERE IS NO LAST VISIT DATE SKIP THIS RECORD
+			### IF THERE IS NO LAST VISIT DATE SKIP THIS RECORD
 			IF (EMPTY($LastVisitDate_db)){
 				IF ($Firstrun == 'Yup'){
 					$LastVisitDate_db = $EnrollDate_db;
@@ -210,7 +210,8 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 					$Firstrun = 'Nope';
 				}
 			} ELSE { $Firstrun = 'Nope';}
-	ECHO 'Card: '.$CardNumber_db.'  FocusDate:'.$FocusDate.'  Last Visit Date: '.$LastVisitDate_db. ' Firstrun:'.$Firstrun.PHP_EOL;
+		#	ECHO 'Card: '.$CardNumber_db.'  FocusDate:'.$FocusDate.'  Last Visit Date: ';
+		#	ECHO $LastVisitDate_db.' Firstrun:'.$Firstrun.PHP_EOL;
 	
 			#FIELD = LAPSEDAYS
 			$query6= "SELECT DATEDIFF('$FocusDate', MAX(TransactionDate)) as LapseDays

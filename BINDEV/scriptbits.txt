@@ -1,3 +1,20 @@
+DeDupe
+
+-- Create temporary table
+CREATE TABLE temp_table LIKE table1;
+
+-- Add constraint
+ALTER TABLE temp_table ADD UNIQUE(category, image_set_id);
+
+-- Copy data
+INSERT IGNORE INTO temp_table SELECT * FROM table1;
+
+-- Rename and drop
+RENAME TABLE table1 TO old_table1, temp_table TO table1;
+DROP TABLE old_table1;
+
+======================================
+
 find the diference in cardnumbers between two tables
 
 SELECT CardNumber
@@ -9,6 +26,16 @@ UNION ALL
 GROUP BY CardNumber
 HAVING count(*) = 1
 ORDER BY CardNumber;
+
+SELECT * FROM Guests_Master WHERE CardNumber = (SELECT CardNumber
+FROM (
+    SELECT CardNumber FROM Master
+UNION ALL
+    SELECT CardNumber FROM Px_Monthly
+    ) tbl
+GROUP BY CardNumber
+HAVING count(*) = 1
+ORDER BY CardNumber limit 1,1 )
 
 
 

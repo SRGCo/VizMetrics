@@ -18,16 +18,17 @@ set -x
 ################# TABLETURNS ##############################
 
 ## 1 ## DELETE OLD TABLETURNS FILE TO MAKE ROOM FOR NEW -OLD- FILE
-rm /home/ubuntu/db_files/incoming/TableTurns.old.csv
+rm /home/ubuntu/db_files/incoming/TableTurn.old.csv
 
 ## 1 ## RENAME CURRENT TABLETURNS FILE TO MAKE ROOM FOR INCOMING
-mv /home/ubuntu/db_files/incoming/TableTurns.csv /home/ubuntu/db_files/incoming/TableTurns.old.csv
+mv /home/ubuntu/db_files/incoming/TableTurn.csv /home/ubuntu/db_files/incoming/TableTurn.old.csv
 
 ## 1 ## REMOVE FIRST ROW/HEADERS BEFORE IMPORTING
-tail -n+2 /home/ubuntu/db_files/incoming/TableTurns.raw.csv > /home/ubuntu/db_files/incoming/TableTurns.csv
+## SHUT THIS OFF IS USING TableTurns.old.csv
+tail -n+2 /home/ubuntu/db_files/incoming/TableTurn.raw.csv > /home/ubuntu/db_files/incoming/TableTurn.csv
 
 ## 1 ## DELETE INCOMING RAW FILE AFTER CLEANING IT UP
-rm /home/ubuntu/db_files/incoming/TableTurns.raw.csv 
+rm /home/ubuntu/db_files/incoming/TableTurn.raw.csv 
 
 ##################### EMPLOYEES #################################
 
@@ -68,7 +69,7 @@ mysql  --login-path=local --silent -DSRG_Dev -N -e "DROP TABLE IF EXISTS TableTu
 mysql  --login-path=local --silent -DSRG_Dev -N -e "CREATE TABLE TableTurns_Temp AS (SELECT * FROM TableTurns_Structure WHERE 1=0)"
 
 ### Load the data from the latest file into the (temp) TableTurns table ########################
-mysql  --login-path=local --silent -DSRG_Dev -N -e "Load data local infile '/home/ubuntu/db_files/incoming/TableTurns.csv' into table TableTurns_Temp fields terminated by ',' lines terminated by '\n'"
+mysql  --login-path=local --silent -DSRG_Dev -N -e "Load data local infile '/home/ubuntu/db_files/incoming/TableTurn.csv' into table TableTurns_Temp fields terminated by ',' lines terminated by '\n'"
 
 ### PUT DOB INTO SQL FORMAT
 mysql  --login-path=local --silent -DSRG_Dev -N -e "UPDATE TableTurns_Temp SET DOB= STR_TO_DATE(DOB, '%c/%e/%Y') WHERE STR_TO_DATE(DOB, '%c/%e/%Y') IS NOT NULL"
