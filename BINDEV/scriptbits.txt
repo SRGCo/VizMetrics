@@ -1,3 +1,4 @@
+
 DeDupe
 
 -- Create temporary table
@@ -14,7 +15,12 @@ RENAME TABLE table1 TO old_table1, temp_table TO table1;
 DROP TABLE old_table1;
 
 ======================================
+find the diference in cardnumbers between two tables w dates
 
+
+SELECT CardNumber FROM ( SELECT CardNumber FROM Master WHERE DOB <= '2018-07-01' UNION ALL SELECT CardNumber FROM Px_Monthly WHERE FocusDate <= '2018-07-01' ) tbl GROUP BY CardNumber HAVING count(*) = 1 ORDER BY CardNumber
+
++++++++++++++++++++++++++++++++++++
 find the diference in cardnumbers between two tables
 
 SELECT CardNumber
@@ -26,6 +32,9 @@ UNION ALL
 GROUP BY CardNumber
 HAVING count(*) = 1
 ORDER BY CardNumber;
+
+
+++++++++++++++++++++++++++++++++
 
 SELECT * FROM Guests_Master WHERE CardNumber = (SELECT CardNumber
 FROM (
