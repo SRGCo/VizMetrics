@@ -47,7 +47,7 @@ $counter = 0;
 $query_table= "TRUNCATE table Px_Monthly";
 $result_table = mysqli_query($dbc, $query_table);	
 ECHO MYSQLI_ERROR($dbc);
-ECHO 'Px_Monthly TRUNCATED FOR FULL RUN!!!!!!';
+ECHO 'Px_Monthly TRUNCATED FOR FULL RUN!!!!!!'.PHP_EOL;
 #ECHO 'Px_Monthly ##NOT## TRUNCATED FOR Partial RUN!!!!!!';
 
 
@@ -70,7 +70,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	$LastVisitDate_db = $PrevYearVisitBal_db = $LapseDays_db = $RecentFreqDays_db = $ProgAge_db = '';	
 	$TwoVisitsBack_db = $FocusDate_php = $TwoVisitsBack_php = $MonthsEnrolled_db = $LifetimeFreq = '';
 	$YearFreqSeg = $RecentFreqMonths_db = $TwoVisitsBack_php = $YrAgoFreq = $LastVisitBalance_db = '';
-	$YrMoVisitBal_1MoBack_db = $YrMoVisitBal_3MoBack_db = $YrMoVisitBal_12MoBack_db = '';
+	$YrMoVisitBal_1MoBack_db = $YrMoVisitBal_3MoBack_db = $LapseMo_12MoBack_db = $YrMoVisitBal_12MoBack_db = '';
 	$YrMoFreqSeg_12MoBack_txt = $YrMoFreqSeg_3MoBack_txt = $YrMoFreqSeg_1MoBack_txt = $YrMoFreq_1YrBack_txt = '';
 
 	$segment_txt = '';
@@ -81,9 +81,9 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	$Firstrun = 'Yup';
 
 	$counter++;
-	$printcount = fmod($counter, 500);
+	$printcount = fmod($counter, 100);
 	IF ($printcount == '0'){
-	ECHO PHP_EOL.$counter++.'  card:';
+	ECHO $counter++.'  card:';
 	ECHO $CardNumber_db;
 	}
 
@@ -102,7 +102,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	IF ($VisitsAccruedLife_db == ''){$VisitsAccruedLife_db = '0';}
 	
 	# GET FIRSTNAME, LASTNAME, ENROLLDATE, ZIP
-	$query3 = "SELECT FirstName, LastName, EnrollDate, Zip,
+	$query3 = "SELECT FirstName, LastName, EnrollDate, Zip, Tier,
 				YEAR(EnrollDate) as MinDateYear,
 				MONTH(EnrollDate) as MinDateMonth
 				FROM Guests_Master WHERE CardNumber = '$CardNumber_db'";
@@ -114,9 +114,11 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 		$FirstName_db = addslashes($row1['FirstName']);
 		$LastName_db = addslashes($row1['LastName']);
 		$EnrollDate_db = $row1['EnrollDate'];		
-		$Zip_db = $row1['Zip'];
+		$Zip_db = $row1['Zip'];		
+		$Tier_db = $row1['Tier'];
 	}
-	#	echo ' FirstName:'.$FirstName_db.' LastName:'.$LastName_db.' Enrolled:'.$EnrollDate_db.' Zip:'.$Zip_db;
+	#	echo ' FirstName:'.$FirstName_db.' LastName:'.$LastName_db.' Enrolled:'.$EnrollDate_db;
+		IF ($printcount == '0'){echo ' Zip:'.$Zip_db.' Tier:'.$Tier_db;}
 	
 	// FORMAT FOCUSDATE
 	$FocusDate = $MinDateYear_db."-".$MinDateMonth_db."-01"; 
@@ -309,6 +311,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 					LastName = '$LastName_db',
 					EnrollDate = '$EnrollDate_db',
 					Zip = '$Zip_db',
+					Tier = '$Tier_db',
 					DollarsSpentMonth = ROUND('$DollarsSpentMonth_db',2),
 					PointsRedeemedMonth = '$PointsRedeemedMonth_db',
 					PointsAccruedMonth = '$PointsAccruedMonth_db',
@@ -359,17 +362,18 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 			IF ($YrMoVisitBal_3MoBack_db == ''){$YrMoVisitBal_3MoBack_db = '0';}
 
 			#### TWELVE MONTHS BACK
-			$query15 = "SELECT 12MoVisitBalance FROM Px_Monthly 
+			$query15 = "SELECT 12MoVisitBalance, LapseMonths FROM Px_Monthly 
 				WHERE CardNumber = '$CardNumber_db'
 				AND FocusDate = DATE_SUB('$FocusDate', INTERVAL 1 YEAR)";
 			$result15 = mysqli_query($dbc, $query15);	
 			ECHO MYSQLI_ERROR($dbc);
 			while($row1 = mysqli_fetch_array($result15, MYSQLI_ASSOC)){
 				$YrMoVisitBal_12MoBack_db = $row1['12MoVisitBalance'];	
-			#	ECHO 'DaysEnrolled_db='.$DaysEnrolled.PHP_EOL;	
+				$LapseMo_12MoBack_db = $row1['LapseMonths'];		
 			}
 			IF ($YrMoVisitBal_12MoBack_db == ''){$YrMoVisitBal_12MoBack_db = '0';}
-
+			IF ($LapseMo_12MoBack_db == ''){$LapseMo_12MoBack_db = '0';}
+			IF ($printcount == '0'){ECHO ' LapseMo_12MoBack='.$LapseMo_12MoBack_db.PHP_EOL;}
 
 		
 
@@ -394,7 +398,8 @@ $YrMoFreqSeg_1MoBack_txt = yrseg($YrMoVisitBal_1MoBack_db, $VisitsAccruedLife_db
 			12MoFreqSeg_1MoBack = '$YrMoFreqSeg_1MoBack_txt',
 			12MoFreqSeg_3MoBack = '$YrMoFreqSeg_3MoBack_txt',
 			12MoFreqSeg_12MoBack = '$YrMoFreqSeg_12MoBack_txt',
-			12MoFreqSeg = '$YrMoFreq_1YrBack_txt'
+			12MoFreqSeg = '$YrMoFreq_1YrBack_txt',
+			LapseMo_12MoBack = '$LapseMo_12MoBack_db'
 		WHERE CardNumber = '$CardNumber_db'
 		AND FocusDate = '$FocusDate'";
 // ECHO $query8.PHP_EOL;
