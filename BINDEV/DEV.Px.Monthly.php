@@ -83,7 +83,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	$counter++;
 	$printcount = fmod($counter, 100);
 	IF ($printcount == '0'){
-	ECHO $counter++.'  card:';
+	ECHO PHP_EOL.$counter++.'  card:';
 	ECHO $CardNumber_db;
 	}
 
