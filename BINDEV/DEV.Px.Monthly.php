@@ -259,7 +259,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 
 			##### GET NUMBER OF MONTHS BETWEEN ENROLLDATE AND FOCUSDATE  (+1 for marks numbers)
 			#PROGRAMAGE
-			$query7= "SELECT (PERIOD_DIFF(EXTRACT(YEAR_MONTH FROM '$FocusDate'), EXTRACT(YEAR_MONTH FROM '$EnrollDate_db')) + 1) AS ProgAge";
+			$query7= "SELECT (TIMESTAMPDIFF(MONTH, '$EnrollDate_db', '$FocusDate') + 1) AS ProgAge";
 			$result7 = mysqli_query($dbc, $query7);	
 			ECHO MYSQLI_ERROR($dbc);
 			while($row1 = mysqli_fetch_array($result7, MYSQLI_ASSOC)){
@@ -268,7 +268,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 
 			##### GET NUMBER OF MONTHS BETWEEN ENROLLDATE AND FOCUSDATE 
 			#FIELD = LIFETIMEFREQ
-			$query7x= "SELECT PERIOD_DIFF(EXTRACT(YEAR_MONTH FROM '$FocusDate'), EXTRACT(YEAR_MONTH FROM '$EnrollDate_db')) AS MonthsEnrolled";
+			$query7x= "SELECT TIMESTAMPDIFF(MONTH, '$EnrollDate_db', '$FocusDate') AS MonthsEnrolled";
 			$result7x = mysqli_query($dbc, $query7x);	
 			ECHO MYSQLI_ERROR($dbc);
 			while($row1 = mysqli_fetch_array($result7x, MYSQLI_ASSOC)){
@@ -283,7 +283,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 
 
 			#FIELD RECENTFREQMONTHS
-			$query7e= "SELECT PERIOD_DIFF(EXTRACT(YEAR_MONTH FROM '$FocusDate'), EXTRACT(YEAR_MONTH FROM '$TwoVisitsBack_db')) AS RecentFreqMonths";
+			$query7e= "SELECT TIMESTAMPDIFF(MONTH, '$TwoVisitsBack_db', '$FocusDate') AS RecentFreqMonths";
 			$result7e = mysqli_query($dbc, $query7e);	
 			ECHO MYSQLI_ERROR($dbc);
 			while($row1 = mysqli_fetch_array($result7e, MYSQLI_ASSOC)){
@@ -292,10 +292,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 			}
 
 			#FIELD LAPSEMONTHS
-			$query7e= "SELECT PERIOD_DIFF(EXTRACT(YEAR_MONTH FROM '$FocusDate'), EXTRACT(YEAR_MONTH FROM MAX(TransactionDate))) AS LapseMonths FROM Master
-					WHERE TransactionDate < '$FocusDate' 
-					AND CardNumber = '$CardNumber_db' 
-					AND Vm_VisitsAccrued > '0'";
+			$query7e= "SELECT TIMESTAMPDIFF(MONTH, '$LastVisitDate_db', '$FocusDate') AS LapseMonths";
 			$result7e = mysqli_query($dbc, $query7e);	
 			ECHO MYSQLI_ERROR($dbc);
 			while($row1 = mysqli_fetch_array($result7e, MYSQLI_ASSOC)){
@@ -365,7 +362,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 			$query15 = "SELECT 12MoVisitBalance, LapseMonths FROM Px_Monthly 
 				WHERE CardNumber = '$CardNumber_db'
 				AND FocusDate = DATE_SUB('$FocusDate', INTERVAL 1 YEAR)";
-			$result15 = mysqli_query($dbc, $query15);	
+			$result15 = mysqli_query($dbc, $query15);
 			ECHO MYSQLI_ERROR($dbc);
 			while($row1 = mysqli_fetch_array($result15, MYSQLI_ASSOC)){
 				$YrMoVisitBal_12MoBack_db = $row1['12MoVisitBalance'];	
@@ -373,9 +370,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 			}
 			IF ($YrMoVisitBal_12MoBack_db == ''){$YrMoVisitBal_12MoBack_db = '0';}
 			IF ($LapseMo_12MoBack_db == ''){$LapseMo_12MoBack_db = '0';}
-			IF ($printcount == '0'){ECHO ' LapseMo_12MoBack='.$LapseMo_12MoBack_db.PHP_EOL;}
-
-		
+	
 
 
 # do this for $YrMoVisitBal_1MoBack_db - $YrMoFreq_1YrBack_txt
@@ -418,8 +413,6 @@ $FocusDateEnd = date("Y-m-d",strtotime($FocusDate." +2 month - 1 day "));
 $Carryover_LastVisitDate = $LastVisitDate_db;
 
 }
-
-
 
 
 // END OF CARD NUMBER WHILE LOOP
