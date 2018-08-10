@@ -88,7 +88,7 @@ do
 
 		##### UPDATE FISCAL YEAR FROM TRANSACTIONDATE
 		mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_temp SET FY = '$FY',YLuna = '$YLuna', Luna='$Luna' WHERE Master_temp.DOB = '$TransactionDate'"
-		echo $TransactionDate updated FY= $FY YLuna = $YLuna  Luna = $Luna
+		#echo $TransactionDate updated FY= $FY YLuna = $YLuna  Luna = $Luna
 
 done
 echo FY YLUNA CALCD POPULATED
@@ -126,7 +126,7 @@ do
 	######## VISIT ACCRUED ON FIRST TRANSACTIONDATE
 	if [[ "$CarriedBal" = "1" && "$VisitsAccrued" = "1" ]]
 	then
-		echo $CardNumber"          Accrued on First Day!!!!       "$Min_dob"       no exchange       "$CarriedBal
+		# echo $CardNumber"          Accrued on First Day!!!!       "$Min_dob"       no exchange       "$CarriedBal
 		##### UPDATE SUBTRACTING 1 FROM ALL VisitsBalance VALUES (to account for visit counted on enrollment day)
 		mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET Vm_VisitsBalance = VisitsBalance -1 WHERE CardNumber = '$CardNumber' AND VisitsBalance IS NOT NULL AND VisitsBalance != '0'"
 
@@ -147,12 +147,12 @@ do
 		########### VISIT ACCRUED NULL
 		if  [ "$VisitsAccrued" = "0" ] ||  [ -z "$VisitsAccrued"  ] 
 		then
-			echo $CardNumber" DID NOT Accrue First Day "$Min_dob" no exchange "$CarriedBal
+		# echo $CardNumber" DID NOT Accrue First Day "$Min_dob" no exchange "$CarriedBal
 			##### UPDATE SUBTRACTING 1 FROM ALL VisitsBalance VALUES (to account for visit counted on enrollment day)
 			mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET Vm_VisitsBalance = VisitsBalance, Vm_VisitsAccrued = VisitsAccrued WHERE CardNumber = '$CardNumber' "
 		else
 			##### ODD CASES - NO BALANCE BUT 1 VISIT ACCRUED
-			echo $CardNumber" Odd Case Min_dob:"$Min_dob" Visits Accrued:"$VisitsAccrued" Carried Balance"$CarriedBal
+		# echo $CardNumber" Odd Case Min_dob:"$Min_dob" Visits Accrued:"$VisitsAccrued" Carried Balance"$CarriedBal
 			##### SET FIRST DATES visitsaccrued to 0 (to account for visit counted on enrollment day), vm_visitsbalance = visitsbalance
 			mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET Vm_VisitsAccrued = '' WHERE CardNumber = '$CardNumber' and TransactionDate = '$Min_dob'"
 			##### UPDATE SUBTRACTING 1 FROM ALL VisitsBalance VALUES (to account for visit counted on enrollment day)
@@ -165,7 +165,7 @@ do
 	####  AN EXCHANGE
 	if [ "$CarriedBal"  -gt "1" ]
 	then
-		echo $CardNumber"        First Day         "$Min_dob"       EXCHANGED!!! "$CarriedBal
+		# echo $CardNumber"        First Day         "$Min_dob"       EXCHANGED!!! "$CarriedBal
 		##### PX counts are correct
 		mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET Vm_VisitsBalance = VisitsBalance, Vm_VisitsAccrued = VisitsAccrued WHERE CardNumber = '$CardNumber' "
 
