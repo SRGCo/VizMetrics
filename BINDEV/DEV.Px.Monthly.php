@@ -17,7 +17,7 @@ function yrseg ($pastvisitbal, $lifetimevisits)
 	if (($pastvisitbal >= '11') AND ($pastvisitbal <= '25'))  {$segment_txt = '11-25';
 	} ELSE {
 	if ($pastvisitbal >= '26') {$segment_txt = '26+';	
-	} 
+	} ELSE {$segment_txt = '';}
 	} } } } } } 
 	# UNCOMMENT NEXT LINE FOR DEBUG
 	# echo $segment_txt;
@@ -71,7 +71,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	$TwoVisitsBack_db = $FocusDate_php = $TwoVisitsBack_php = $MonthsEnrolled_db = $LifetimeFreq = '';
 	$YearFreqSeg = $RecentFreqMonths_db = $TwoVisitsBack_php = $YrAgoFreq = $LastVisitBalance_db = '';
 	$YrMoVisitBal_1MoBack_db = $YrMoVisitBal_3MoBack_db = $LapseMo_12MoBack_db = $YrMoVisitBal_12MoBack_db = '';
-	$YrMoVisitBal24MoBack_db = $YrMoVisitBal_36MoBack_db = $YrMoFreqSeg_24MoBack_txt = $YrMoFreqSeg_36MoBack_txt = '';
+	$YrMoVisitBal_24MoBack_db = $YrMoVisitBal_36MoBack_db = $YrMoFreqSeg_24MoBack_txt = $YrMoFreqSeg_36MoBack_txt = '';
 
 	$YrMoFreqSeg_12MoBack_txt = $YrMoFreqSeg_3MoBack_txt = $YrMoFreqSeg_1MoBack_txt = $YrMoFreq_1YrBack_txt = '';
 
@@ -412,7 +412,7 @@ $YrMoFreqSeg_12MoBack_txt = yrseg($YrMoVisitBal_12MoBack_db, $VisitsAccruedLife_
 # do this for $YrMoVisitBal_24MoBack_db - $YrMoFreqSeg_24MoBack_txt
 $YrMoFreqSeg_24MoBack_txt = yrseg($YrMoVisitBal_24MoBack_db, $VisitsAccruedLife_db);
 
-# do this for $YrMoVisitBal_24MoBack_db - $YrMoFreqSeg_24MoBack_txt
+# do this for $YrMoVisitBal_36MoBack_db - $YrMoFreqSeg_36MoBack_txt
 $YrMoFreqSeg_36MoBack_txt = yrseg($YrMoVisitBal_36MoBack_db, $VisitsAccruedLife_db);
 
 
