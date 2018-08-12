@@ -71,6 +71,8 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	$TwoVisitsBack_db = $FocusDate_php = $TwoVisitsBack_php = $MonthsEnrolled_db = $LifetimeFreq = '';
 	$YearFreqSeg = $RecentFreqMonths_db = $TwoVisitsBack_php = $YrAgoFreq = $LastVisitBalance_db = '';
 	$YrMoVisitBal_1MoBack_db = $YrMoVisitBal_3MoBack_db = $LapseMo_12MoBack_db = $YrMoVisitBal_12MoBack_db = '';
+	$YrMoVisitBal24MoBack_db = $YrMoVisitBal_36MoBack_db = $YrMoFreqSeg_24MoBack_txt = $YrMoFreqSeg_36MoBack_txt = '';
+
 	$YrMoFreqSeg_12MoBack_txt = $YrMoFreqSeg_3MoBack_txt = $YrMoFreqSeg_1MoBack_txt = $YrMoFreq_1YrBack_txt = '';
 
 	$segment_txt = '';
@@ -371,28 +373,70 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 			IF ($YrMoVisitBal_12MoBack_db == ''){$YrMoVisitBal_12MoBack_db = '0';}
 			IF ($LapseMo_12MoBack_db == ''){$LapseMo_12MoBack_db = '0';}
 	
+			##### RETRIEVE PRIOR VISITBALANCE VALUES
+			#### TWENTY FOUR MONTHS BACK
+			$query13 = "SELECT 12MoVisitBalance FROM Px_Monthly 
+				WHERE CardNumber = '$CardNumber_db'
+				AND FocusDate = DATE_SUB('$FocusDate',INTERVAL 2 YEAR)";
+			$result13 = mysqli_query($dbc, $query13);	
+			ECHO MYSQLI_ERROR($dbc);
+			while($row1 = mysqli_fetch_array($result13, MYSQLI_ASSOC)){
+				$YrMoVisitBal_24MoBack_db = $row1['12MoVisitBalance'];	
+			#	ECHO 'DaysEnrolled_db='.$DaysEnrolled.PHP_EOL;	
+			}
+			IF ($YrMoVisitBal_24MoBack_db == ''){$YrMoVisitBal24MoBack_db = '0';}
+
+			##### RETRIEVE PRIOR VISITBALANCE VALUES
+			#### THIRTY SIX MONTHS BACK
+			$query13 = "SELECT 12MoVisitBalance FROM Px_Monthly 
+				WHERE CardNumber = '$CardNumber_db'
+				AND FocusDate = DATE_SUB('$FocusDate',INTERVAL 3 YEAR)";
+			$result13 = mysqli_query($dbc, $query13);	
+			ECHO MYSQLI_ERROR($dbc);
+			while($row1 = mysqli_fetch_array($result13, MYSQLI_ASSOC)){
+				$YrMoVisitBal_36MoBack_db = $row1['12MoVisitBalance'];	
+			#	ECHO 'DaysEnrolled_db='.$DaysEnrolled.PHP_EOL;	
+			}
+			IF ($YrMoVisitBal_36MoBack_db == ''){$YrMoVisitBal36MoBack_db = '0';}
 
 
-# do this for $YrMoVisitBal_1MoBack_db - $YrMoFreq_1YrBack_txt
-$YrMoFreq_1YrBack_txt = yrseg($PrevYearVisitBal_db, $VisitsAccruedLife_db);
-
-# do this for $YrMoVisitBal_12MoBack_db - $YrMoFreqSeg_12MoBack_txt
-$YrMoFreqSeg_12MoBack_txt = yrseg($YrMoVisitBal_12MoBack_db, $VisitsAccruedLife_db);
+# do this for $YrMoVisitBal_1MoBack_db - $YrMoFreqSeg_1MoBack_tx
+$YrMoFreqSeg_1MoBack_txt = yrseg($YrMoVisitBal_1MoBack_db, $VisitsAccruedLife_db);
 
 # do this for $YrMoVisitBal_3MoBack_db - $YrMoFreqSeg_3MoBack_txt
 $YrMoFreqSeg_3MoBack_txt = yrseg($YrMoVisitBal_3MoBack_db, $VisitsAccruedLife_db);
 
-# do this for $YrMoVisitBal_1MoBack_db - $YrMoFreqSeg_1MoBack_tx
-$YrMoFreqSeg_1MoBack_txt = yrseg($YrMoVisitBal_1MoBack_db, $VisitsAccruedLife_db);
+# do this for $YrMoVisitBal_12MoBack_db - $YrMoFreqSeg_12MoBack_txt
+$YrMoFreqSeg_12MoBack_txt = yrseg($YrMoVisitBal_12MoBack_db, $VisitsAccruedLife_db);
+
+# do this for $YrMoVisitBal_24MoBack_db - $YrMoFreqSeg_24MoBack_txt
+$YrMoFreqSeg_24MoBack_txt = yrseg($YrMoVisitBal_24MoBack_db, $VisitsAccruedLife_db);
+
+# do this for $YrMoVisitBal_24MoBack_db - $YrMoFreqSeg_24MoBack_txt
+$YrMoFreqSeg_36MoBack_txt = yrseg($YrMoVisitBal_36MoBack_db, $VisitsAccruedLife_db);
+
+
+
+
+
+# do this for $YrMoVisitBal_1YrBack_db - $YrMoFreq_1YrBack_txt
+$YrMoFreq_1YrBack_txt = yrseg($PrevYearVisitBal_db, $VisitsAccruedLife_db);
+
+
+
+
 
 /////// INSERT VALUES INTO THE TABLE HERE
 	$query16= "UPDATE Px_Monthly SET
 			12MoVisitBal_1MoBack = '$YrMoVisitBal_1MoBack_db',
 			12MoVisitBal_3MoBack = '$YrMoVisitBal_3MoBack_db',
 			12MoVisitBal_12MoBack = '$YrMoVisitBal_12MoBack_db',
+			12MoVisitBal_24MoBack = '$YrMoVisitBal_24MoBack_db',
+			12MoVisitBal_36MoBack = '$YrMoVisitBal_36MoBack_db',
 			12MoFreqSeg_1MoBack = '$YrMoFreqSeg_1MoBack_txt',
 			12MoFreqSeg_3MoBack = '$YrMoFreqSeg_3MoBack_txt',
 			12MoFreqSeg_12MoBack = '$YrMoFreqSeg_12MoBack_txt',
+			12MoFreqSeg_24MoBack = '$YrMoFreqSeg_24MoBack_txt',
 			12MoFreqSeg = '$YrMoFreq_1YrBack_txt',
 			LapseMo_12MoBack = '$LapseMo_12MoBack_db'
 		WHERE CardNumber = '$CardNumber_db'
