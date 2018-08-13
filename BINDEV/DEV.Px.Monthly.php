@@ -16,11 +16,10 @@ function yrseg ($pastvisitbal, $lifetimevisits)
 	} ELSE {
 	if (($pastvisitbal >= '11') AND ($pastvisitbal <= '25'))  {$segment_txt = '11-25';
 	} ELSE {
-	if ($pastvisitbal >= '26') {$segment_txt = '26+';	
-	} ELSE {$segment_txt = '';}
+	if ($pastvisitbal >= '26') {$segment_txt = '26+';} 
 	} } } } } } 
 	# UNCOMMENT NEXT LINE FOR DEBUG
-	# echo $segment_txt;
+	# echo $segment_txt.PHP_EOL;
 	RETURN $segment_txt;
 }
 
@@ -375,29 +374,28 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	
 			##### RETRIEVE PRIOR VISITBALANCE VALUES
 			#### TWENTY FOUR MONTHS BACK
-			$query13 = "SELECT 12MoVisitBalance FROM Px_Monthly 
+			$query13b = "SELECT 12MoVisitBalance FROM Px_Monthly 
 				WHERE CardNumber = '$CardNumber_db'
 				AND FocusDate = DATE_SUB('$FocusDate',INTERVAL 2 YEAR)";
-			$result13 = mysqli_query($dbc, $query13);	
+			$result13b = mysqli_query($dbc, $query13b);	
 			ECHO MYSQLI_ERROR($dbc);
-			while($row1 = mysqli_fetch_array($result13, MYSQLI_ASSOC)){
+			while($row1 = mysqli_fetch_array($result13b, MYSQLI_ASSOC)){
 				$YrMoVisitBal_24MoBack_db = $row1['12MoVisitBalance'];	
-			#	ECHO 'DaysEnrolled_db='.$DaysEnrolled.PHP_EOL;	
 			}
-			IF ($YrMoVisitBal_24MoBack_db == ''){$YrMoVisitBal24MoBack_db = '0';}
+			IF ($YrMoVisitBal_24MoBack_db == ''){$YrMoVisitBal_24MoBack_db = '0';}
 
 			##### RETRIEVE PRIOR VISITBALANCE VALUES
 			#### THIRTY SIX MONTHS BACK
-			$query13 = "SELECT 12MoVisitBalance FROM Px_Monthly 
+			$query13c = "SELECT 12MoVisitBalance FROM Px_Monthly 
 				WHERE CardNumber = '$CardNumber_db'
 				AND FocusDate = DATE_SUB('$FocusDate',INTERVAL 3 YEAR)";
-			$result13 = mysqli_query($dbc, $query13);	
+			$result13c = mysqli_query($dbc, $query13c);	
 			ECHO MYSQLI_ERROR($dbc);
-			while($row1 = mysqli_fetch_array($result13, MYSQLI_ASSOC)){
+			while($row1 = mysqli_fetch_array($result13c, MYSQLI_ASSOC)){
 				$YrMoVisitBal_36MoBack_db = $row1['12MoVisitBalance'];	
 			#	ECHO 'DaysEnrolled_db='.$DaysEnrolled.PHP_EOL;	
 			}
-			IF ($YrMoVisitBal_36MoBack_db == ''){$YrMoVisitBal36MoBack_db = '0';}
+			IF ($YrMoVisitBal_36MoBack_db == ''){$YrMoVisitBal_36MoBack_db = '0';}
 
 
 # do this for $YrMoVisitBal_1MoBack_db - $YrMoFreqSeg_1MoBack_tx
@@ -437,6 +435,7 @@ $YrMoFreq_1YrBack_txt = yrseg($PrevYearVisitBal_db, $VisitsAccruedLife_db);
 			12MoFreqSeg_3MoBack = '$YrMoFreqSeg_3MoBack_txt',
 			12MoFreqSeg_12MoBack = '$YrMoFreqSeg_12MoBack_txt',
 			12MoFreqSeg_24MoBack = '$YrMoFreqSeg_24MoBack_txt',
+			12MoFreqSeg_36MoBack = '$YrMoFreqSeg_36MoBack_txt',
 			12MoFreqSeg = '$YrMoFreq_1YrBack_txt',
 			LapseMo_12MoBack = '$LapseMo_12MoBack_db'
 		WHERE CardNumber = '$CardNumber_db'
