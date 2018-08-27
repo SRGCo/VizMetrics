@@ -18,9 +18,9 @@ set -e
 
 ## REMOVE (1) HEADER ROW AND MERGE (IF NECCESSARY) INCOMING CARD ACTIVITY CSVs
 ## INTO SINGLE CARD ACTIVITY FILE IN DB_FILES
-   for file in /home/ubuntu/db_files/incoming/px/CardActivity*.csv
+for file in /home/ubuntu/db_files/incoming/px/CardActivity*.csv
   do
-#### MAKE A COPY OF THE FILE IN BACKUP DIR
+	#### MAKE A COPY OF THE FILE IN BACKUP DIR
 	cp "$file" //home/ubuntu/db_files/incoming/px/backup/
 	tail -n+2 "$file"  >> /home/ubuntu/db_files/incoming/px/Infile.CardActivity.csv
   done

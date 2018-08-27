@@ -24,27 +24,23 @@ failfunction()
     fi
 }
 
-
-
-
 ################# TABLETURNS ##############################
+##### BACK IT UP AFTER DUMPING OLD BACKUP (-f no error if file does not exist)
 
-## 1 ## DELETE OLD TABLETURNS FILE TO MAKE ROOM FOR NEW -OLD- FILE
-rm /home/ubuntu/db_files/incoming/TableTurn.old.csv
-failfunction "$?"
+## REMOVE (1) HEADER ROW AND MERGE (IF NECCESSARY) INCOMING CARD ACTIVITY CSVs
+## INTO SINGLE CARD ACTIVITY FILE IN DB_FILES
+for file in /home/ubuntu/db_files/incoming/*Tableturns*.csv
+  do
+	#### MAKE A COPY OF THE FILE IN BACKUP DIR
+	cp "$file" //home/ubuntu/db_files/incoming/backup/
+	failfunction "$?"
+	tail -n+2 "$file"  >> /home/ubuntu/db_files/incoming/Infile.Tableturns.csv
+	failfunction "$?"
+  done
+echo 'INCOMING TableTurns DATA FILES CLEANED AND MERGED, ARCHIVING ORIGINAL FILES'
 
-
-## 1 ## RENAME CURRENT TABLETURNS FILE TO MAKE ROOM FOR INCOMING
-mv /home/ubuntu/db_files/incoming/TableTurn.csv /home/ubuntu/db_files/incoming/TableTurn.old.csv
-failfunction "$?"
-
-## 1 ## REMOVE FIRST ROW/HEADERS BEFORE IMPORTING
-## SHUT THIS OFF IS USING TableTurns.old.csv
-tail -n+2 /home/ubuntu/db_files/incoming/TableTurn.raw.csv > /home/ubuntu/db_files/incoming/TableTurn.csv
-failfunction "$?"
-
-## 1 ## DELETE INCOMING RAW FILE AFTER CLEANING IT UP
-rm /home/ubuntu/db_files/incoming/TableTurn.raw.csv 
+## TableTurns ## DELETE OLD TABLETURNS FILE TO MAKE ROOM FOR NEW -OLD- FILE
+rm /home/ubuntu/db_files/incoming/TableTurns.old.csv
 failfunction "$?"
 
 ##################### EMPLOYEES #################################
