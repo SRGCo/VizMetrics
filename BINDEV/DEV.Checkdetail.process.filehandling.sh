@@ -1,4 +1,4 @@
-#! /bin/env bash
+#! /bin/bash
 ### OK 8-29-18 #####
 
 # UNCOMMENT TO LOG IT TO SYSLOG
@@ -28,6 +28,13 @@ failfunction()
 	fi
 }
 
+
+################################### BACK UP THE 3 LIVE TABLES FOR SAFTEY #####################################
+#rm -f /home/ubuntu/db_files/Checkdetail.3tables.bu.sql
+#mysqldump -uroot -ps3r3n1t33 SRG_Dev CheckDetail_Live Employees_Live TableTurns_Live >  /home/ubuntu/db_files/Checkdetail.3tables.bu.sql
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+
+
 ############################# GET CTUIT FILES FROM BERTHA THEN BACK THEM UP ON BERTHA ###################
 lftp -e 'set net:timeout 10;set ssl:verify-certificate no; set ftp:ssl-protect-data true;' -u VM_ctuit,Serenitee185Ctuit 50.195.41.122  << EOF
 	lcd /home/ubuntu/db_files/incoming/ctuit
@@ -45,12 +52,10 @@ for file in /home/ubuntu/db_files/incoming/ctuit/*Tableturns*.csv
   do
 	#### MAKE A COPY OF THE FILE IN BACKUP DIR
 	cp "$file" //home/ubuntu/db_files/incoming/backup/ctuit/	
-	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 	tail -n+2 "$file"  >> /home/ubuntu/db_files/incoming/ctuit/Infile.Tableturn.csv		
-	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 	rm "$file"
-	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-  done
+done
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'INCOMING TableTurns DATA FILES CLEANED AND MERGED'
 
 
@@ -101,8 +106,7 @@ trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 mysql  --login-path=local --silent -DSRG_Dev -N -e "UPDATE TableTurns_Temp set Exceldate = (((unix_timestamp(DOB) / 86400) + 25569) + (-5/24))"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
-########################### fix check numbers (> 6 chars, start with '100') for PX CA join ###################
-
+#### fix check numbers (> 6 chars, start with '100') for PX CA join #######
 #### Update POSkey field (location + TransactionDate[excel format][no decimal] + checknumber)
 mysql  --login-path=local --silent -DSRG_Dev -N -e "UPDATE TableTurns_Temp set POSkey = CONCAT_WS('', LocationID, Exceldate, CheckNumbers)"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
@@ -111,18 +115,9 @@ trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 mysql  --login-path=local --silent -DSRG_Dev -N -e "ALTER TABLE TableTurns_Temp ADD INDEX(POSkey)"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
-
-
-
-
-
-
-
-
-############ TURN ON THE INSERT INTO LIVE TABLE ONCE READY TO LET SCRIPTS AUTORUN #########
-
 #### Insert into the LIVE tableTurns table
-# mysql  --login-path=local --silent -DSRG_Dev -N -e "INSERT INTO TableTurns_Live SELECT * FROM TableTurns_Temp"
+#mysql  --login-path=local --silent -DSRG_Dev -N -e "INSERT INTO TableTurns_Live SELECT * FROM TableTurns_Temp"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 ## Tableturns ## DELETE OLD TABLETURNS FILE TO MAKE READY FOR NEXT TIME
 rm /home/ubuntu/db_files/incoming/ctuit/Infile.Tableturn.csv
@@ -130,24 +125,20 @@ trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 
 
-
-
 ################ EMPLOYEES SECTION #########################################
 ## DELETE ALL BUT NEWEST EMPLOYEE FILE AND REMOVE (1) HEADER ROW
-
-ls /home/ubuntu/db_files/incoming/ctuit/*Employees*.csv -t | tail -n +2 | xargs rm  --
+ls /home/ubuntu/db_files/incoming/ctuit/*Employees*.csv -t | tail -n +2 | xargs rm  {}
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 ###### PROCESS THE REMAINING FILE
 for file in /home/ubuntu/db_files/incoming/ctuit/*Employees*.csv
   do
 	#### MAKE A COPY OF THE FILE IN BACKUP DIR
 	cp "$file" //home/ubuntu/db_files/incoming/backup/ctuit/
-	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 	tail -n+2 "$file"  >> /home/ubuntu/db_files/incoming/ctuit/Infile.Employee.csv
-	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 	rm "$file"
-	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
   done
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'MOST RECENT INCOMING Employees DATA FILE CLEANED'
 
 ## EMPLOYEES ##### EMPTY EMPLOYEE TABLE
@@ -157,7 +148,6 @@ trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 ## EMPLOYEES ##### Load the data from the latest file into the (LIVE) employees table
 mysql  --login-path=local --silent -DSRG_Dev -N -e "Load data local infile '/home/ubuntu/db_files/incoming/ctuit/Infile.Employee.csv' into table Employees_Live fields terminated by ',' lines terminated by '\n'"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-
 
 ## EMPLOYEES ##### DELETE OLD EMPLOYEES FILE TO MAKE READY FOR NEXT TIME
 rm /home/ubuntu/db_files/incoming/ctuit/Infile.Employee.csv
@@ -175,12 +165,10 @@ for file in /home/ubuntu/db_files/incoming/ctuit/*Checkdetail*.csv
   do
 	#### MAKE A COPY OF THE FILE IN BACKUP DIR
 	cp "$file" //home/ubuntu/db_files/incoming/backup/ctuit/
-	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 	tail -n+2 "$file"  >> /home/ubuntu/db_files/incoming/ctuit/Infile.Chkdetail.csv
-	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 	rm "$file"
-	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
   done
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'INCOMING CheckDetail DATA FILES CLEANED AND MERGED'
 
 
@@ -285,14 +273,9 @@ trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 mysql  --login-path=local --silent -DSRG_Dev -N -e "UPDATE CheckDetail_Temp CDT SET CDT.CloseTime = CDT.DOB WHERE CDT.CloseTime < '2001-01-01'"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
-
-
-
-#################### UNCOMMENT THE FOLLOWING TO PROCESS FULLY
-
 ##### ADD INCOMING CHECK DETAIL DATA TO LIVE TABLE
-#mysql  --login-path=local --silent -DSRG_Dev -N -e "INSERT INTO CheckDetail_Live SELECT * FROM CheckDetail_Temp"
-#trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+mysql  --login-path=local --silent -DSRG_Dev -N -e "INSERT INTO CheckDetail_Live SELECT * FROM CheckDetail_Temp"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 ## EMPLOYEES ##### DELETE OLD TABLETURNS FILE TO MAKE READY FOR NEXT TIME
 rm /home/ubuntu/db_files/incoming/ctuit/Infile.Chkdetail.csv
