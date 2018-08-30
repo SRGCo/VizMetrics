@@ -5,7 +5,7 @@
 # exec 1> >(logger -s -t $(basename $0)) 2>&1
 
 # Next line turns echo on
-set -x
+#set -x
 
 ####### USES CTUIT EXPORTS #########
 ## 1 ## TableTurn [all company by date][TableTurns.raw.csv]
@@ -71,6 +71,12 @@ trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 mysql  --login-path=local --silent -DSRG_Dev -N -e "Load data local infile '/home/ubuntu/db_files/incoming/ctuit/Infile.Tableturn.csv' into table TableTurns_Temp fields terminated by ',' lines terminated by '\n'"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
+## Tableturns ## DELETE OLD TABLETURNS FILE TO MAKE READY FOR NEXT TIME
+rm /home/ubuntu/db_files/incoming/ctuit/Infile.Tableturn.csv
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+
+
+
 ### PUT DOB INTO SQL FORMAT
 mysql  --login-path=local --silent -DSRG_Dev -N -e "UPDATE TableTurns_Temp SET DOB= STR_TO_DATE(DOB, '%c/%e/%Y') WHERE STR_TO_DATE(DOB, '%c/%e/%Y') IS NOT NULL"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
@@ -119,18 +125,10 @@ trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 #mysql  --login-path=local --silent -DSRG_Dev -N -e "INSERT INTO TableTurns_Live SELECT * FROM TableTurns_Temp"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
-## Tableturns ## DELETE OLD TABLETURNS FILE TO MAKE READY FOR NEXT TIME
-rm /home/ubuntu/db_files/incoming/ctuit/Infile.Tableturn.csv
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-
 
 
 ################ EMPLOYEES SECTION #########################################
-## DELETE ALL BUT NEWEST EMPLOYEE FILE AND REMOVE (1) HEADER ROW
-ls /home/ubuntu/db_files/incoming/ctuit/*Employees*.csv -t | tail -n +2 | xargs rm  {}
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
-###### PROCESS THE REMAINING FILE
 for file in /home/ubuntu/db_files/incoming/ctuit/*Employees*.csv
   do
 	#### MAKE A COPY OF THE FILE IN BACKUP DIR
@@ -148,10 +146,24 @@ trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 ## EMPLOYEES ##### Load the data from the latest file into the (LIVE) employees table
 mysql  --login-path=local --silent -DSRG_Dev -N -e "Load data local infile '/home/ubuntu/db_files/incoming/ctuit/Infile.Employee.csv' into table Employees_Live fields terminated by ',' lines terminated by '\n'"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-
 ## EMPLOYEES ##### DELETE OLD EMPLOYEES FILE TO MAKE READY FOR NEXT TIME
 rm /home/ubuntu/db_files/incoming/ctuit/Infile.Employee.csv
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+
+
+## EMPLOYEES ##### REMOVE DUPLICATE ROWS FROM EMPLOYEES LIVE TABLE
+mysql  --login-path=local --silent -DSRG_Dev -N -e "DROP TABLE IF EXISTS Employees_Live_temp"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+mysql  --login-path=local --silent -DSRG_Dev -N -e "CREATE table Employees_Live_temp LIKE Employees_Live"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+mysql  --login-path=local --silent -DSRG_Dev -N -e "INSERT INTO Employees_Live_temp SELECT * FROM Employees_Live GROUP BY EmployeeID"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+mysql  --login-path=local --silent -DSRG_Dev -N -e "DROP table Employees_Live"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+mysql  --login-path=local --silent -DSRG_Dev -N -e "RENAME table Employees_Live_temp TO Employees_Live"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+
+
 
 
 
@@ -183,6 +195,11 @@ trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 #### Load the data from the latest file into the (temp) check detail
 mysql  --login-path=local --silent -DSRG_Dev -N -e "Load data local infile '/home/ubuntu/db_files/incoming/ctuit/Infile.Chkdetail.csv' into table CheckDetail_Temp fields terminated by ',' lines terminated by '\n'"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+
+## CHECKDETAIL ##### DELETE OLD CHECKDETAIL FILE TO MAKE READY FOR NEXT TIME
+rm /home/ubuntu/db_files/incoming/ctuit/Infile.Chkdetail.csv
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+
 
 #### PUT TransactionDate INTO SQL FORMAT
 mysql  --login-path=local --silent -DSRG_Dev -N -e "UPDATE CheckDetail_Temp SET DOB = STR_TO_DATE(DOB, '%m/%d/%Y') WHERE STR_TO_DATE(DOB, '%m/%d/%Y') IS NOT NULL"
@@ -275,10 +292,6 @@ trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 ##### ADD INCOMING CHECK DETAIL DATA TO LIVE TABLE
 mysql  --login-path=local --silent -DSRG_Dev -N -e "INSERT INTO CheckDetail_Live SELECT * FROM CheckDetail_Temp"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-
-## EMPLOYEES ##### DELETE OLD TABLETURNS FILE TO MAKE READY FOR NEXT TIME
-rm /home/ubuntu/db_files/incoming/ctuit/Infile.Chkdetail.csv
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 
