@@ -56,8 +56,6 @@ for file in /home/ubuntu/db_files/incoming/ctuit/*Tableturns*.csv
 	rm "$file"
 done
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'INCOMING TableTurns DATA FILES CLEANED AND MERGED'
-
 
 ### Drop and recreate temp tableturns table
 mysql  --login-path=local --silent -DSRG_Dev -N -e "DROP TABLE IF EXISTS TableTurns_Temp"
@@ -124,6 +122,7 @@ trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 #### Insert into the LIVE tableTurns table
 #mysql  --login-path=local --silent -DSRG_Dev -N -e "INSERT INTO TableTurns_Live SELECT * FROM TableTurns_Temp"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+echo 'Incoming Tableturns data processed'
 
 
 
@@ -137,7 +136,6 @@ for file in /home/ubuntu/db_files/incoming/ctuit/*Employees*.csv
 	rm "$file"
   done
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MOST RECENT INCOMING Employees DATA FILE CLEANED'
 
 ## EMPLOYEES ##### EMPTY EMPLOYEE TABLE
 mysql  --login-path=local --silent -DSRG_Dev -N -e "TRUNCATE TABLE Employees_Live"
@@ -163,6 +161,8 @@ trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 mysql  --login-path=local --silent -DSRG_Dev -N -e "RENAME table Employees_Live_temp TO Employees_Live"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
+echo 'Incoming Employees data processed'
+
 
 
 
@@ -181,8 +181,6 @@ for file in /home/ubuntu/db_files/incoming/ctuit/*Checkdetail*.csv
 	rm "$file"
   done
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'INCOMING CheckDetail DATA FILES CLEANED AND MERGED'
-
 
 #### DUMP EXISTING CHECK DETAIL INCOMING TABLE
 mysql  --login-path=local --silent -DSRG_Dev -N -e "DROP TABLE IF EXISTS CheckDetail_Temp"
@@ -293,6 +291,11 @@ trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 ##### ADD INCOMING CHECK DETAIL DATA TO LIVE TABLE
 mysql  --login-path=local --silent -DSRG_Dev -N -e "INSERT INTO CheckDetail_Live SELECT * FROM CheckDetail_Temp"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+
+echo '======================================================'
+echo 'CheckDetail_Live table populated with most recent data'
+
+
 
 
 

@@ -5,17 +5,40 @@
 # UNCOMMENT NEXT FOR VERBOSE
 #set -x
 ##### HALT AND CATCH FIRE IF ANY COMMAND FAILS
-set -e
+#set -e
+
+##### USE time command to calc runtime "time DEV.cd.ca.into.master.sh"
+
+################# ERROR CATCHING ##########################
+failfunction()
+{
+	local scriptname=$(basename -- "$0") 
+	local returned_value=$1
+	local lineno=$2
+	local bash_error=$3
+
+	if [ "$returned_value" != 0 ]
+	then 
+ 		echo "$scriptname failed on $bash_error at line: $lineno"
+        	mail -s "VizMetrics Server Alert"  it@serenitee.com <<< 'Script '"$scriptname"' failed on '"$bash_error"' at Line: '"$lineno"
+        	exit
+	fi
+}
+
+
+
 
 ################# THIS INSERTS ALL DATA FROM TEMP TABLE, IT SHOULD JUST UPDATE.
 
 ######### UBER JOIN LIVE CHECK DETAIL WITH LIVE SQUASHED CARD ACTIVITY
 # Delete Temp table if it exists
 mysql  --login-path=local --silent -DSRG_Dev -N -e "DROP TABLE IF EXISTS Master_temp"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'TEMP TABLE DROPPED, STARTING NEW TEMP TABLE CREATION'
 
 # Create a empty copy of CardActivity table from CardActivityStructure table
 mysql  --login-path=local --silent -DSRG_Dev -N -e "CREATE TABLE Master_temp LIKE Master_structure"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'MASTER TEMP CREATED STARTING JOIN'
 
 #### Double check UNION !!!!!!!!!!!!!!!!
@@ -23,45 +46,56 @@ mysql  --login-path=local -DSRG_Dev -N -e "INSERT INTO Master_temp SELECT CD.*, 
 						LEFT JOIN CardActivity_squashed_2 AS CA ON CD.POSkey = CA.POSkey 
 						UNION SELECT CD.*, CA.* FROM .CheckDetail_Live as CD 
 						RIGHT JOIN CardActivity_squashed_2 AS CA ON CD.POSkey = CA.POSkey"
-
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 # echo 'UBER JOIN COMPLETED'
 echo 'UBER JOIN DATA INSERTED INTO Master_temp'
 
 # Create enroll_date and Account_status fields
 mysql  --login-path=local --silent -DSRG_Dev -N -e "ALTER TABLE Master_temp ADD EnrollDate VARCHAR(11)"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 # Create POSkey field
 mysql  --login-path=local --silent -DSRG_Dev -N -e "ALTER TABLE Master_temp ADD Account_status VARCHAR(26)"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 mysql  --login-path=local --silent -DSRG_Dev -N -e "ALTER TABLE Master_temp ADD INDEX(Account_status)"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'ADDED ENROLLDATE AND Account_status TO Master_temp'
 
 ######## UPDATE ACCOUNT STATUS FROM GUEST TABLE
 mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_temp JOIN Guests_Master ON Master_temp.CardNumber = Guests_Master.CardNumber 
 							SET Master_temp.EnrollDate = Guests_Master.EnrollDate, Master_temp.Account_status = Guests_Master.AccountStatus"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'ACCOUNT STATUSES UPDATED FROM Guests_Master TABLE'
 
 mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_temp JOIN Px_exchanges ON Master_temp.CardNumber = Px_exchanges.CurrentCardNumber SET Master_temp.Account_status = 'Exchange'"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'EXCHANGED ACCOUNTS STATUSES UPDATED FROM px_exchanges TABLE'
 
 mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_temp JOIN Excludes ON Master_temp.CardNumber = Excludes.CardNumber SET Master_temp.Account_status = 'Exclude'"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'EXCLUDED ACCOUNTS STATUSES UPDATED USING Excludes TABLE'
 
 ######## UPDATE THE EMPTY CHECKDETAIL FIELDS WITH PX DATA
 mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_temp SET CheckNumber = CheckNo_px WHERE CheckNumber IS NULL"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo EMPTY CHECKNO POPULATED FROM PX DATA
 
 mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_temp SET DOB = TransactionDate WHERE DOB IS NULL"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo Empty DOB-s POPULATED FROM PX DATA
 
 mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_temp SET LocationID = LocationID_px WHERE LocationID IS NULL"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo Empty LocationID-s POPULATED FROM PX DATA
 
 mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_temp SET POSkey = POSKey_px WHERE POSkey IS NULL"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo Empty POSkey-s POPULATED FROM PX DATA
 
 mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_temp SET GrossSalesCoDefined = DollarsSpentAccrued WHERE GrossSalesCoDefined IS NULL 
 						AND Master_temp.Account_status <> 'TERMIN' AND Master_temp.Account_status <> 'SUSPEN' 
 						AND Master_temp.Account_status <> 'Exchanged' AND Master_temp.Account_status <> 'Exchange' 
 						AND Master_temp.Account_status <> 'Exclude'"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'EMPTY GrossSalesCoDefined-s POPULATED (PROMOS OR COMPS COULD NOT BE ADD, LOWBALL FIGURES)'
 
 
@@ -90,7 +124,7 @@ do
 		mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_temp SET FY = '$FY',YLuna = '$YLuna', Luna='$Luna' WHERE Master_temp.DOB = '$TransactionDate'"
 		#echo $TransactionDate updated FY= $FY YLuna = $YLuna  Luna = $Luna
 
-done
+done || trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo FY YLUNA CALCD POPULATED
 
 
@@ -99,11 +133,13 @@ echo FY YLUNA CALCD POPULATED
 # Delete Temp table if it exists
 
 mysql  --login-path=local --silent -DSRG_Dev -N -e "TRUNCATE TABLE Master"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'TABLE Master TRUNCATED'
 
 
 ####### COPY TEMP DATA INTO MASTER
 mysql  --login-path=local --silent -DSRG_Dev -N -e "INSERT INTO Master SELECT * FROM Master_temp"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'DATA INSERTED INTO Master TABLE'
 
 
@@ -175,7 +211,7 @@ do
 	############## AFTER WE FIGURE OUT WHY IT HAPPENS
 	mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET Vm_VisitsBalance = '0' WHERE Vm_VisitsBalance ='-1'"
 
-done
+done || trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 
 
@@ -256,7 +292,7 @@ do
 			fi
 
 		fi
-done
+done || trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo "Updated Frequencies in Master table"
 
 
