@@ -152,12 +152,26 @@ do
 	
 	######## GET FIRST TRANSACTION
 	Min_dob=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT MIN(TransactionDate) from Master WHERE CardNumber = '$CardNumber'")
+	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 	######## GET visitsaccrued FOR THIS TransactionDate (DOB)
 	VisitsAccrued=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT MAX(VisitsAccrued) from Master WHERE TransactionDate = '$Min_dob' and CardNumber = '$CardNumber'")
+	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+	##### CAN NOT BE NULL
+	if [ -z "$VisitsAccrued" ] 
+	then 
+		$VisitsAccrued='0'
+	fi
 
 	CarriedBal=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT MAX(VisitsBalance) from Master WHERE TransactionDate = '$Min_dob' AND CardNumber = '$CardNumber'")
+	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+		##### CAN NOT BE NULL
+	if [ -z "$CarriedBal" ] 
+	then 
+		$CarriedBal='0'
+	fi
 
+	
 	#### NOT AN EXCHANGE
 	######## VISIT ACCRUED ON FIRST TRANSACTIONDATE
 	if [[ "$CarriedBal" = "1" && "$VisitsAccrued" = "1" ]]
@@ -165,12 +179,15 @@ do
 		# echo $CardNumber"          Accrued on First Day!!!!       "$Min_dob"       no exchange       "$CarriedBal
 		##### UPDATE SUBTRACTING 1 FROM ALL VisitsBalance VALUES (to account for visit counted on enrollment day)
 		mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET Vm_VisitsBalance = VisitsBalance -1 WHERE CardNumber = '$CardNumber' AND VisitsBalance IS NOT NULL AND VisitsBalance != '0'"
+		trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 		##### UPDATE SUBTRACTING 1 FROM ALL VisitsBalance VALUES (to account for visit counted on enrollment day)
 		mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET Vm_VisitsAccrued = '' WHERE CardNumber = '$CardNumber' and TransactionDate > '$Min_dob'"
+		trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 		##### UPDATE SUBTRACTING 1 FROM ALL VisitsBalance VALUES (to account for visit counted on enrollment day)
 		mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET Vm_VisitsAccrued = VisitsAccrued WHERE CardNumber = '$CardNumber' and TransactionDate > '$Min_dob'"
+		trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 	fi
 
@@ -186,13 +203,17 @@ do
 		# echo $CardNumber" DID NOT Accrue First Day "$Min_dob" no exchange "$CarriedBal
 			##### UPDATE SUBTRACTING 1 FROM ALL VisitsBalance VALUES (to account for visit counted on enrollment day)
 			mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET Vm_VisitsBalance = VisitsBalance, Vm_VisitsAccrued = VisitsAccrued WHERE CardNumber = '$CardNumber' "
+			trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 		else
 			##### ODD CASES - NO BALANCE BUT 1 VISIT ACCRUED
 		# echo $CardNumber" Odd Case Min_dob:"$Min_dob" Visits Accrued:"$VisitsAccrued" Carried Balance"$CarriedBal
 			##### SET FIRST DATES visitsaccrued to 0 (to account for visit counted on enrollment day), vm_visitsbalance = visitsbalance
 			mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET Vm_VisitsAccrued = '' WHERE CardNumber = '$CardNumber' and TransactionDate = '$Min_dob'"
+			trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+
 			##### UPDATE SUBTRACTING 1 FROM ALL VisitsBalance VALUES (to account for visit counted on enrollment day)
 			mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET Vm_VisitsAccrued = VisitsAccrued, Vm_VisitsBalance = VisitsBalance WHERE CardNumber = '$CardNumber' and TransactionDate > '$Min_dob'"
+			trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 		fi
 	fi
@@ -204,6 +225,7 @@ do
 		# echo $CardNumber"        First Day         "$Min_dob"       EXCHANGED!!! "$CarriedBal
 		##### PX counts are correct
 		mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET Vm_VisitsBalance = VisitsBalance, Vm_VisitsAccrued = VisitsAccrued WHERE CardNumber = '$CardNumber' "
+		trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 	fi
 
@@ -234,23 +256,29 @@ do
 	######## COUNT VISITS OVER PREVIOUS 12 MONTHS AND LIFETIME
 	PrevYear=$(mysql  --login-path=local -DSRG_Prod -N -e "SELECT COUNT(*) from Master WHERE CardNumber = '$CardNumber' AND TransactionDate <> EnrollDate 
 								AND Vm_VisitsAccrued = '1' AND TransactionDate >= DATE_SUB(NOW(),INTERVAL 1 YEAR)")
+	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 	######## MINIMUM VISITBALNCE
 	MinBal=$(mysql  --login-path=local -DSRG_Prod -N -e "SELECT MIN(Vm_Visitsbalance) from Master WHERE CardNumber = '$CardNumber'")
+	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 	######## COUNT VISITS OVER LIFETIME
 	Lifetime=$(mysql  --login-path=local -DSRG_Prod -N -e "SELECT COUNT(*) from Master WHERE CardNumber = '$CardNumber' 
 								AND Vm_VisitsAccrued = '1'")
+	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 	######## 
 	Lifetimereal="$(($MinBal+$Lifetime))"
-
+	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 	######## MINIMUM VISITBALNCE
 	VmVB=$(mysql  --login-path=local -DSRG_Prod -N -e "SELECT MAX(Vm_Visitsbalance) from Master WHERE CardNumber = '$CardNumber'")
+	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 	##### GET MAX  TRANSACTIONDATE
 	MaxDate=$(mysql  --login-path=local -DSRG_Prod -N -e "SELECT MAX(TransactionDate) from Master WHERE CardNumber = '$CardNumber'")
+	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR	
 		##### GET 2ND TO MAX TRANSACTIONDATE
 		SecondMax=$(mysql  --login-path=local -DSRG_Prod -N -e "SELECT TransactionDate from Master WHERE CardNumber = '$CardNumber' 
 										AND Vm_VisitsAccrued = '1' ORDER BY TransactionDate DESC limit 1,1") 
+		trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 		##### IF SECONDMAX IS NULL / EMPTY
 		if [ -z "$SecondMax" ]
 		then
@@ -258,6 +286,7 @@ do
 			##### UPDATE ONLY FIRST FREQUENCIES
 			mysql  --login-path=local -DSRG_Prod -N -e "UPDATE Master SET FreqCurrent = DATEDIFF(NOW(), '$MaxDate'), Freq12mos = '$PrevYear', 
 										FreqLifetime = '$Lifetimereal'  WHERE CardNumber = '$CardNumber'"
+			trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR	
 			#echo $CardNumber" first only MAX "$MaxDate" 2ND "$SecondMax"  Prevyr "$PrevYear" VmVB "$VmVB 
 			#echo "PrevLifereal "$Lifetimereal" prevlifenotreal"$Lifetime" MinBal "$MinBal
 
@@ -266,13 +295,15 @@ do
 			##### GET 3RD TO MAX TRANSACTIONDATE
 			ThirdMax=$(mysql  --login-path=local -DSRG_Prod -N -e "SELECT transactiondate from Master WHERE CardNumber = '$CardNumber' 
 										AND Vm_VisitsAccrued = '1' ORDER BY TransactionDate DESC limit 2,1") 
+			trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 			##### IF THIRDMAX IS NULL / EMPTY
 			if [ -z "$ThirdMax" ]
 			then
 				##### UPDATE ONLY FIRST AND SECOND FREQUENCIES
 				mysql  --login-path=local -DSRG_Prod -N -e "UPDATE Master SET FreqCurrent = DATEDIFF(NOW(), '$MaxDate'), 
 										FreqRecent = DATEDIFF('$MaxDate', '$SecondMax'), Freq12mos = '$PrevYear', 
-										FreqLifetime = '$Lifetimereal'  WHERE CardNumber = '$CardNumber'"			   
+										FreqLifetime = '$Lifetimereal'  WHERE CardNumber = '$CardNumber'"
+				trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR			   
 				#echo $CardNumber" first and second MAX "$MaxDate" 2ND "$SecondMax" Prevyr "$PrevYear" VmVB "$VmVB
 				#echo " PrevLifereal "$Lifetimereal" prevlifenotreal "$Lifetime" MinBal "$MinBal
 				
@@ -284,7 +315,7 @@ do
 										FreqRecent = DATEDIFF('$MaxDate', '$SecondMax'), 
 										FreqPrevious = DATEDIFF('$SecondMax', '$ThirdMax'), Freq12mos = '$PrevYear', 
 										FreqLifetime = '$Lifetimereal'   WHERE CardNumber = '$CardNumber'"
-
+			trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 			#echo $CardNumber" first second third MAX "$MaxDate" 2ND "$SecondMax" 3RD "$ThirdMax" Prevyr "$PrevYear" VmVB "$VmVB
 			#echo " PrevLifereal "$Lifetimereal" prevlifenotreal "$Lifetime" MinBal "$MinBal
 

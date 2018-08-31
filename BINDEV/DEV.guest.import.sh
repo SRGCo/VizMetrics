@@ -18,7 +18,7 @@ set -e
 #### USE PX REPORT Guest Analysis Report
 #### WITH FILTER ~ALL rewards accounts (all statuses) use for VM
 #### ADD "Email Failed", "Account Status", "Phone number", "date of birth" fields ON Guest Analysis Report - Customize Output PAGE (run report)
-#### download tsv
+#### download tsv Rename "Guests.tsv" in /home/ubuntu/db_files/incoming/px
 
 # DELETE THE PREVIOUS INFILE FILE
 rm -f /home/ubuntu/db_files/incoming/px/guests.infile.tsv
