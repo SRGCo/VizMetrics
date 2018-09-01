@@ -236,7 +236,7 @@ do
 
 
 done || trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-
+echo 'VisitBalance Fix subroutine completed'
 
 
 
