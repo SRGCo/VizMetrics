@@ -5,7 +5,7 @@
 # UNCOMMENT NEXT FOR VERBOSE
 #set -x
 ##### HALT AND CATCH FIRE IF ANY COMMAND FAILS
-#set -e
+set -e
 
 ##### USE time command to calc runtime "time DEV.cd.ca.into.master.sh"
 
@@ -232,6 +232,8 @@ do
 	##### FIX THE MULTI TRANS ON DAY 1
 	############## AFTER WE FIGURE OUT WHY IT HAPPENS
 	mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET Vm_VisitsBalance = '0' WHERE Vm_VisitsBalance ='-1'"
+	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+
 
 done || trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
