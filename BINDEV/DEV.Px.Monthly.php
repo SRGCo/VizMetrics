@@ -1,6 +1,14 @@
 #!/usr/bin/php
 <?php 
 
+
+
+###### could we check to see when the last real transaction is and then just replicate entires for everyone 
+### between that date and the focusmonth ? ? 
+
+
+
+
 ### functions
 function yrseg ($pastvisitbal, $lifetimevisits)
 {
