@@ -1,7 +1,8 @@
-
 #!/usr/bin/php
 <?php 
 
+	 $segment_txt = '';
+	
 
 
 ### functions
@@ -45,7 +46,7 @@ mysqli_select_db($dbc, DB_NAME)
 
 //QUERY PX_MONTHLY FOR CARDNUMBER
 # NOT USING -- 	AND MOD(CardNumber, 200) = '0'
-$query1 = "SELECT DISTINCT(CardNumber) as CardNumber FROM PX_Monthly	
+$query1 = "SELECT DISTINCT(CardNumber) as CardNumber FROM Px_Monthly	
 					ORDER BY CardNumber ASC";
 $result1 = mysqli_query($dbc, $query1);
 ECHO MYSQLI_ERROR($dbc);
@@ -57,11 +58,25 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 
 	$YrMoFreqSeg_12MoBack_txt = $YrMoFreqSeg_3MoBack_txt = $YrMoFreqSeg_1MoBack_txt = $YrMoFreq_1YrBack_txt = '';
 
-	$segment_txt = '';
+	$segment_txt  = $VisitsAccruedLife_db = '0';
+	#INIT THE VARS
+	$MaxDate_db = $MinDateMonth_db = $MinDateYear_db = $FocusDate = $FocusDateEnd = '';
+	$CurrentDate_db = $FirstName_db = $LastName_db = $EnrollDate_db = $Zip_db = '';	
+
+	$DollarsSpentLife_db = $PointsRedeemedLife_db = $PointsAccruedLife_db = $VisitsAccruedLife_db = '0';
+	$DollarsSpentMonth_db = $PointsRedeemedMonth_db = $PointsAccruedMonth_db = $VisitsAccruedMonth_db = '0';
+
+	$LastVisitDate_db = $PrevYearVisitBal_db = $LapseDays_db = $RecentFreqDays_db = $ProgAge_db = '';	
+	$TwoVisitsBack_db = $FocusDate_php = $TwoVisitsBack_php = $MonthsEnrolled_db = $LifetimeFreq = '';
+	$YearFreqSeg = $RecentFreqMonths_db = $TwoVisitsBack_php = $YrAgoFreq = $LastVisitBalance_db = '';
+
+	
+	$Carryover_LastVisitDate = $segment_txt = '';
+	
 
 
 	###### NOW SELECT THE FOCUSDATE AND PROCESS
-	$query2 = "SELECT FocusDate FROM PX_Monthly where CardNumber = '$CardNumber_db'	
+	$query2 = "SELECT FocusDate FROM Px_Monthly where CardNumber = '$CardNumber_db'	
 					ORDER BY FocusDate DESC";
 	$result2 = mysqli_query($dbc, $query2);
 	ECHO MYSQLI_ERROR($dbc);
