@@ -1,13 +1,31 @@
 #!/usr/bin/php
 <?php 
 
-	 $segment_txt = '';
-	
 
 
 ### functions
+
+################# ERROR CATCHING ##########################
+failfunction()
+{
+	local scriptname=$(basename -- "$0") 
+	local returned_value=$1
+	local lineno=$2
+	local bash_error=$3
+
+	if [ "$returned_value" != 0 ]
+	then 
+ 		echo "$scriptname failed on $bash_error at line: $lineno"
+        	mail -s "VizMetrics Server Alert"  it@serenitee.com <<< 'Script '"$scriptname"' failed on '"$bash_error"' at Line: '"$lineno"
+        	exit
+	fi
+}
+
+
 function yrseg ($pastvisitbal, $lifetimevisits)
 {
+	 $segment_txt = '';
+
 	if (($pastvisitbal == '0') AND ($lifetimevisits > '0')) {$segment_txt = 'Dropout';
 	} ELSE {
 	if (($pastvisitbal == '0') AND ( $lifetimevisits == '0')) {$segment_txt = 'Zombie';
@@ -53,25 +71,20 @@ ECHO MYSQLI_ERROR($dbc);
 while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	$CardNumber_db = $row1['CardNumber'];
 	
+	#INIT THE VARS
 	$YrMoVisitBal_1MoBack_db = $YrMoVisitBal_3MoBack_db = $LapseMo_12MoBack_db = $YrMoVisitBal_12MoBack_db = '';
 	$YrMoVisitBal_24MoBack_db = $YrMoVisitBal_36MoBack_db = $YrMoFreqSeg_24MoBack_txt = $YrMoFreqSeg_36MoBack_txt = '';
 
 	$YrMoFreqSeg_12MoBack_txt = $YrMoFreqSeg_3MoBack_txt = $YrMoFreqSeg_1MoBack_txt = $YrMoFreq_1YrBack_txt = '';
 
-	$segment_txt  = $VisitsAccruedLife_db = '0';
-	#INIT THE VARS
-	$MaxDate_db = $MinDateMonth_db = $MinDateYear_db = $FocusDate = $FocusDateEnd = '';
-	$CurrentDate_db = $FirstName_db = $LastName_db = $EnrollDate_db = $Zip_db = '';	
-
-	$DollarsSpentLife_db = $PointsRedeemedLife_db = $PointsAccruedLife_db = $VisitsAccruedLife_db = '0';
-	$DollarsSpentMonth_db = $PointsRedeemedMonth_db = $PointsAccruedMonth_db = $VisitsAccruedMonth_db = '0';
-
+	$VisitsAccruedLife_db = '0';
+	
 	$LastVisitDate_db = $PrevYearVisitBal_db = $LapseDays_db = $RecentFreqDays_db = $ProgAge_db = '';	
-	$TwoVisitsBack_db = $FocusDate_php = $TwoVisitsBack_php = $MonthsEnrolled_db = $LifetimeFreq = '';
-	$YearFreqSeg = $RecentFreqMonths_db = $TwoVisitsBack_php = $YrAgoFreq = $LastVisitBalance_db = '';
 
 	
-	$Carryover_LastVisitDate = $segment_txt = '';
+	$Carryover_LastVisitDate = '';
+	
+	
 	
 
 
@@ -82,6 +95,9 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	ECHO MYSQLI_ERROR($dbc);
 	while($row1 = mysqli_fetch_array($result2, MYSQLI_ASSOC)){
 		$FocusDate_db = $row1['FocusDate'];
+
+
+	 $segment_txt = '';
 
 
 		##### RETRIEVE PRIOR VISITBALANCE VALUES
@@ -186,12 +202,29 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 		// ECHO $query8.PHP_EOL;
 		$result16 = mysqli_query($dbc, $query16);	
 		ECHO MYSQLI_ERROR($dbc);
+	ECHO 'Cardnumber: '.$CardNumber_db.' FocusDate: '.$FocusDate_db.PHP_EOL;
 	//END OF FOCUSMONTH LOOP
 	}
-
+ECHO '+++++++++++++++ Cardnumber: '.$CardNumber_db.' FocusDate: '.$FocusDate_db.PHP_EOL;
 // END OF CARD NUMBER WHILE LOOP
 }
 
+
+############# COPY TO PROD ##############
+# Delete Prod Master table if it exists
+mysql  --login-path=local --silent -DSRG_Prod -N -e "DROP TABLE IF EXISTS Px_Monthly"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+echo 'PROD Px_Monthly TABLE DROPPED, COPYING DEV Px_Monthly TABLE TO PROD'
+
+# Copy Dev Px_Monthly to Prod
+mysql  --login-path=local --silent -DSRG_Prod -N -e "CREATE TABLE Px_Monthly LIKE SRG_Dev.Px_Monthly;"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+echo 'PROD Px_Monthly CREATED'
+
+# Copy Dev Px_Monthly  to Prod
+mysql  --login-path=local --silent -DSRG_Prod -N -e "INSERT INTO Px_Monthly SELECT * FROM SRG_Dev.Px_Monthly;"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+echo 'PROD Px_Monthly POPULATED'
 
 
 

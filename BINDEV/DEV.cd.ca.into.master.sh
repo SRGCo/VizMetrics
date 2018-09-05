@@ -329,3 +329,19 @@ done || trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo "Updated Frequencies in Master table"
 
 
+############# COPY TO PROD ##############
+# Delete Prod Master table if it exists
+mysql  --login-path=local --silent -DSRG_Prod -N -e "DROP TABLE IF EXISTS Master"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+echo 'TEMP TABLE DROPPED, STARTING NEW TEMP TABLE CREATION'
+
+# Copy Dev Master to Prod
+mysql  --login-path=local --silent -DSRG_Prod -N -e "CREATE TABLE Master LIKE SRG_Dev.Master;"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+echo 'PROD Master CREATED'
+
+# Copy Dev Master to Prod
+mysql  --login-path=local --silent -DSRG_Prod -N -e "INSERT INTO Master SELECT * FROM SRG_Dev.Master;"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+echo 'PROD Master POPULATED'
+
