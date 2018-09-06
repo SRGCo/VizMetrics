@@ -251,34 +251,34 @@ echo 'VisitBalance Fix subroutine completed'
 ####### CALC-ing OFF Vm_VisitsAccrued
 
 
-mysql  --login-path=local -DSRG_Prod -N -e "SELECT CardNumber FROM Master WHERE CardNumber IS NOT NULL 
+mysql  --login-path=local -DSRG_Dev -N -e "SELECT CardNumber FROM Master WHERE CardNumber IS NOT NULL 
 						GROUP BY CardNumber ORDER BY CardNumber ASC" | while read -r CardNumber;
 do
 
 	######## COUNT VISITS OVER PREVIOUS 12 MONTHS AND LIFETIME
-	PrevYear=$(mysql  --login-path=local -DSRG_Prod -N -e "SELECT COUNT(*) from Master WHERE CardNumber = '$CardNumber' AND TransactionDate <> EnrollDate 
+	PrevYear=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT COUNT(*) from Master WHERE CardNumber = '$CardNumber' AND TransactionDate <> EnrollDate 
 								AND Vm_VisitsAccrued = '1' AND TransactionDate >= DATE_SUB(NOW(),INTERVAL 1 YEAR)")
 	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 	######## MINIMUM VISITBALNCE
-	MinBal=$(mysql  --login-path=local -DSRG_Prod -N -e "SELECT MIN(Vm_Visitsbalance) from Master WHERE CardNumber = '$CardNumber'")
+	MinBal=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT MIN(Vm_Visitsbalance) from Master WHERE CardNumber = '$CardNumber'")
 	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 	######## COUNT VISITS OVER LIFETIME
-	Lifetime=$(mysql  --login-path=local -DSRG_Prod -N -e "SELECT COUNT(*) from Master WHERE CardNumber = '$CardNumber' 
+	Lifetime=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT COUNT(*) from Master WHERE CardNumber = '$CardNumber' 
 								AND Vm_VisitsAccrued = '1'")
 	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 	######## 
 	Lifetimereal="$(($MinBal+$Lifetime))"
 	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 	######## MINIMUM VISITBALNCE
-	VmVB=$(mysql  --login-path=local -DSRG_Prod -N -e "SELECT MAX(Vm_Visitsbalance) from Master WHERE CardNumber = '$CardNumber'")
+	VmVB=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT MAX(Vm_Visitsbalance) from Master WHERE CardNumber = '$CardNumber'")
 	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 	##### GET MAX  TRANSACTIONDATE
-	MaxDate=$(mysql  --login-path=local -DSRG_Prod -N -e "SELECT MAX(TransactionDate) from Master WHERE CardNumber = '$CardNumber'")
+	MaxDate=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT MAX(TransactionDate) from Master WHERE CardNumber = '$CardNumber'")
 	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR	
 		##### GET 2ND TO MAX TRANSACTIONDATE
-		SecondMax=$(mysql  --login-path=local -DSRG_Prod -N -e "SELECT TransactionDate from Master WHERE CardNumber = '$CardNumber' 
+		SecondMax=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT TransactionDate from Master WHERE CardNumber = '$CardNumber' 
 										AND Vm_VisitsAccrued = '1' ORDER BY TransactionDate DESC limit 1,1") 
 		trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 		##### IF SECONDMAX IS NULL / EMPTY
@@ -286,7 +286,7 @@ do
 		then
 
 			##### UPDATE ONLY FIRST FREQUENCIES
-			mysql  --login-path=local -DSRG_Prod -N -e "UPDATE Master SET FreqCurrent = DATEDIFF(NOW(), '$MaxDate'), Freq12mos = '$PrevYear', 
+			mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET FreqCurrent = DATEDIFF(NOW(), '$MaxDate'), Freq12mos = '$PrevYear', 
 										FreqLifetime = '$Lifetimereal'  WHERE CardNumber = '$CardNumber'"
 			trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR	
 			#echo $CardNumber" first only MAX "$MaxDate" 2ND "$SecondMax"  Prevyr "$PrevYear" VmVB "$VmVB 
@@ -295,14 +295,14 @@ do
 		##### IF SECONDMAX HAS A VALUE
 		else
 			##### GET 3RD TO MAX TRANSACTIONDATE
-			ThirdMax=$(mysql  --login-path=local -DSRG_Prod -N -e "SELECT transactiondate from Master WHERE CardNumber = '$CardNumber' 
+			ThirdMax=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT transactiondate from Master WHERE CardNumber = '$CardNumber' 
 										AND Vm_VisitsAccrued = '1' ORDER BY TransactionDate DESC limit 2,1") 
 			trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 			##### IF THIRDMAX IS NULL / EMPTY
 			if [ -z "$ThirdMax" ]
 			then
 				##### UPDATE ONLY FIRST AND SECOND FREQUENCIES
-				mysql  --login-path=local -DSRG_Prod -N -e "UPDATE Master SET FreqCurrent = DATEDIFF(NOW(), '$MaxDate'), 
+				mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET FreqCurrent = DATEDIFF(NOW(), '$MaxDate'), 
 										FreqRecent = DATEDIFF('$MaxDate', '$SecondMax'), Freq12mos = '$PrevYear', 
 										FreqLifetime = '$Lifetimereal'  WHERE CardNumber = '$CardNumber'"
 				trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR			   
@@ -313,7 +313,7 @@ do
 			##### IF THIRDMAX HAS A VALUE
 			else
 				##### UPDATE ALL FREQUENCIES
-				mysql  --login-path=local -DSRG_Prod -N -e "UPDATE Master SET FreqCurrent = DATEDIFF(NOW(), '$MaxDate'), 
+				mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET FreqCurrent = DATEDIFF(NOW(), '$MaxDate'), 
 										FreqRecent = DATEDIFF('$MaxDate', '$SecondMax'), 
 										FreqPrevious = DATEDIFF('$SecondMax', '$ThirdMax'), Freq12mos = '$PrevYear', 
 										FreqLifetime = '$Lifetimereal'   WHERE CardNumber = '$CardNumber'"
