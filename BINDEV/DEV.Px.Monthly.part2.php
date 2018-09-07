@@ -2,26 +2,6 @@
 <?php 
 
 
-
-### functions
-
-################# ERROR CATCHING ##########################
-failfunction()
-{
-	local scriptname=$(basename -- "$0") 
-	local returned_value=$1
-	local lineno=$2
-	local bash_error=$3
-
-	if [ "$returned_value" != 0 ]
-	then 
- 		echo "$scriptname failed on $bash_error at line: $lineno"
-        	mail -s "VizMetrics Server Alert"  it@serenitee.com <<< 'Script '"$scriptname"' failed on '"$bash_error"' at Line: '"$lineno"
-        	exit
-	fi
-}
-
-
 function yrseg ($pastvisitbal, $lifetimevisits)
 {
 	 $segment_txt = '';
@@ -84,10 +64,16 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	
 	$Carryover_LastVisitDate = '';
 	
-	
-	
+	#### GET THE MAX VISIT BALANCE
+	$query2 = "SELECT LifetimeVisitBalance as VisitsAccruedLife
+				FROM Px_Monthly WHERE CardNumber = '$CardNumber_db'";
+	$result2 = mysqli_query($dbc, $query2);	
+	ECHO MYSQLI_ERROR($dbc);
+	while($row1 = mysqli_fetch_array($result2, MYSQLI_ASSOC)){
+		$VisitsAccruedLife_db = $row1['VisitsAccruedLife'];
+	}
 
-
+	
 	###### NOW SELECT THE FOCUSDATE AND PROCESS
 	$query2 = "SELECT FocusDate FROM Px_Monthly where CardNumber = '$CardNumber_db'	
 					ORDER BY FocusDate DESC";
@@ -99,6 +85,19 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 
 	 $segment_txt = '';
 
+
+		#FIELDS = 12MOVISITBALANCE (PHP=PREVYEARVISITBALANCE)
+		$query5= "SELECT 12MoVisitBalance as PrevYearVisitBal
+				FROM Px_Monthly 
+				WHERE CardNumber = '$CardNumber_db'
+				AND FocusDate = '$FocusDate_db'";
+		$result5 = mysqli_query($dbc, $query5);	
+		ECHO MYSQLI_ERROR($dbc);
+		while($row1 = mysqli_fetch_array($result5, MYSQLI_ASSOC)){
+			$PrevYearVisitBal_db = $row1['PrevYearVisitBal'];
+		}
+		IF ($PrevYearVisitBal_db == ''){$PrevYearVisitBal_db = '0';}
+	
 
 		##### RETRIEVE PRIOR VISITBALANCE VALUES
 		#### ONE MONTH BACK
@@ -212,21 +211,22 @@ ECHO '+++++++++++++++ Cardnumber: '.$CardNumber_db.' FocusDate: '.$FocusDate_db.
 
 ############# COPY TO PROD ##############
 # Delete Prod Master table if it exists
-mysql  --login-path=local --silent -DSRG_Prod -N -e "DROP TABLE IF EXISTS Px_Monthly"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'PROD Px_Monthly TABLE DROPPED, COPYING DEV Px_Monthly TABLE TO PROD'
-
-# Copy Dev Px_Monthly to Prod
-mysql  --login-path=local --silent -DSRG_Prod -N -e "CREATE TABLE Px_Monthly LIKE SRG_Dev.Px_Monthly;"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'PROD Px_Monthly CREATED'
-
-# Copy Dev Px_Monthly  to Prod
-mysql  --login-path=local --silent -DSRG_Prod -N -e "INSERT INTO Px_Monthly SELECT * FROM SRG_Dev.Px_Monthly;"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'PROD Px_Monthly POPULATED'
+$query_prod1 = "DROP TABLE IF EXISTS SRG_Prod.Px_Monthly";
+$result_prod1 = mysqli_query($dbc, $query_prod1);
+ECHO MYSQLI_ERROR($dbc);
+ECHO 'PROD Px_Monthly DROPPED';
 
 
+$query_prod2 = "CREATE TABLE SRG_Prod.Px_Monthly LIKE SRG_Dev.Px_Monthly";
+$result_prod2 = mysqli_query($dbc, $query_prod2);
+ECHO MYSQLI_ERROR($dbc);
+ECHO 'PROD Px_Monthly RECREATED LIKE DEV Px_Monthly';
+
+
+$query_prod2 = "INSERT INTO Px_Monthly SELECT * FROM SRG_Dev.Px_Monthly";
+$result_prod2 = mysqli_query($dbc, $query_prod2);
+ECHO MYSQLI_ERROR($dbc);
+ECHO 'PROD Px_Monthly POPULATED';
 
 
 ?>
