@@ -10,7 +10,7 @@
 # exec 1> >(logger -s -t $(basename $0)) 2>&1
 
 #UNCOMMENT NEXT FOR VERBOSE
-set -x
+#set -x
 ##### HALT AND CATCH FIRE IF ANY COMMANd FAILS
 set -e
 
@@ -54,8 +54,8 @@ mysql  --login-path=local --silent -DSRG_Dev -N -e "TRUNCATE TABLE Guests_Master
 echo 'Guests_Master Emptied'
 
 # Add Population, avg income, Town to Guests_Master table joined from MA_Zips table
-mysql  --login-path=local -DSRG_Dev -N -e "INSERT INTO Guests_Master SELECT GT.*, MZ.Population, MZ.AvgIncome, MZ.Town FROM Guests_temp AS GT 
-						LEFT JOIN MA_Zips as MZ ON MZ.Zip = GT.Zip"
+mysql  --login-path=local -DSRG_Dev -N -e "INSERT INTO Guests_Master SELECT Guests_temp.*, MA_Zips.Population, MA_Zips.AvgIncome, MA_Zips.Town FROM Guests_temp  
+						LEFT JOIN MA_Zips ON MA_Zips.Zip = Guests_temp.Zip"
 echo 'Guests_Master Updated w town data'
 
 # Delete guests file

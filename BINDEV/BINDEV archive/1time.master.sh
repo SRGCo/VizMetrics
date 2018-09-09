@@ -3,7 +3,7 @@
 # exec 1> >(logger -s -t $(basename $0)) 2>&1
 
 # UNCOMMENT NEXT FOR VERBOSE
-#set -x
+set -x
 ##### HALT AND CATCH FIRE IF ANY COMMAND FAILS
 set -e
 
@@ -28,77 +28,6 @@ failfunction()
 
 
 
-################# THIS INSERTS ALL DATA FROM TEMP TABLE, IT SHOULD JUST UPDATE.
-
-######### UBER JOIN LIVE CHECK DETAIL WITH LIVE SQUASHED CARD ACTIVITY
-# Delete Temp table if it exists
-mysql  --login-path=local --silent -DSRG_Dev -N -e "DROP TABLE IF EXISTS Master_temp"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER TEMP TABLE DROPPED'
-
-# Create a empty copy of CardActivity table from CardActivityStructure table
-mysql  --login-path=local --silent -DSRG_Dev -N -e "CREATE TABLE Master_temp LIKE Master_structure"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER TEMP CREATED'
-
-#### Double check UNION !!!!!!!!!!!!!!!!
-mysql  --login-path=local -DSRG_Dev -N -e "INSERT INTO Master_temp SELECT CD.*, CA.* FROM CheckDetail_Live AS CD 
-						LEFT JOIN CardActivity_squashed_2 AS CA ON CD.POSkey = CA.POSkey 
-						UNION SELECT CD.*, CA.* FROM .CheckDetail_Live as CD 
-						RIGHT JOIN CardActivity_squashed_2 AS CA ON CD.POSkey = CA.POSkey"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-# echo 'UBER JOIN COMPLETED'
-echo 'MASTER TEMP UPDATED WITH UBER CARD ACTIVITY AND CHECK DETAIL'
-
-# Create enroll_date and Account_status fields
-mysql  --login-path=local --silent -DSRG_Dev -N -e "ALTER TABLE Master_temp ADD EnrollDate VARCHAR(11)"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-# Create POSkey field
-mysql  --login-path=local --silent -DSRG_Dev -N -e "ALTER TABLE Master_temp ADD Account_status VARCHAR(26)"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-mysql  --login-path=local --silent -DSRG_Dev -N -e "ALTER TABLE Master_temp ADD INDEX(Account_status)"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER TEMP ENROLLDATE AND ACCOUNT STATUS FIELDS CREATED'
-
-######## UPDATE ACCOUNT STATUS FROM GUEST TABLE
-mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_temp JOIN Guests_Master ON Master_temp.CardNumber = Guests_Master.CardNumber 
-							SET Master_temp.EnrollDate = Guests_Master.EnrollDate, Master_temp.Account_status = Guests_Master.AccountStatus"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER TEMP ACCOUNT STATUSES UPDATED FROM GUESTS MASTER TABLE'
-
-mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_temp JOIN Px_exchanges ON Master_temp.CardNumber = Px_exchanges.CurrentCardNumber SET Master_temp.Account_status = 'Exchange'"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER TEMP EXCHANGED ACCOUNTS STATUSES UPDATED FROM px_exchanges TABLE'
-
-mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_temp JOIN Excludes ON Master_temp.CardNumber = Excludes.CardNumber SET Master_temp.Account_status = 'Exclude'"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER TEMP EXCLUDED ACCOUNTS STATUSES UPDATED USING Excludes TABLE'
-
-######## UPDATE THE EMPTY CHECKDETAIL FIELDS WITH PX DATA
-mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_temp SET CheckNumber = CheckNo_px WHERE CheckNumber IS NULL"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER TEMP EMPTY CHECKNO POPULATED FROM PX DATA'
-
-mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_temp SET DOB = TransactionDate WHERE DOB IS NULL"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER TEMP EMPTY DOB POPULATED FROM PX DATA'
-
-mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_temp SET LocationID = LocationID_px WHERE LocationID IS NULL"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER TEMP EMPTY LOCATION ID POPULATED FROM PX DATA'
-
-mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_temp SET POSkey = POSKey_px WHERE POSkey IS NULL"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo MASTER TEMP EMPTY POS KEYS POPULATED FROM PX DATA
-
-mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master_temp SET GrossSalesCoDefined = DollarsSpentAccrued WHERE GrossSalesCoDefined IS NULL 
-						AND Master_temp.Account_status <> 'TERMIN' AND Master_temp.Account_status <> 'SUSPEN' 
-						AND Master_temp.Account_status <> 'Exchanged' AND Master_temp.Account_status <> 'Exchange' 
-						AND Master_temp.Account_status <> 'Exclude'"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER TEMP GROSSSALESCODEFINED FIELD POPULATED'
-echo '(PROMOS OR COMPS COULD NOT BE ADD, LOWBALL FIGURES)'
-
 
 ##### CALC THE (non-dynamic) FREQUENCY FIELDS -FY Y-LUNA
 ##### FIRST 4 CHARS of TransactionDate BECOME FY
@@ -107,7 +36,7 @@ echo '(PROMOS OR COMPS COULD NOT BE ADD, LOWBALL FIGURES)'
 ###### -e is the 'read statement and quit'
 ###################### This was going to only go 3 months back but we rebuild master every time so that is not possible in this build ###########
 
-mysql  --login-path=local -DSRG_Dev -N -e "SELECT Master_temp.DOB FROM Master_temp WHERE Master_temp.DOB >= '2013-09-01'AND Master_temp.DOB IS NOT NULL 
+mysql  --login-path=local -DSRG_Dev -N -e "SELECT Master_temp.DOB FROM Master_temp WHERE Master_temp.DOB IS NOT NULL AND Master_temp.dob >= '2018-01-01'
 				GROUP BY Master_temp.DOB ORDER BY Master_temp.DOB DESC" | while read -r TransactionDate;
 do
 
@@ -132,31 +61,28 @@ do
 		#echo $TransactionDate updated FY= $FY YLuna = $YLuna  Luna = $Luna
 
 done || trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER TEMP FY YLUNA FIELDS UPATED WITH DATA FROM LUNA TABLE'
+echo FY YLUNA CALCD POPULATED
 
 
-######## DELETE MASTER TABLE IF EXISTS
-mysql  --login-path=local --silent -DSRG_Dev -N -e "DROP TABLE IF EXISTS Master"
+## TRUNCATE Master TABLE BEFORE LOADING W NEW
+# Delete Temp table if it exists
+
+mysql  --login-path=local --silent -DSRG_Dev -N -e "TRUNCATE TABLE Master"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER TABLE DROPPED'
+echo 'TABLE Master TRUNCATED'
 
-###### CREATE NEW MASTER TABLE
-mysql  --login-path=local --silent -DSRG_Dev -N -e "CREATE TABLE Master LIKE SRG_Dev.Master_temp"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER TABLE CREATED'
 
-# COPY MASTER TEMP INTO MASTER
+####### COPY TEMP DATA INTO MASTER
 mysql  --login-path=local --silent -DSRG_Dev -N -e "INSERT INTO Master SELECT * FROM Master_temp"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER POPULATED FROM MASTER TEMP'
-
+echo 'DATA INSERTED INTO Master TABLE'
 
 
 ################################ VISIT BALANCE FIX SECTION ########################################
 
 ### what if more than one transaction per day
 
-mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(CardNumber) FROM Master WHERE CardNumber IS NOT NULL ORDER BY CardNumber ASC" | while read -r CardNumber;
+mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(CardNumber) FROM Master WHERE CardNumber > '6000227905600000' ORDER BY CardNumber ASC" | while read -r CardNumber;
 do
 	
 	######## GET FIRST TRANSACTION
@@ -167,7 +93,7 @@ do
 	VisitsAccrued=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT MAX(VisitsAccrued) from Master WHERE TransactionDate = '$Min_dob' and CardNumber = '$CardNumber'")
 	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 	##### CAN NOT BE NULL
-	if [ -z $VisitsAccrued ] 
+	if [ -z "$VisitsAccrued" ] 
 	then 
 		VisitsAccrued='0'
 	fi
@@ -175,7 +101,7 @@ do
 	CarriedBal=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT MAX(VisitsBalance) from Master WHERE TransactionDate = '$Min_dob' AND CardNumber = '$CardNumber'")
 	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 		##### CAN NOT BE NULL
-	if [ -z $CarriedBal ] 
+	if [ -z "$CarriedBal" ] 
 	then 
 		CarriedBal='0'
 	fi
@@ -183,7 +109,7 @@ do
 	
 	#### NOT AN EXCHANGE
 	######## VISIT ACCRUED ON FIRST TRANSACTIONDATE
-	if [[ $CarriedBal -eq 1 && $VisitsAccrued -eq 1 ]]
+	if [ $CarriedBal = 1 && $VisitsAccrued = 1 ]
 	then
 		# echo $CardNumber"          Accrued on First Day!!!!       "$Min_dob"       no exchange       "$CarriedBal
 		##### UPDATE SUBTRACTING 1 FROM ALL VisitsBalance VALUES (to account for visit counted on enrollment day)
@@ -191,7 +117,7 @@ do
 		trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 		##### UPDATE SUBTRACTING 1 FROM ALL VisitsBalance VALUES (to account for visit counted on enrollment day)
-		mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET Vm_VisitsAccrued = '0' WHERE CardNumber = '$CardNumber' and TransactionDate > '$Min_dob'"
+		mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET Vm_VisitsAccrued = '' WHERE CardNumber = '$CardNumber' and TransactionDate > '$Min_dob'"
 		trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 		##### UPDATE SUBTRACTING 1 FROM ALL VisitsBalance VALUES (to account for visit counted on enrollment day)
@@ -203,11 +129,11 @@ do
 
 
 	#### NOT AN EXCHANGE
-	if [[ $CarriedBal = 0 ]]
+	if [ $CarriedBal = 0 ]
 	then
 		
 		########### VISIT ACCRUED NULL
-		if  [ $VisitsAccrued -eq 0 ] ||  [ -z $VisitsAccrued  ] 
+		if  [ $VisitsAccrued = 0 ] ||  [ -z $VisitsAccrued  ] 
 		then
 		# echo $CardNumber" DID NOT Accrue First Day "$Min_dob" no exchange "$CarriedBal
 			##### UPDATE SUBTRACTING 1 FROM ALL VisitsBalance VALUES (to account for visit counted on enrollment day)
@@ -231,7 +157,6 @@ do
 	####  AN EXCHANGE
 	if [ $CarriedBal  -gt 1 ]
 	then
-		echo 'XXX '$CardNumber' Carried Bal should be greater than 1' $CarriedBal
 		# echo $CardNumber"        First Day         "$Min_dob"       EXCHANGED!!! "$CarriedBal
 		##### PX counts are correct
 		mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET Vm_VisitsBalance = VisitsBalance, Vm_VisitsAccrued = VisitsAccrued WHERE CardNumber = '$CardNumber' "
@@ -246,7 +171,7 @@ do
 
 
 done || trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER TABLE VISIT BALANCE FIX APPLIED'
+echo 'VisitBalance Fix subroutine completed'
 
 
 
@@ -261,7 +186,7 @@ echo 'MASTER TABLE VISIT BALANCE FIX APPLIED'
 ####### CALC-ing OFF Vm_VisitsAccrued
 
 
-mysql  --login-path=local -DSRG_Dev -N -e "SELECT CardNumber FROM Master WHERE CardNumber IS NOT NULL 
+mysql  --login-path=local -DSRG_Dev -N -e "SELECT CardNumber FROM Master WHERE CardNumber IS NOT NULL AND CardNumber > '6000227905600000' 
 						GROUP BY CardNumber ORDER BY CardNumber ASC" | while read -r CardNumber;
 do
 
@@ -336,22 +261,22 @@ do
 
 		fi
 done || trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER TABLE FREQUENCY FIELDS UPDATED'
+echo "Updated Frequencies in Master table"
 
 
 ############# COPY TO PROD ##############
 # Delete Prod Master table if it exists
 mysql  --login-path=local --silent -DSRG_Prod -N -e "DROP TABLE IF EXISTS Master"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'PROD MASTER TABLE DROPPED'
+echo 'TEMP TABLE DROPPED, STARTING NEW TEMP TABLE CREATION'
 
 # Copy Dev Master to Prod
 mysql  --login-path=local --silent -DSRG_Prod -N -e "CREATE TABLE Master LIKE SRG_Dev.Master;"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'PROD MASTER TABLE CREATED'
+echo 'PROD Master CREATED'
 
 # Copy Dev Master to Prod
 mysql  --login-path=local --silent -DSRG_Prod -N -e "INSERT INTO Master SELECT * FROM SRG_Dev.Master;"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'PROD MASTER POPULATED FROM DEV MASTER'
+echo 'PROD Master POPULATED'
 
