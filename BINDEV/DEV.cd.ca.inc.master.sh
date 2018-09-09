@@ -42,8 +42,9 @@ mysql  --login-path=local --silent -DSRG_Dev -N -e "CREATE TABLE Master_temp LIK
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'MASTER TEMP CREATED'
 
-#### Double check UNION !!!!!!!!!!!!!!!!
-mysql  --login-path=local -DSRG_Dev -N -e "INSERT INTO Master_temp SELECT CD.*, CA.* FROM CheckDetail_Live AS CD 
+###### WE ONLY GET THE LAST WEEKS WORTH OF DATA
+mysql  --login-path=local -DSRG_Dev -N -e "INSERT INTO Master_temp SELECT CD.*, CA.* FROM CheckDetail_Live AS CD
+						WHERE CD.DOB >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
 						LEFT JOIN CardActivity_squashed_2 AS CA ON CD.POSkey = CA.POSkey 
 						UNION SELECT CD.*, CA.* FROM .CheckDetail_Live as CD 
 						RIGHT JOIN CardActivity_squashed_2 AS CA ON CD.POSkey = CA.POSkey"
@@ -64,13 +65,21 @@ mysql  --login-path=local --silent -DSRG_Dev -N -e "ALTER TABLE Master_temp ADD 
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'MASTER TEMP ENROLLDATE AND ACCOUNT STATUS FIELDS CREATED'
 
+# DELETE A COUPLE DAYS FROM MASTER SO WE GET ANY STRAGGLES AFTER GETTING MAXDATE
+mysql  --login-path=local --silent -DSRG_Dev -N -e "DELETE FROM Master WHERE DOB >= DATE_SUB(CURDATE(), INTERVAL 2 DAY) "
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+echo 'MASTER UPDATED LAST 2 DAYS REMOVED TO ALLOW PROCESSING OF ANY ODD PX OR CTUIT CASES'
 
-######## GET MOST RECENT TRANSACTION DATE FROM MASTER AND WE WILL 
+
+######## GET MOST RECENT TRANSACTION DATE FROM MASTER AFTER WE HAVE CLEANED A COUPLE DAYS
 Max_DOB=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT MAX(DOB) from Master")
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 
-# COPY JUST THE NEWEST COUPLE DAYS INTO MASTER TABLE
+##### MAYBE WE SHOULD DUMP A DAY TO NOT GET ONLY MISC TRANSACTIONS
+
+
+# COPY JUST THE NEWEST DATA INTO MASTER TABLE
 mysql  --login-path=local --silent -DSRG_Dev -N -e "INSERT INTO Master SELECT * FROM Master_temp WHERE Master_temp.DOB > '$Max_DOB' "
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'MASTER UPDATED FROM MASTER TEMP STARTING WITH DATE '$Max_DOB

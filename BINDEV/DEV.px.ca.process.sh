@@ -26,6 +26,15 @@ failfunction()
 	fi
 }
 
+###### CALL THE FTP CRON JOBS
+###### FIRST WE GET THE FILES FROM PX
+( "/home/ubuntu/bin/CRON.sftp.px.daily.get.sh" )
+sleep 5s
+
+###### THEN BERTHA AND MARKETING VITALS GET A COPY
+( "/home/ubuntu/bin/CRON.ftp.mv.daily.put.sh" )
+sleep 5s
+
 ##### BACK IT UP AFTER DUMPING OLD BACKUP (-f no error if file does not exist)
 
 ## REMOVE (1) HEADER ROW AND MERGE (IF NECCESSARY) INCOMING CARD ACTIVITY CSVs
@@ -285,9 +294,9 @@ trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'SQUASHED DATA TABLE POPULATED'
 
 
-################################### WE ARE ONLY RUNNING THIS FIX ON CARDS USED IN LAST 2 MONTHS #######################
+################################### WE ARE ONLY RUNNING THIS FIX ON CARDS USED IN LAST MONTH #######################
 ######## Get CardNumber
-mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(CardNumber) FROM CardActivity_squashed WHERE CardNumber IS NOT NULL AND TransactionDate > DATE_SUB(CURDATE(), INTERVAL 2 MONTH) ORDER BY CardNumber ASC" | while read -r CardNumber;
+mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(CardNumber) FROM CardActivity_squashed WHERE CardNumber IS NOT NULL AND TransactionDate > DATE_SUB(CURDATE(), INTERVAL 1 MONTH) ORDER BY CardNumber ASC" | while read -r CardNumber;
 do
 	######### GET DATA IF CHECK FROM BETWEEN MIDNIGHT AND 4 AM (LAST 2 MONTHS ONLY)
 	mysql  --login-path=local -DSRG_Dev -N -e "SELECT POSkey, TransactionDate, CheckNo FROM CardActivity_squashed where cardnumber like $CardNumber
