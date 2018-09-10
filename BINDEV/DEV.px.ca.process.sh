@@ -8,7 +8,7 @@
 # exec 1> >(logger -s -t $(basename $0)) 2>&1
 
 #UNCOMMENT NEXT FOR VERBOSE
-#set -x
+set -x
 
 ################# ERROR CATCHING ##########################
 failfunction()

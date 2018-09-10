@@ -43,11 +43,12 @@ trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'MASTER TEMP CREATED'
 
 ###### WE ONLY GET THE LAST WEEKS WORTH OF DATA
-mysql  --login-path=local -DSRG_Dev -N -e "INSERT INTO Master_temp SELECT CD.*, CA.* FROM CheckDetail_Live AS CD
-						WHERE CD.DOB >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+mysql  --login-path=local -DSRG_Dev -N -e "INSERT INTO Master_temp SELECT CD.*, CA.* FROM CheckDetail_Live AS CD 
 						LEFT JOIN CardActivity_squashed_2 AS CA ON CD.POSkey = CA.POSkey 
+						WHERE CD.DOB >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) 
 						UNION SELECT CD.*, CA.* FROM .CheckDetail_Live as CD 
-						RIGHT JOIN CardActivity_squashed_2 AS CA ON CD.POSkey = CA.POSkey"
+						RIGHT JOIN CardActivity_squashed_2 AS CA ON CD.POSkey = CA.POSkey 
+						WHERE CD.DOB >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 # echo 'UBER JOIN COMPLETED'
 echo 'MASTER TEMP UPDATED WITH UBER CARD ACTIVITY AND CHECK DETAIL'
@@ -166,7 +167,6 @@ echo 'MASTER FY YLUNA FIELDS UPATED WITH DATA FROM LUNA TABLE'
 mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(CardNumber) FROM Master WHERE CardNumber IS NOT NULL AND DOB >= '$Max_DOB' ORDER BY CardNumber ASC" | while read -r CardNumber;
 do
 	
-echo 'CardNumber: '$CardNumber
 		# GET FIRST TRANSACTION
 		Min_dob=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT MIN(TransactionDate) from Master WHERE CardNumber = '$CardNumber'")
 		trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
@@ -239,7 +239,7 @@ echo 'CardNumber: '$CardNumber
 		####  AN EXCHANGE
 		if [ $CarriedBal  -gt 1 ]
 		then
-			echo 'XXX '$CardNumber' Carried Bal should be greater than 1' $CarriedBal
+			# echo 'XXX '$CardNumber' Carried Bal should be greater than 1' $CarriedBal
 			# echo $CardNumber"        First Day         "$Min_dob"       EXCHANGED!!! "$CarriedBal
 			##### PX counts are correct
 			mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET Vm_VisitsBalance = VisitsBalance, Vm_VisitsAccrued = VisitsAccrued WHERE CardNumber = '$CardNumber' "
