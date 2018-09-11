@@ -1,6 +1,6 @@
 #! //bin/bash
 # NEXT for echo
- set -x
+# set -x
 
 ############################################################################################
 ################## THIS SCRIPT SHOULD DO FILE HANDLING IN A NON PRODUCTION DIRECTORY !!!!!
@@ -13,7 +13,7 @@
 ##### HALT AND CATCH FIRE AT SINGLE ITERATION LEVEL
 set -e
 
-######### Px_monthly_small FIELDS
+######### Px_monthly FIELDS
 #1.	CardNumber
 #2.	FocusDate = 1st day of focus month
 #3.	FirstName = Guest firstname from 'Guests' table (should be Px_guests table) 
@@ -34,7 +34,7 @@ set -e
 #18.*	Freq12mos = 12Mo Freq (Count visits over 12 months previous to 1st day of focus month)
 #19.-	HistFreqCurrent = Historical current freq (current freq as of FocusDate)
 #20.-	Lifetimefrequency = Count visits since enrollment (as of FocusDate)
-#21.-	LifetimeFreqSeg = LifeTime Freq segmentation (visitbalance / months in program) 
+#21.-	LifetimeFreqSeg = LifeTime Freq segmentation 
 #22.-+*	12MoFreqSeg = 12mo freq segmentation
 #23.-	RecentFreqSeg = Recent freq segmentation
 #24.-	CurFreqSeg = Current freq segmentation
@@ -52,10 +52,10 @@ set -e
 ###### -e is the 'read statement and quit'
 
 
-##################################### THIS CALCULATES ALL VISITS FOR ALL CARDS SO Px_monthly_small SHOULD BE TRUNCATED BEFORE THIS RUNS 
+##################################### THIS CALCULATES ALL VISITS FOR ALL CARDS SO Px_monthly SHOULD BE TRUNCATED BEFORE THIS RUNS 
 
-mysql  --login-path=local -DSRG_Dev -N -e "TRUNCATE table Px_monthly_small"
-echo 'Px_monthly_small TRUNCATED FOR FULL RUN!!!!!!'
+mysql  --login-path=local -DSRG_Dev -N -e "TRUNCATE table Px_monthly"
+echo 'Px_Monthly TRUNCATED FOR FULL RUN!!!!!!'
 # echo 'Px Monthly NOT truncated'
 
 
@@ -65,7 +65,6 @@ mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(CardNumber), MAX(Vm_V
 					FROM Master
 					WHERE CardNumber > '0'
 					AND CardNumber IS NOT NULL 
-					AND MOD(CardNumber, 8000) = '0'
 					GROUP BY CardNumber	
 					ORDER BY CardNumber ASC" | while read -r CardNumber VisitBalance;
 do
@@ -150,16 +149,16 @@ do
 
 					# OFF UNTIL NEXT VERSION
 					##### GET RECENT FREQ (2 visits back) AS OF FOCUS DATE
-					TwoVisitsBack=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT TransactionDate FROM Master
-						           	WHERE TransactionDate < '$FocusDate' 
-								AND CardNumber = '$CardNumber' 
-								AND VisitsAccrued > '0'
-								ORDER BY TransactionDate DESC LIMIT 1 , 1")
+				#	TwoVisitsBack=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT MAX(TransactionDate) FROM Master
+				#		           	WHERE TransactionDate < '$FocusDate' 
+				#				AND CardNumber = '$CardNumber' 
+				#				AND VisitsAccrued > '0'
+				#				ORDER BY TransactionDate DESC LIMIT 1 , 1")
 
-						
+
 					# OFF UNTIL NEXT VERSION
 					###### BASH COULD DO THIS EQUATION AND SAVE OVERHEAD !!!!!!!!!!
-					FreqRecent=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT DATEDIFF('$FocusDate' ,'$TwoVisitsBack') FROM Px_monthly_small limit 1")
+					#FreqRecent=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT DATEDIFF('$FocusDate' ,'$2VisitsBack') FROM Master")
 
 
 
@@ -226,8 +225,11 @@ do
 					then
 					ProgAge=0
 					fi
-					
-					######## HAD TO CHANGE FreqRecent field type to allow blanks (was failing as integer)					
+					# this is failing?  prob because variable doesnt exist in this version
+					#if [ $FreqRecent == 'NULL' ]
+					#then
+					#FreqRecent=0
+					#fi	
 
 					####### ECHO DATA FOR DEBUG
 					echo "FirstName"$FirstName" LastName"$LastName" Enrolled"$EnrollDate" Zip"$Zip" FocDate"$FocusDate" FocDateEnd"$FocusDateEnd 
@@ -239,7 +241,7 @@ do
 
 
 					#UPDATE TABLE
-					mysql  --login-path=local -DSRG_Dev -N -e "INSERT INTO Px_monthly_small SET CardNumber = '$CardNumber',
+					mysql  --login-path=local -DSRG_Dev -N -e "INSERT INTO Px_monthly SET CardNumber = '$CardNumber',
 										FocusDate = '$FocusDate',
 										FirstName = '${FirstName//\'/''}',
 										LastName = '${LastName//\'/''}',
@@ -255,7 +257,7 @@ do
 										LifetimePointsRedeemed = '$PointsRedeemedLife',
 										LastVisit = '$MaxDate',
 										FreqCurrent = '$CurrentFreq',
-										FreqRecent = '$FreqRecent',
+										
 										Freq12mos = '$PrevYear',
 										ProgramAge = '$ProgAge'";
 										# FreqRecent = '$FreqRecent',												
