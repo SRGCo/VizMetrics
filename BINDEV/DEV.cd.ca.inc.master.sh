@@ -3,9 +3,9 @@
 # exec 1> >(logger -s -t $(basename $0)) 2>&1
 
 # UNCOMMENT NEXT FOR VERBOSE
-#set -x
+# set -x
 ##### HALT AND CATCH FIRE IF ANY COMMAND FAILS
-set -e
+# set -e
 
 ##### USE time command to calc runtime "time DEV.cd.ca.into.master.sh"
 
@@ -23,6 +23,42 @@ failfunction()
         	mail -s "VizMetrics Server Alert"  it@serenitee.com <<< 'Script '"$scriptname"' failed on '"$bash_error"' at Line: '"$lineno"
         	exit
 	fi
+}
+################# DATA DUPLICATION AVOIDANCE ##########################
+### no_dupe_days(database, livetable, temptable, datefield)
+no_dupe_days()
+{
+	# $1 will be database name
+	# $2 will be live table name
+	# $3 will be temp table name
+	# $4 is name of date field for this table structure
+	local database=$1
+	local livetable=$2
+	local temptable=$3
+	local datefield=$4
+	
+	######## GET MOST RECENT TRANSACTION DATE FROM TABLE
+	Max_DOB_1=$(mysql  --login-path=local -D${database} -N -e "SELECT MAX(${datefield}) from ${livetable}")
+	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+
+
+	######## DELETE A COUPLE DAYS OF DATA FROM LIVE TABLE SO WE CAN AVOID DUPLICATE DATA
+	mysql  --login-path=local --silent -D${database} -N -e "DELETE FROM ${livetable} WHERE ${datefield} >= DATE_SUB('$Max_DOB_1', INTERVAL 2 DAY)"
+	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+	echo 'LIVE UPDATED MOST RECENT 2 DAYS OF DATA REMOVED TO AVOID DUPLICATING DATA'
+
+
+	######## GET MOST RECENT TRANSACTION DATE FROM MASTER AFTER WE HAVE CLEANED A COUPLE DAYS
+	Max_DOB_2=$(mysql  --login-path=local -D${database} -N -e "SELECT MAX(${datefield}) from ${livetable}")
+	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+
+
+	########### UPDATE THE CardActivitylive table
+	mysql  --login-path=local --silent -D${database} -N -e "INSERT INTO ${livetable} SELECT * FROM ${temptable} WHERE ${datefield} > '$Max_DOB_2'"
+	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+	echo 'LIVE DATA (NEWER THAN MAX LIVE DATE) INSERTED FROM TEMP TABLE'
+
+
 }
 
 
@@ -66,59 +102,45 @@ mysql  --login-path=local --silent -DSRG_Dev -N -e "ALTER TABLE Master_temp ADD 
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'MASTER TEMP ENROLLDATE AND ACCOUNT STATUS FIELDS CREATED'
 
-# DELETE A COUPLE DAYS FROM MASTER SO WE GET ANY STRAGGLES AFTER GETTING MAXDATE
-mysql  --login-path=local --silent -DSRG_Dev -N -e "DELETE FROM Master WHERE DOB >= DATE_SUB(CURDATE(), INTERVAL 2 DAY) "
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER UPDATED LAST 2 DAYS REMOVED TO ALLOW PROCESSING OF ANY ODD PX OR CTUIT CASES'
 
-
-######## GET MOST RECENT TRANSACTION DATE FROM MASTER AFTER WE HAVE CLEANED A COUPLE DAYS
-Max_DOB=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT MAX(DOB) from Master")
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-
-
-##### MAYBE WE SHOULD DUMP A DAY TO NOT GET ONLY MISC TRANSACTIONS
-
-
-# COPY JUST THE NEWEST DATA INTO MASTER TABLE
-mysql  --login-path=local --silent -DSRG_Dev -N -e "INSERT INTO Master SELECT * FROM Master_temp WHERE Master_temp.DOB > '$Max_DOB' "
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER UPDATED FROM MASTER TEMP STARTING WITH DATE '$Max_DOB
+######## AVOID DATA DUPLICATION BY DELETING TWO DAYS FROM LIVE AND THEN INSERTING RECENT DATA
+### no_dupe_days(database, livetable, temptable, datefield)
+no_dupe_days SRG_Dev Master Master_temp DOB
 
 
 ####### MASTER TABLE GUEST INFO UPDATE
 mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master JOIN Guests_Master ON Master.CardNumber = Guests_Master.CardNumber 
-							SET Master.EnrollDate = Guests_Master.EnrollDate, Master.Account_status = Guests_Master.AccountStatus where Master.DOB >= '$Max_DOB'"
+							SET Master.EnrollDate = Guests_Master.EnrollDate, Master.Account_status = Guests_Master.AccountStatus where Master.DOB >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'MASTER ACCOUNT STATUSES UPDATED FROM GUESTS MASTER TABLE'
 
-mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master JOIN Px_exchanges ON Master.CardNumber = Px_exchanges.CurrentCardNumber SET Master.Account_status = 'Exchange' where Master.DOB >= '$Max_DOB'"
+mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master JOIN Px_exchanges ON Master.CardNumber = Px_exchanges.CurrentCardNumber SET Master.Account_status = 'Exchange' where Master.DOB >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'MASTER EXCHANGED ACCOUNTS STATUSES UPDATED FROM PX EXCHANGES TABLE'
 
-mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master JOIN Excludes ON Master.CardNumber = Excludes.CardNumber SET Master.Account_status = 'Exclude' where Master.DOB >= '$Max_DOB'"
+mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master JOIN Excludes ON Master.CardNumber = Excludes.CardNumber SET Master.Account_status = 'Exclude' where Master.DOB >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'MASTER EXCLUDED ACCOUNTS STATUSES UPDATED USING EXCLUDES TABLE'
 
 
 ######## UPDATE THE EMPTY CHECKDETAIL FIELDS WITH PX DATA
-mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET CheckNumber = CheckNo_px WHERE CheckNumber IS NULL AND Master.DOB >= '$Max_DOB'"
+mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET CheckNumber = CheckNo_px WHERE CheckNumber IS NULL AND Master.DOB >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'MASTER EMPTY CHECKNO POPULATED FROM PX DATA'
 
 
-mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET LocationID = LocationID_px WHERE LocationID IS NULL AND Master.DOB >= '$Max_DOB'"
+mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET LocationID = LocationID_px WHERE LocationID IS NULL AND Master.DOB >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'MASTER EMPTY LOCATION ID POPULATED FROM PX DATA'
 
-mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET POSkey = POSKey_px WHERE POSkey IS NULL AND Master.DOB >= '$Max_DOB'"
+mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET POSkey = POSKey_px WHERE POSkey IS NULL AND Master.DOB >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo MASTER EMPTY POS KEYS POPULATED FROM PX DATA
 
 mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET GrossSalesCoDefined = DollarsSpentAccrued WHERE GrossSalesCoDefined IS NULL 
 						AND Master.Account_status <> 'TERMIN' AND Master.Account_status <> 'SUSPEN' 
 						AND Master.Account_status <> 'Exchanged' AND Master.Account_status <> 'Exchange' 
-						AND Master.Account_status <> 'Exclude' AND Master.DOB >= '$Max_DOB'"
+						AND Master.Account_status <> 'Exclude' AND Master.DOB >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'MASTER GROSSSALESCODEFINED FIELD POPULATED'
 echo '(PROMOS OR COMPS COULD NOT BE ADD, LOWBALL FIGURES)'
@@ -128,7 +150,7 @@ echo '(PROMOS OR COMPS COULD NOT BE ADD, LOWBALL FIGURES)'
 ###### -e is the 'read statement and quit'
 ######## WE ARE ###
 
-mysql  --login-path=local -DSRG_Dev -N -e "SELECT Master.DOB FROM Master  WHERE Master.DOB >= '$Max_DOB' AND Master.DOB IS NOT NULL 
+mysql  --login-path=local -DSRG_Dev -N -e "SELECT Master.DOB FROM Master  WHERE Master.DOB >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) AND Master.DOB IS NOT NULL 
 				GROUP BY Master.DOB ORDER BY Master.DOB DESC" | while read -r TransactionDate;
 do
 
@@ -158,13 +180,10 @@ echo 'MASTER FY YLUNA FIELDS UPATED WITH DATA FROM LUNA TABLE'
 
 
 
-
-
-
 ################################ VISIT BALANCE FIX SECTION ########################################
 ### what if more than one transaction per day
 
-mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(CardNumber) FROM Master WHERE CardNumber IS NOT NULL AND DOB >= '$Max_DOB' ORDER BY CardNumber ASC" | while read -r CardNumber;
+mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(CardNumber) FROM Master WHERE CardNumber IS NOT NULL AND Master.DOB >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) ORDER BY CardNumber ASC" | while read -r CardNumber;
 do
 	
 		# GET FIRST TRANSACTION
@@ -255,7 +274,6 @@ do
 	
 
 	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-	echo 'MASTER TABLE VISIT BALANCE FIX APPLIED'
 
 
 

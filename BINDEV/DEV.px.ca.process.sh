@@ -1,14 +1,13 @@
 #! //bin/bash
 # LOG IT TO SYSLOG
-############################################################################################
-################## THIS SCRIPT SHOULD DO ITS WORK IN A NON PRODUCTION DIRECTORY !!!!!
-############################################################################################
-########## ADD ERROR HANDLING AT EACH FAIL POINT ###########################################
-
 # exec 1> >(logger -s -t $(basename $0)) 2>&1
 
-#UNCOMMENT NEXT FOR VERBOSE
-set -x
+# THIS SCRIPT HAS TO RUN AFTER CHECKDETAIL IS PROCESSED SO THAT THE CHECK NUMBER FIX RUNS CORRECTLY
+
+# UNCOMMENT NEXT FOR VERBOSE
+# set -x
+
+
 
 ################# ERROR CATCHING ##########################
 failfunction()
@@ -26,16 +25,24 @@ failfunction()
 	fi
 }
 
+
+### IF THE FOLLOWING FTPS FAIL WE KEEP GOING
+set +e
+
 ###### CALL THE FTP CRON JOBS
 ###### FIRST WE GET THE FILES FROM PX
 ( "/home/ubuntu/bin/CRON.sftp.px.daily.get.sh" )
-sleep 5s
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+ sleep 5s
 
 ###### THEN BERTHA AND MARKETING VITALS GET A COPY
 ( "/home/ubuntu/bin/CRON.ftp.mv.daily.put.sh" )
+## IF WE ERROR TRAP HERE AND MV FAILS WHOLE SCRIPT BLOWS OUT
+## trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 sleep 5s
 
-##### BACK IT UP AFTER DUMPING OLD BACKUP (-f no error if file does not exist)
+##### HALT AND CATCH FIRE IF ANY COMMAND FAILS FROM HERE ON
+set -e
 
 ## REMOVE (1) HEADER ROW AND MERGE (IF NECCESSARY) INCOMING CARD ACTIVITY CSVs
 ## INTO SINGLE CARD ACTIVITY FILE IN DB_FILES
@@ -181,7 +188,9 @@ echo 'CARDACTIVITY -dev- CheckNo indexed'
 #### !!!!!!!! 	WE COULD HAVE THE SELECT QUERY ONLY GO BACK x# OF DAYS   !!!!!! ####
 ############ ************** CAN WE SPEED THIS UP ******************** ##############
 ##################### ITERATE UPDATE TO CA CheckNumbers MISSING LEADIN "100"
-mysql  --login-path=local --silent -DSRG_Dev -N -e "SELECT RIGHT(CheckNumber, 4), DOB, LocationID FROM CheckDetail_Live WHERE CheckDetail_Live.CheckNumber like '100%' ORDER BY DOB ASC" | while read -r CheckNumber DOB LocationID;
+############################## THIS IS WHY CHECKDETAIL HAS TO RUN EARLIER THAN CA 
+
+mysql  --login-path=local --silent -DSRG_Dev -N -e "SELECT RIGHT(CheckNumber, 4), DOB, LocationID FROM CheckDetail_Live WHERE CheckDetail_Live.CheckNumber like '100%' AND DOB >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) ORDER BY DOB ASC" | while read -r CheckNumber DOB LocationID;
 do
 mysql  --login-path=local --silent -DSRG_Dev -N -e "UPDATE CardActivity_Temp SET CheckNo=CONCAT('100',CheckNo) WHERE CheckNo = '$CheckNumber' AND TransactionDate = '$DOB' AND LocationID = '$LocationID' AND char_length(CheckNo) < '6'"
 done
@@ -197,13 +206,17 @@ echo 'UPDATED POSKEYS IN TEMP TABLE'
 ######## DROP UNNEEDED TEMP FIELDS
 mysql  --login-path=local --silent -DSRG_Dev -N -e "ALTER TABLE CardActivity_Temp DROP Exceldate"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'DROPPED Exceldate fields from temp table'
+echo 'DROPPED EXCEL DATE FIELD FROM CARDACTIVITY TEMP'
+
 
 ########### UPDATE THE CardActivitylive table
 mysql  --login-path=local --silent -DSRG_Dev -N -e "INSERT INTO CardActivity_Live SELECT * FROM CardActivity_Temp"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+echo 'CARD ACTIVITY LIVE TABLE UPDATED WITH CARD ACTIVITY TEMP DATA'
 
-echo 'Data inserted into CardActivity_Live, done.'
+
+#######################################################################
+################ THE SQUASHES RUN ON ALL DATA COULD THEY JUST RUN ON MOST RECENT?
 
 
 ########### DROP AND RECREATE THE 'squashed' TABLE to READY FOR RELOAD
@@ -294,13 +307,15 @@ trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'SQUASHED DATA TABLE POPULATED'
 
 
-################################### WE ARE ONLY RUNNING THIS FIX ON CARDS USED IN LAST MONTH #######################
+########################## 
+##########################   WE NEED TO HAVE CARD ACTIVITY SQUASHED BECOME A LIVE TABLE THAT GETS UPDATED INCREMENTALLY
+########################## THEN WE CAN RUN THIS FIX ON ONLY THE NEW TRANSACTIONS
 ######## Get CardNumber
-mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(CardNumber) FROM CardActivity_squashed WHERE CardNumber IS NOT NULL AND TransactionDate > DATE_SUB(CURDATE(), INTERVAL 1 MONTH) ORDER BY CardNumber ASC" | while read -r CardNumber;
+mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(CardNumber) FROM CardActivity_squashed WHERE CardNumber IS NOT NULL AND TransactionTime > '21:00:00' ORDER BY CardNumber ASC" | while read -r CardNumber;
 do
-	######### GET DATA IF CHECK FROM BETWEEN MIDNIGHT AND 4 AM (LAST 2 MONTHS ONLY)
+	######### GET DATA IF CHECK FROM BETWEEN MIDNIGHT AND 4 AM 
 	mysql  --login-path=local -DSRG_Dev -N -e "SELECT POSkey, TransactionDate, CheckNo FROM CardActivity_squashed where cardnumber like $CardNumber
-	AND TransactionDate > DATE_SUB(CURDATE(), INTERVAL 2 MONTH) AND TransactionTime > '00:00' and TransactionTime < '04:00'"| while read -r POSkey TransactionDate CheckNo;
+	AND TransactionTime > '00:00' and TransactionTime < '04:00'"| while read -r POSkey TransactionDate CheckNo;
 	do
 		
 		########## GET THE POSkey FOR SAME CHECK FROM PREVIOUS DAY IF IT EXISTS
@@ -310,7 +325,7 @@ do
 		if [ -n "$POSkey_prev" ]
 		then		
 			mysql  --login-path=local -DSRG_Dev -N -e "UPDATE CardActivity_squashed SET POSkey = '$POSkey_prev' WHERE POSkey = '$POSkey'"
-			echo "CARD: "$CardNumber" Transdate1: "$TransactionDate" Check: "$CheckNo" Key1: "$POSkey" Key2: "$POSkey_prev 
+		#	echo "CARD: "$CardNumber" Transdate1: "$TransactionDate" Check: "$CheckNo" Key1: "$POSkey" Key2: "$POSkey_prev 
 		fi
 	done
 
@@ -328,6 +343,10 @@ trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'NEW 2ND SQUASHED TABLE CREATED, SQUASHING 1ST SQUASHED TABLE'
 
 ############## SQUASH AND INSERT DATA FROM FIRST SQUASHED TABLE ###############
+######### THIS ACCOUNTS FOR THE CARDS THAT GOT A WRONG POSKEY BECAUSE THEY WERE OPEN ACROSS MIDNIGHT
+############# THIS IS ANOTHER REASON WE SHOULD HAVE SQUASH ONLY PROCESSING INCREMENTALLY 
+
+
 mysql  --login-path=local --silent -DSRG_Dev -N -e "INSERT INTO CardActivity_squashed_2
 SELECT
 DISTINCT(POSKey), LocationID, CardNumber, CardTemplate, MIN(TransactionDate), MIN(TransactionTime), MIN(checkno),
@@ -393,10 +412,11 @@ echo 'NEW SQUASHED DATA TABLE    2    POPULATED'
 ### INDEX SQUASHED TABLE POSkey
 mysql  --login-path=local --silent -DSRG_Dev -N -e "ALTER TABLE CardActivity_squashed_2 ADD INDEX(POSkey)"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'CARDACTIVITY SQUASHED    2    POSkey indexed'
+echo 'CARDACTIVITY SQUASHED 2 POSKEY INDEX ADDED'
 
+echo 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
 
-echo ' Card activity process Script Completed'
+echo 'DEV.PX.CA.PROCESS.SH COMPLETED'
 
 
 

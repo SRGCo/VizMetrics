@@ -12,6 +12,7 @@
 ## 2 ## Employees
 ## 3 ## CheckDetail - Full by date [CheckDetail.update.raw.csv]
 
+########### FUNCTIONS #####################################
 ################# ERROR CATCHING ##########################
 failfunction()
 {
@@ -27,23 +28,54 @@ failfunction()
         	exit
 	fi
 }
+################# DATA DUPLICATION AVOIDANCE ##########################
+### no_dupe_days(database, livetable, temptable, datefield)
+no_dupe_days()
+{
+	# $1 will be database name
+	# $2 will be live table name
+	# $3 will be temp table name
+	# $4 is name of date field for this table structure
+	local database=$1
+	local livetable=$2
+	local temptable=$3
+	local datefield=$4
+	
+	######## GET MOST RECENT TRANSACTION DATE FROM TABLE
+	Max_DOB_1=$(mysql  --login-path=local -D${database} -N -e "SELECT MAX(${datefield}) from ${livetable}")
+	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
+
+	######## DELETE A COUPLE DAYS OF DATA FROM LIVE TABLE SO WE CAN AVOID DUPLICATE DATA
+	mysql  --login-path=local --silent -D${database} -N -e "DELETE FROM ${livetable} WHERE ${datefield} >= DATE_SUB('$Max_DOB_1', INTERVAL 2 DAY)"
+	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+	echo 'LIVE UPDATED MOST RECENT 2 DAYS OF DATA REMOVED TO AVOID DUPLICATING DATA'
+
+
+	######## GET MOST RECENT TRANSACTION DATE FROM MASTER AFTER WE HAVE CLEANED A COUPLE DAYS
+	Max_DOB_2=$(mysql  --login-path=local -D${database} -N -e "SELECT MAX(${datefield}) from ${livetable}")
+	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+
+
+	########### UPDATE THE CardActivitylive table
+	mysql  --login-path=local --silent -D${database} -N -e "INSERT INTO ${livetable} SELECT * FROM ${temptable} WHERE ${datefield} > '$Max_DOB_2'"
+	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+	echo 'LIVE DATA (NEWER THAN MAX LIVE DATE) INSERTED FROM TEMP TABLE'
+
+
+}
 
 ################################### BACK UP THE 3 LIVE TABLES FOR SAFTEY #####################################
 #rm -f /home/ubuntu/db_files/Checkdetail.3tables.bu.sql
 #mysqldump -uroot -ps3r3n1t33 SRG_Dev CheckDetail_Live Employees_Live TableTurns_Live >  /home/ubuntu/db_files/Checkdetail.3tables.bu.sql
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+#trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 
-############################# GET CTUIT FILES FROM BERTHA THEN BACK THEM UP ON BERTHA ###################
-lftp -e 'set net:timeout 10;set ssl:verify-certificate no; set ftp:ssl-protect-data true;' -u VM_ctuit,Serenitee185Ctuit 50.195.41.122  << EOF
-	lcd /home/ubuntu/db_files/incoming/ctuit
-	mget *
-	mirror --reverse --no-recursion /home/ubuntu/db_files/incoming/ctuit /backup
-	mrm *csv
-bye
-EOF
+###### FIRST WE GET THE FILES FROM PX
+( "/home/ubuntu/bin/CRON.lftp.ctuit.daily.sh" )
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+echo 'CTUIT FILES RETRIEVED FROM BERTHA FTP SITE'
+sleep 5s
 
 ################# TABLETURNS ##############################
 ## REMOVE (1) HEADER ROW AND MERGE (IF NECCESSARY) INCOMING CARD ACTIVITY CSVs
@@ -119,10 +151,12 @@ trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 mysql  --login-path=local --silent -DSRG_Dev -N -e "ALTER TABLE TableTurns_Temp ADD INDEX(POSkey)"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
-#### Insert into the LIVE tableTurns table
-#mysql  --login-path=local --silent -DSRG_Dev -N -e "INSERT INTO TableTurns_Live SELECT * FROM TableTurns_Temp"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'Incoming Tableturns data processed'
+
+######## AVOID DATA DUPLICATION BY DELETING TWO DAYS FROM LIVE AND THEN INSERTING RECENT DATA
+### no_dupe_days(database, livetable, temptable, datefield)
+no_dupe_days SRG_Dev TableTurns_Live TableTurns_Temp DOB
+
+
 
 
 
@@ -161,7 +195,7 @@ trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 mysql  --login-path=local --silent -DSRG_Dev -N -e "RENAME table Employees_Live_temp TO Employees_Live"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
-echo 'Incoming Employees data processed'
+echo 'FULL SET OF EMPLOYEE DATA PROCESSED'
 
 
 
@@ -288,12 +322,20 @@ trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 mysql  --login-path=local --silent -DSRG_Dev -N -e "UPDATE CheckDetail_Temp CDT SET CDT.CloseTime = CDT.DOB WHERE CDT.CloseTime < '2001-01-01'"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
+
+
+### no_dupe_days(database, livetable, temptable, datefield)
+no_dupe_days SRG_Dev CheckDetail_Live CheckDetail_Temp DOB
+
+
+
+
 ##### ADD INCOMING CHECK DETAIL DATA TO LIVE TABLE
-mysql  --login-path=local --silent -DSRG_Dev -N -e "INSERT INTO CheckDetail_Live SELECT * FROM CheckDetail_Temp"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+#mysql  --login-path=local --silent -DSRG_Dev -N -e "INSERT INTO CheckDetail_Live SELECT * FROM CheckDetail_Temp"
+#trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 echo '======================================================'
-echo 'CheckDetail_Live table populated with most recent data'
+echo 'CHECKDETAIL LIVE TABLE POPULATED WITH MOST RECENT DATA'
 
 
 
