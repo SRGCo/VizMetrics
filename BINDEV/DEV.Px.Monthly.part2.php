@@ -1,6 +1,8 @@
 #!/usr/bin/php
 <?php 
 
+##### Right off we backup the last version of px_monthly while debugging
+exec('mysqldump -uroot -ps3r3n1t33 SRG_Dev Px_Monthly > /home/ubuntu/db_files/DEV.Px_Monthly.$(date +%Y-%m-%d-%H.%M.%S).sql');
 
 function yrseg ($pastvisitbal, $lifetimevisits)
 {
