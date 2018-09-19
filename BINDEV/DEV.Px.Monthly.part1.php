@@ -195,12 +195,16 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 		#	ECHO 'Card: '.$CardNumber_db.'  FocusDate:'.$FocusDate.'  Last Visit Date: ';
 		#	ECHO $LastVisitDate_db.' Firstrun:'.$Firstrun.PHP_EOL;
 	
+##################### NEED TO VERIFY BOTH LAPSEDAYS AND FREQRECENTDAYS (RECENTLAPSE)
+########### old query
+# $query6= "SELECT DATEDIFF('$FocusDate', MAX(TransactionDate)) as LapseDays
+#	FROM Master
+#       	WHERE TransactionDate < '$FocusDate' 
+#		AND CardNumber = '$CardNumber_db' 
+#		AND Vm_VisitsAccrued > '0'";
+
 			#FIELD = LAPSEDAYS
-			$query6= "SELECT DATEDIFF('$FocusDate', MAX(TransactionDate)) as LapseDays
-					FROM Master
-			           	WHERE TransactionDate < '$FocusDate' 
-					AND CardNumber = '$CardNumber_db' 
-					AND Vm_VisitsAccrued > '0'";
+			$query6= "SELECT DATEDIFF('$FocusDate', '$LastVisitDate_db') as LapseDays";
 			$result6 = mysqli_query($dbc, $query6);	
 			ECHO MYSQLI_ERROR($dbc);
 			while($row1 = mysqli_fetch_array($result6, MYSQLI_ASSOC)){
@@ -210,6 +214,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 				$LapseDays_db = '0';
 			}
 
+####### IF LAPSE WASN'T CORRECT THIS IS MOST LIKELY WRONG
 			##### GET RECENT FREQ (2 visits back) AS OF FOCUS DATE
 			#FIELD = FREQRECENTDAYS
 			$query7a = "SELECT TransactionDate FROM Master
