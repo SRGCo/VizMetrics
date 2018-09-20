@@ -24,47 +24,6 @@ failfunction()
         	exit
 	fi
 }
-################# DATA DUPLICATION AVOIDANCE ##########################
-### no_dupe_days(database, livetable, temptable, datefield)
-no_dupe_days()
-{
-	# $1 will be database name
-	# $2 will be live table name
-	# $3 will be temp table name
-	# $4 is name of date field for this table structure
-	local database=$1
-	local livetable=$2
-	local temptable=$3
-	local datefield=$4
-	
-	######## GET MOST RECENT TRANSACTION DATE FROM TABLE
-	Max_DOB_1=$(mysql  --login-path=local -D${database} -N -e "SELECT MAX(${datefield}) from ${livetable}")
-	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-
-
-	######## DELETE A COUPLE DAYS OF DATA FROM LIVE TABLE SO WE CAN AVOID DUPLICATE DATA
-	mysql  --login-path=local --silent -D${database} -N -e "DELETE FROM ${livetable} WHERE ${datefield} >= DATE_SUB('$Max_DOB_1', INTERVAL 2 DAY)"
-	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-	echo 'LIVE UPDATED MOST RECENT 2 DAYS OF DATA REMOVED TO AVOID DUPLICATING DATA'
-
-
-	######## GET MOST RECENT TRANSACTION DATE FROM MASTER AFTER WE HAVE CLEANED A COUPLE DAYS
-	Max_DOB_2=$(mysql  --login-path=local -D${database} -N -e "SELECT MAX(${datefield}) from ${livetable}")
-	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-
-
-	########### UPDATE THE CardActivitylive table
-	mysql  --login-path=local --silent -D${database} -N -e "INSERT INTO ${livetable} SELECT * FROM ${temptable} WHERE ${datefield} > '$Max_DOB_2'"
-	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-	echo 'LIVE DATA (NEWER THAN MAX LIVE DATE) INSERTED FROM TEMP TABLE'
-
-
-}
-
-
-
-
-
 
 
 ######### UBER JOIN LIVE CHECK DETAIL WITH LIVE SQUASHED CARD ACTIVITY
@@ -81,10 +40,10 @@ echo 'MASTER TEMP CREATED'
 ###### WE ONLY GET THE LAST WEEKS WORTH OF DATA
 mysql  --login-path=local -DSRG_Dev -N -e "INSERT INTO Master_temp SELECT CD.*, CA.* FROM CheckDetail_Live AS CD 
 						LEFT JOIN CardActivity_squashed_2 AS CA ON CD.POSkey = CA.POSkey 
-						WHERE CD.DOB >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) 
+						WHERE CD.DOB >= DATE_SUB(CURDATE(), INTERVAL 9 DAY) 
 						UNION SELECT CD.*, CA.* FROM .CheckDetail_Live as CD 
 						RIGHT JOIN CardActivity_squashed_2 AS CA ON CD.POSkey = CA.POSkey 
-						WHERE CD.DOB >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)"
+						WHERE CD.DOB >= DATE_SUB(CURDATE(), INTERVAL 9 DAY)"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 # echo 'UBER JOIN COMPLETED'
 echo 'MASTER TEMP UPDATED WITH UBER CARD ACTIVITY AND CHECK DETAIL'
@@ -103,9 +62,25 @@ trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'MASTER TEMP ENROLLDATE AND ACCOUNT STATUS FIELDS CREATED'
 
 
-######## AVOID DATA DUPLICATION BY DELETING TWO DAYS FROM LIVE AND THEN INSERTING RECENT DATA
-### no_dupe_days(database, livetable, temptable, datefield)
-no_dupe_days SRG_Dev Master Master_temp DOB
+# Copy Dev Master to Prod
+mysql  --login-path=local --silent -DSRG_Dev -N -e "INSERT INTO Master SELECT * FROM Master_temp"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+echo 'MASTER POPULATED FROM MASTER TEMP'
+
+
+##############  DEDUPE PAST WEEK IN MASTER BY POSkey BEFORE IT BECOMES PRODUCTION READY
+## MASTER ##### REMOVE DUPLICATE ROWS FROM MASTER TABLE
+mysql  --login-path=local --silent -DSRG_Dev -N -e "DROP TABLE IF EXISTS Master_dedupe"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+mysql  --login-path=local --silent -DSRG_Dev -N -e "CREATE table Master_dedupe LIKE Master"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+mysql  --login-path=local --silent -DSRG_Dev -N -e "INSERT INTO Master_dedupe SELECT * FROM Master WHERE DOB = DATE_SUB(CURDATE(), INTERVAL 7 DAY) GROUP BY POSkey"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+mysql  --login-path=local --silent -DSRG_Dev -N -e "DELETE FROM Master WHERE DOB = DATE_SUB(CURDATE(), INTERVAL 7 DAY)"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+mysql  --login-path=local --silent -DSRG_Dev -N -e "INSERT INTO Master SELECT * FROM Master_dedupe"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+echo 'MASTER DATA DEDUPED FOR LAST WEEKS DATA'
 
 
 ####### MASTER TABLE GUEST INFO UPDATE
@@ -143,7 +118,7 @@ mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET GrossSalesCoDefined
 						AND Master.Account_status <> 'Exclude' AND Master.DOB >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'MASTER GROSSSALESCODEFINED FIELD POPULATED'
-echo '(PROMOS OR COMPS COULD NOT BE ADD, LOWBALL FIGURES)'
+echo '(PROMOS OR COMPS COULD NOT BE ADDED, LOWBALL FIGURES)'
 
 
 ###### -N is the No Headers in Output option
@@ -168,7 +143,6 @@ do
 		then 
 		Luna='0'
 		fi
-
 
 		##### UPDATE FISCAL YEAR FROM TRANSACTIONDATE
 		mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET FY = '$FY',YLuna = '$YLuna', Luna='$Luna' WHERE Master.DOB = '$TransactionDate'"
@@ -270,11 +244,6 @@ do
 		############## AFTER WE FIGURE OUT WHY IT HAPPENS
 		mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET Vm_VisitsBalance = '0' WHERE Vm_VisitsBalance ='-1'"
 		trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-	
-	
-
-	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-
 
 
 	######### THESE ARE THE FIELDS WE WILL CALCULATE EVERY DAY #################################
@@ -344,7 +313,6 @@ do
 				#echo $CardNumber" first and second MAX "$MaxDate" 2ND "$SecondMax" Prevyr "$PrevYear" VmVB "$VmVB
 				#echo " PrevLifereal "$Lifetimereal" prevlifenotreal "$Lifetime" MinBal "$MinBal
 				
-
 			##### IF THIRDMAX HAS A VALUE
 			else
 				##### UPDATE ALL FREQUENCIES
@@ -366,17 +334,17 @@ echo 'MASTER TABLE FREQUENCY FIELDS UPDATED AND VISIT BALANCE FIX APPLIED'
 
 ############# COPY TO PROD ##############
 # Delete Prod Master table if it exists
-mysql  --login-path=local --silent -DSRG_Prod -N -e "DROP TABLE IF EXISTS Master"
+#mysql  --login-path=local --silent -DSRG_Prod -N -e "DROP TABLE IF EXISTS Master"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'PROD MASTER TABLE DROPPED'
 
 # Copy Dev Master to Prod
-mysql  --login-path=local --silent -DSRG_Prod -N -e "CREATE TABLE Master LIKE SRG_Dev.Master;"
+#mysql  --login-path=local --silent -DSRG_Prod -N -e "CREATE TABLE Master LIKE SRG_Dev.Master;"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'PROD MASTER TABLE CREATED'
 
 # Copy Dev Master to Prod
-mysql  --login-path=local --silent -DSRG_Prod -N -e "INSERT INTO Master SELECT * FROM SRG_Dev.Master;"
+#mysql  --login-path=local --silent -DSRG_Prod -N -e "INSERT INTO Master SELECT * FROM SRG_Dev.Master;"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'PROD MASTER POPULATED FROM DEV MASTER'
 

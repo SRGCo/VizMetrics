@@ -28,45 +28,6 @@ failfunction()
         	exit
 	fi
 }
-################# DATA DUPLICATION AVOIDANCE ##########################
-### no_dupe_days(database, livetable, temptable, datefield)
-no_dupe_days()
-{
-	# $1 will be database name
-	# $2 will be live table name
-	# $3 will be temp table name
-	# $4 is name of date field for this table structure
-	local database=$1
-	local livetable=$2
-	local temptable=$3
-	local datefield=$4
-
-##### THERE IS SOMETHING WRONG WITH THIS ? ? ? ?
-#################### WE NEED TO MAKE SURE WE ARE NOT DELETING DATA WE DO NOT GET BACK AT THE INSERT 
-	
-	######## GET MOST RECENT TRANSACTION DATE FROM TABLE
-	Max_DOB_1=$(mysql  --login-path=local -D${database} -N -e "SELECT MAX(${datefield}) from ${livetable}")
-	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-
-
-	######## DELETE A COUPLE DAYS OF DATA FROM LIVE TABLE SO WE CAN AVOID DUPLICATE DATA
-	mysql  --login-path=local --silent -D${database} -N -e "DELETE FROM ${livetable} WHERE ${datefield} >= DATE_SUB('$Max_DOB_1', INTERVAL 2 DAY)"
-	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-	echo 'LIVE UPDATED MOST RECENT 2 DAYS OF DATA REMOVED TO AVOID DUPLICATING DATA'
-
-
-	######## GET MOST RECENT TRANSACTION DATE FROM MASTER AFTER WE HAVE CLEANED A COUPLE DAYS
-	Max_DOB_2=$(mysql  --login-path=local -D${database} -N -e "SELECT MAX(${datefield}) from ${livetable}")
-	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-
-
-	########### UPDATE THE CardActivitylive table
-	mysql  --login-path=local --silent -D${database} -N -e "INSERT INTO ${livetable} SELECT * FROM ${temptable} WHERE ${datefield} > '$Max_DOB_2'"
-	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-	echo 'LIVE DATA (NEWER THAN MAX LIVE DATE) INSERTED FROM TEMP TABLE'
-
-
-}
 
 ################################### BACK UP THE 3 LIVE TABLES FOR SAFTEY #####################################
 rm -f /home/ubuntu/db_files/Checkdetail.3tables.bu.sql
@@ -155,15 +116,10 @@ trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 mysql  --login-path=local --silent -DSRG_Dev -N -e "ALTER TABLE TableTurns_Temp ADD INDEX(POSkey)"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
-
-######## AVOID DATA DUPLICATION BY DELETING TWO DAYS FROM LIVE AND THEN INSERTING RECENT DATA
-### SYNTAX no_dupe_days(database, livetable, temptable, datefield)
-echo 'TABLETURNS'
-##### turn next line back on
-# no_dupe_days SRG_Dev TableTurns_Live TableTurns_Temp DOB
-
-
-
+#### Insert into the LIVE tableTurns table
+mysql  --login-path=local --silent -DSRG_Dev -N -e "INSERT INTO TableTurns_Live SELECT * FROM TableTurns_Temp"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+echo 'Incoming Tableturns data processed'
 
 
 ################ EMPLOYEES SECTION #########################################
@@ -177,14 +133,10 @@ for file in /home/ubuntu/db_files/incoming/ctuit/*Employees*.csv
   done
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
-## EMPLOYEES ##### EMPTY EMPLOYEE TABLE
-#mysql  --login-path=local --silent -DSRG_Dev -N -e "TRUNCATE TABLE Employees_Live"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-
 
 ########################## CHECK THE WHOLE EMPLOYEE FLOW ####################
 ## EMPLOYEES ##### Load the data from the latest file into the (LIVE) employees table
-# mysql  --login-path=local --silent -DSRG_Dev -N -e "Load data local infile '/home/ubuntu/db_files/incoming/ctuit/Infile.Employee.csv' into table Employees_Live fields terminated by ',' lines terminated by '\n'"
+mysql  --login-path=local --silent -DSRG_Dev -N -e "Load data local infile '/home/ubuntu/db_files/incoming/ctuit/Infile.Employee.csv' into table Employees_Live fields terminated by ',' lines terminated by '\n'"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 ## EMPLOYEES ##### DELETE OLD EMPLOYEES FILE TO MAKE READY FOR NEXT TIME
 rm /home/ubuntu/db_files/incoming/ctuit/Infile.Employee.csv
@@ -192,24 +144,18 @@ trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 
 ## EMPLOYEES ##### REMOVE DUPLICATE ROWS FROM EMPLOYEES LIVE TABLE
-#mysql  --login-path=local --silent -DSRG_Dev -N -e "DROP TABLE IF EXISTS Employees_Live_temp"
+mysql  --login-path=local --silent -DSRG_Dev -N -e "DROP TABLE IF EXISTS Employees_Live_temp"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-#mysql  --login-path=local --silent -DSRG_Dev -N -e "CREATE table Employees_Live_temp LIKE Employees_Live"
+mysql  --login-path=local --silent -DSRG_Dev -N -e "CREATE table Employees_Live_temp LIKE Employees_Live"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-#mysql  --login-path=local --silent -DSRG_Dev -N -e "INSERT INTO Employees_Live_temp SELECT * FROM Employees_Live GROUP BY EmployeeID"
+mysql  --login-path=local --silent -DSRG_Dev -N -e "INSERT INTO Employees_Live_temp SELECT * FROM Employees_Live GROUP BY EmployeeID"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-#mysql  --login-path=local --silent -DSRG_Dev -N -e "DROP table Employees_Live"
+mysql  --login-path=local --silent -DSRG_Dev -N -e "DROP table Employees_Live"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-#mysql  --login-path=local --silent -DSRG_Dev -N -e "RENAME table Employees_Live_temp TO Employees_Live"
+mysql  --login-path=local --silent -DSRG_Dev -N -e "RENAME table Employees_Live_temp TO Employees_Live"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
-echo 'FULL SET OF EMPLOYEE DATA PROCESSED'
-
-
-
-
-
-
+echo 'FULL SET OF EMPLOYEE DATA PROCESSED AND DEDUPED'
 
 
 ################ CHECKDETAIL SECTION #########################################
@@ -331,17 +277,25 @@ mysql  --login-path=local --silent -DSRG_Dev -N -e "UPDATE CheckDetail_Temp CDT 
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 
-######## AVOID DATA DUPLICATION BY DELETING TWO DAYS FROM LIVE AND THEN INSERTING RECENT DATA
-### SYNTAX = no_dupe_days(database, livetable, temptable, datefield)
-#no_dupe_days SRG_Dev CheckDetail_Live CheckDetail_Temp DOB
-
-
 ##### ADD INCOMING CHECK DETAIL DATA TO LIVE TABLE
 mysql  --login-path=local --silent -DSRG_Dev -N -e "INSERT INTO CheckDetail_Live SELECT * FROM CheckDetail_Temp"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
+## CHECKDETAIL ##### REMOVE DUPLICATE ROWS FROM CHECKDETAIL LIVE TABLE
+mysql  --login-path=local --silent -DSRG_Dev -N -e "DROP TABLE IF EXISTS CheckDetail_Live_temp"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+mysql  --login-path=local --silent -DSRG_Dev -N -e "CREATE table CheckDetail_Live_temp LIKE CheckDetail_Live"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+mysql  --login-path=local --silent -DSRG_Dev -N -e "INSERT INTO CheckDetail_Live_temp SELECT * FROM CheckDetail_Live GROUP BY POSkey"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+mysql  --login-path=local --silent -DSRG_Dev -N -e "DROP table CheckDetail_Live"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+mysql  --login-path=local --silent -DSRG_Dev -N -e "RENAME table CheckDetail_Live_temp TO CheckDetail_Live"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+
+
 echo '======================================================'
-echo 'CHECKDETAIL LIVE TABLE POPULATED WITH MOST RECENT DATA'
+echo 'CHECKDETAIL LIVE TABLE POPULATED WITH MOST RECENT DATA DEDUPED USING POSKEY GROUPED'
 
 
 
