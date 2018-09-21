@@ -105,7 +105,7 @@ echo MASTER EMPTY POS KEYS POPULATED FROM PX DATA
 mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET GrossSalesCoDefined = DollarsSpentAccrued WHERE GrossSalesCoDefined IS NULL 
 						AND Master.Account_status <> 'TERMIN' AND Master.Account_status <> 'SUSPEN' 
 						AND Master.Account_status <> 'Exchanged' AND Master.Account_status <> 'Exchange' 
-						AND Master.Account_status <> 'Exclude' "
+						AND Master.Account_status <> 'Exclude' AND DollarsSpentAccrued IS NOT NULL"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'MASTER GROSSSALESCODEFINED FIELD POPULATED'
 echo '(PROMOS OR COMPS COULD NOT BE ADDED, LOWBALL FIGURES)'
