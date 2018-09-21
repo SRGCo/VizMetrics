@@ -70,8 +70,6 @@ trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 rm /home/ubuntu/db_files/incoming/ctuit/Infile.Tableturn.csv
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
-
-
 ### PUT DOB INTO SQL FORMAT
 mysql  --login-path=local --silent -DSRG_Dev -N -e "UPDATE TableTurns_Temp SET DOB= STR_TO_DATE(DOB, '%c/%e/%Y') WHERE STR_TO_DATE(DOB, '%c/%e/%Y') IS NOT NULL"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
@@ -88,7 +86,7 @@ mysql  --login-path=local --silent -DSRG_Dev -N -e "UPDATE TableTurns_Temp SET O
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 
-##### MUST ALTER THESE FIELDS TO DATETIME #################
+##### CHANGE CLOSETIME FIELD TO DATETIME #################
 mysql  --login-path=local --silent -DSRG_Dev -N -e "ALTER TABLE TableTurns_Temp CHANGE CloseTime CloseTime DATETIME NOT NULL"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
@@ -117,9 +115,9 @@ mysql  --login-path=local --silent -DSRG_Dev -N -e "ALTER TABLE TableTurns_Temp 
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 #### Insert into the LIVE tableTurns table
-mysql  --login-path=local --silent -DSRG_Dev -N -e "INSERT INTO TableTurns_Live SELECT * FROM TableTurns_Temp"
+mysql  --login-path=local --silent -DSRG_Dev -N -e "INSERT INTO TableTurns_Live SELECT * FROM TableTurns_Temp GROUP BY POSkey"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'Incoming Tableturns data processed'
+echo 'TABLETURNS DATA INSERTED INTO LIVE TABLE GROUPED BY POSKEY TO AVOID DUPLICATE ENTRIES'
 
 
 ################ EMPLOYEES SECTION #########################################

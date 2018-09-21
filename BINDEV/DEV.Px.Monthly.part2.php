@@ -214,23 +214,23 @@ ECHO '+++++++++++++++ Cardnumber: '.$CardNumber_db.' FocusDate: '.$FocusDate_db.
 ############# COPY TO PROD ##############
 # Delete Prod Master table if it exists
 $query_prod1 = "DROP TABLE IF EXISTS SRG_Prod.Px_Monthly";
-$result_prod1 = mysqli_query($dbc, $query_prod1);
+#$result_prod1 = mysqli_query($dbc, $query_prod1);
 ECHO MYSQLI_ERROR($dbc);
-ECHO 'PROD Px_Monthly DROPPED'.PHP_EOL;
+ECHO 'NOT___ PROD Px_Monthly DROPPED'.PHP_EOL;
 // SLEEP THE SCRIPT FOR 5 SECONDS TO LET MYSQL CATCH UP
 sleep(5);
 
 $query_prod2 = "CREATE TABLE SRG_Prod.Px_Monthly LIKE SRG_Dev.Px_Monthly";
-$result_prod2 = mysqli_query($dbc, $query_prod2);
+#$result_prod2 = mysqli_query($dbc, $query_prod2);
 ECHO MYSQLI_ERROR($dbc);
-ECHO 'PROD Px_Monthly RECREATED LIKE DEV Px_Monthly'.PHP_EOL;
+ECHO 'NOT___ PROD Px_Monthly RECREATED LIKE DEV Px_Monthly'.PHP_EOL;
 // SLEEP THE SCRIPT FOR 5 SECONDS TO LET MYSQL CATCH UP
 sleep(5);
 
 $query_prod2 = "INSERT INTO SRG_Prod.Px_Monthly SELECT * FROM SRG_Dev.Px_Monthly";
-$result_prod2 = mysqli_query($dbc, $query_prod2);
+#$result_prod2 = mysqli_query($dbc, $query_prod2);
 ECHO MYSQLI_ERROR($dbc);
-ECHO 'PROD Px_Monthly POPULATED'.PHP_EOL;
+ECHO 'NOT___ PROD Px_Monthly POPULATED'.PHP_EOL;
 // SLEEP THE SCRIPT FOR 5 SECONDS TO LET MYSQL CATCH UP
 sleep(5);
 
