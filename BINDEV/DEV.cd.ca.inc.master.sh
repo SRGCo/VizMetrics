@@ -40,13 +40,13 @@ echo 'MASTER TEMP CREATED'
 ###### WE ONLY GET THE LAST WEEKS WORTH OF DATA
 mysql  --login-path=local -DSRG_Dev -N -e "INSERT INTO Master_temp SELECT CD.*, CA.* FROM CheckDetail_Live AS CD 
 						LEFT JOIN CardActivity_squashed_2 AS CA ON CD.POSkey = CA.POSkey 
-						WHERE CD.DOB >= DATE_SUB(CURDATE(), INTERVAL 9 DAY) 
+						WHERE CD.DOB >= DATE_SUB(CURDATE(), INTERVAL 14 DAY) 
 						UNION SELECT CD.*, CA.* FROM .CheckDetail_Live as CD 
 						RIGHT JOIN CardActivity_squashed_2 AS CA ON CD.POSkey = CA.POSkey 
-						WHERE CD.DOB >= DATE_SUB(CURDATE(), INTERVAL 9 DAY)"
+						WHERE CD.DOB >= DATE_SUB(CURDATE(), INTERVAL 14 DAY)"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 # echo 'UBER JOIN COMPLETED'
-echo 'MASTER TEMP UPDATED WITH UBER CARD ACTIVITY AND CHECK DETAIL'
+echo 'MASTER TEMP UPDATED WITH UBER CARD ACTIVITY AND CHECK DETAIL FROM PAST TWO WEEKS'
 
 # Create enroll_date and Account_status fields
 mysql  --login-path=local --silent -DSRG_Dev -N -e "ALTER TABLE Master_temp ADD EnrollDate VARCHAR(11)"
@@ -61,6 +61,10 @@ mysql  --login-path=local --silent -DSRG_Dev -N -e "ALTER TABLE Master_temp ADD 
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'MASTER TEMP ENROLLDATE AND ACCOUNT STATUS FIELDS CREATED'
 
+# AVOID DUPES DELETE SAME INTERVAL BACK
+mysql  --login-path=local --silent -DSRG_Dev -N -e "DELETE FROM Master WHERE DOB >= DATE_SUB(CURDATE(), INTERVAL 14 DAY) "
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+echo 'MASTER TRUNCATED BACK TWO WEEKS'
 
 # Copy Dev Master to Prod
 mysql  --login-path=local --silent -DSRG_Dev -N -e "INSERT INTO Master SELECT * FROM Master_temp"
@@ -68,54 +72,40 @@ trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'MASTER POPULATED FROM MASTER TEMP'
 
 
-##############  DEDUPE PAST WEEK IN MASTER BY POSkey BEFORE IT BECOMES PRODUCTION READY
-## MASTER ##### REMOVE DUPLICATE ROWS FROM MASTER TABLE
-mysql  --login-path=local --silent -DSRG_Dev -N -e "DROP TABLE IF EXISTS Master_dedupe"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-mysql  --login-path=local --silent -DSRG_Dev -N -e "CREATE table Master_dedupe LIKE Master"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-mysql  --login-path=local --silent -DSRG_Dev -N -e "INSERT INTO Master_dedupe SELECT * FROM Master WHERE DOB = DATE_SUB(CURDATE(), INTERVAL 7 DAY) GROUP BY POSkey"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-mysql  --login-path=local --silent -DSRG_Dev -N -e "DELETE FROM Master WHERE DOB = DATE_SUB(CURDATE(), INTERVAL 7 DAY)"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-mysql  --login-path=local --silent -DSRG_Dev -N -e "INSERT INTO Master SELECT * FROM Master_dedupe"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER DATA DEDUPED FOR LAST WEEKS DATA'
-
-
 ####### MASTER TABLE GUEST INFO UPDATE
 mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master JOIN Guests_Master ON Master.CardNumber = Guests_Master.CardNumber 
-							SET Master.EnrollDate = Guests_Master.EnrollDate, Master.Account_status = Guests_Master.AccountStatus where Master.DOB >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)"
+							SET Master.EnrollDate = Guests_Master.EnrollDate, Master.Account_status = Guests_Master.AccountStatus"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'MASTER ACCOUNT STATUSES UPDATED FROM GUESTS MASTER TABLE'
 
-mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master JOIN Px_exchanges ON Master.CardNumber = Px_exchanges.CurrentCardNumber SET Master.Account_status = 'Exchange' where Master.DOB >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)"
+mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master JOIN Px_exchanges ON Master.CardNumber = Px_exchanges.CurrentCardNumber SET Master.Account_status = 'Exchange' "
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'MASTER EXCHANGED ACCOUNTS STATUSES UPDATED FROM PX EXCHANGES TABLE'
 
-mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master JOIN Excludes ON Master.CardNumber = Excludes.CardNumber SET Master.Account_status = 'Exclude' where Master.DOB >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER EXCLUDED ACCOUNTS STATUSES UPDATED USING EXCLUDES TABLE'
+######### EXCLUDES SECTION USE OR NOT ? ? ?
+# mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master JOIN Excludes ON Master.CardNumber = Excludes.CardNumber SET Master.Account_status = 'Exclude' "
+# trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+echo 'MASTER - NO ACCOUNTS EXCLUDED !!!!!!!!!!!!!!!'
 
 
 ######## UPDATE THE EMPTY CHECKDETAIL FIELDS WITH PX DATA
-mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET CheckNumber = CheckNo_px WHERE CheckNumber IS NULL AND Master.DOB >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)"
+mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET CheckNumber = CheckNo_px WHERE CheckNumber IS NULL "
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'MASTER EMPTY CHECKNO POPULATED FROM PX DATA'
 
 
-mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET LocationID = LocationID_px WHERE LocationID IS NULL AND Master.DOB >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)"
+mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET LocationID = LocationID_px WHERE LocationID IS NULL "
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'MASTER EMPTY LOCATION ID POPULATED FROM PX DATA'
 
-mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET POSkey = POSKey_px WHERE POSkey IS NULL AND Master.DOB >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)"
+mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET POSkey = POSKey_px WHERE POSkey IS NULL "
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo MASTER EMPTY POS KEYS POPULATED FROM PX DATA
 
 mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET GrossSalesCoDefined = DollarsSpentAccrued WHERE GrossSalesCoDefined IS NULL 
 						AND Master.Account_status <> 'TERMIN' AND Master.Account_status <> 'SUSPEN' 
 						AND Master.Account_status <> 'Exchanged' AND Master.Account_status <> 'Exchange' 
-						AND Master.Account_status <> 'Exclude' AND Master.DOB >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)"
+						AND Master.Account_status <> 'Exclude' "
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'MASTER GROSSSALESCODEFINED FIELD POPULATED'
 echo '(PROMOS OR COMPS COULD NOT BE ADDED, LOWBALL FIGURES)'
@@ -125,7 +115,7 @@ echo '(PROMOS OR COMPS COULD NOT BE ADDED, LOWBALL FIGURES)'
 ###### -e is the 'read statement and quit'
 ######## WE ARE ###
 
-mysql  --login-path=local -DSRG_Dev -N -e "SELECT Master.DOB FROM Master  WHERE Master.DOB >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) AND Master.DOB IS NOT NULL 
+mysql  --login-path=local -DSRG_Dev -N -e "SELECT Master.DOB FROM Master  WHERE Master.DOB IS NOT NULL AND DOB >= DATE_SUB(NOW(),INTERVAL 14 DAY) 
 				GROUP BY Master.DOB ORDER BY Master.DOB DESC" | while read -r TransactionDate;
 do
 
@@ -157,7 +147,7 @@ echo 'MASTER FY YLUNA FIELDS UPATED WITH DATA FROM LUNA TABLE'
 ################################ VISIT BALANCE FIX SECTION ########################################
 ### what if more than one transaction per day
 
-mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(CardNumber) FROM Master WHERE CardNumber IS NOT NULL AND Master.DOB >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) ORDER BY CardNumber ASC" | while read -r CardNumber;
+mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(CardNumber) FROM Master WHERE CardNumber IS NOT NULL AND DOB >= DATE_SUB(NOW(),INTERVAL 14 DAY) ORDER BY CardNumber ASC" | while read -r CardNumber;
 do
 	
 		# GET FIRST TRANSACTION
@@ -329,9 +319,22 @@ do
 
 		fi
 done || trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+
+
+## CHECKDETAIL ##### REMOVE DUPLICATE ROWS FROM CHECKDETAIL LIVE TABLE
+mysql  --login-path=local --silent -DSRG_Dev -N -e "DROP TABLE IF EXISTS Master_Live_temp"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+mysql  --login-path=local --silent -DSRG_Dev -N -e "CREATE table Master_Live_temp LIKE Master"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+mysql  --login-path=local --silent -DSRG_Dev -N -e "INSERT INTO Master_Live_temp SELECT * FROM Master GROUP BY POSkey"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+mysql  --login-path=local --silent -DSRG_Dev -N -e "DROP table Master"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+mysql  --login-path=local --silent -DSRG_Dev -N -e "RENAME table Master_Live_temp TO Master"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+
+
 echo 'MASTER TABLE FREQUENCY FIELDS UPDATED AND VISIT BALANCE FIX APPLIED'
-
-
 ############# COPY TO PROD ##############
 # Delete Prod Master table if it exists
 #mysql  --login-path=local --silent -DSRG_Prod -N -e "DROP TABLE IF EXISTS Master"
