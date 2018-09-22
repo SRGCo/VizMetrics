@@ -319,35 +319,35 @@ do
 
 		fi
 done || trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+echo 'MASTER TABLE FREQUENCY FIELDS UPDATED AND VISIT BALANCE FIX APPLIED'
 
 
 ## CHECKDETAIL ##### REMOVE DUPLICATE ROWS FROM CHECKDETAIL LIVE TABLE
-mysql  --login-path=local --silent -DSRG_Dev -N -e "DROP TABLE IF EXISTS Master_Live_temp"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-mysql  --login-path=local --silent -DSRG_Dev -N -e "CREATE table Master_Live_temp LIKE Master"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-mysql  --login-path=local --silent -DSRG_Dev -N -e "INSERT INTO Master_Live_temp SELECT * FROM Master GROUP BY POSkey"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-mysql  --login-path=local --silent -DSRG_Dev -N -e "DROP table Master"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-mysql  --login-path=local --silent -DSRG_Dev -N -e "RENAME table Master_Live_temp TO Master"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+#mysql  --login-path=local --silent -DSRG_Dev -N -e "DROP TABLE IF EXISTS Master_Live_temp"
+#trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+#mysql  --login-path=local --silent -DSRG_Dev -N -e "CREATE table Master_Live_temp LIKE Master"
+#trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+#mysql  --login-path=local --silent -DSRG_Dev -N -e "INSERT INTO Master_Live_temp SELECT * FROM Master GROUP BY POSkey"
+#trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+#mysql  --login-path=local --silent -DSRG_Dev -N -e "DROP table Master"
+#trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+#mysql  --login-path=local --silent -DSRG_Dev -N -e "RENAME table Master_Live_temp TO Master"
+#trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 
-echo 'MASTER TABLE FREQUENCY FIELDS UPDATED AND VISIT BALANCE FIX APPLIED'
 ############# COPY TO PROD ##############
 # Delete Prod Master table if it exists
 #mysql  --login-path=local --silent -DSRG_Prod -N -e "DROP TABLE IF EXISTS Master"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'PROD MASTER TABLE DROPPED'
+echo 'NOT____PROD MASTER TABLE DROPPED'
 
 # Copy Dev Master to Prod
 #mysql  --login-path=local --silent -DSRG_Prod -N -e "CREATE TABLE Master LIKE SRG_Dev.Master;"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'PROD MASTER TABLE CREATED'
+echo 'NOT_____PROD MASTER TABLE CREATED'
 
 # Copy Dev Master to Prod
 #mysql  --login-path=local --silent -DSRG_Prod -N -e "INSERT INTO Master SELECT * FROM SRG_Dev.Master;"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'PROD MASTER POPULATED FROM DEV MASTER'
+echo 'NOT____PROD MASTER POPULATED FROM DEV MASTER'
 
