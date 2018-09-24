@@ -180,13 +180,13 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 		// ECHO $query8.PHP_EOL;
 		$result16 = mysqli_query($dbc, $query16);	
 		ECHO MYSQLI_ERROR($dbc);
-	ECHO 'Cardnumber: ',$CardNumber_db,' FocusDate: ',$FocusDate_db,PHP_EOL;
+	# ECHO 'Cardnumber: ',$CardNumber_db,' FocusDate: ',$FocusDate_db,PHP_EOL;
 	//END OF FOCUSMONTH LOOP
 	}
 ECHO '+++++++++++++++ Cardnumber: ',$CardNumber_db,' FocusDate: ',$FocusDate_db,PHP_EOL;
 // END OF CARD NUMBER WHILE LOOP
 }
-
+ECHO 'ALL CARDS PAST FREQUENCY UPDATED FOR ALL FOCUSDATES',PHP_EOL
 
 ############# COPY TO PROD ##############
 # Delete Prod Master table if it exists
