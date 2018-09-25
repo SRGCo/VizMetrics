@@ -82,6 +82,11 @@ mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master JOIN Px_exchanges ON Ma
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'MASTER EXCHANGED ACCOUNTS STATUSES UPDATED FROM PX EXCHANGES TABLE'
 
+####################### process exchanged cards may be more than one exchange
+
+
+
+
 ######### EXCLUDES SECTION USE OR NOT ? ? ?
 # mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master JOIN Excludes ON Master.CardNumber = Excludes.CardNumber SET Master.Account_status = 'Exclude' "
 # trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
