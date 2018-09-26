@@ -3,9 +3,9 @@
 # exec 1> >(logger -s -t $(basename $0)) 2>&1
 
 # UNCOMMENT NEXT FOR VERBOSE
- set -x
+# set -x
 ##### HALT AND CATCH FIRE IF ANY COMMAND FAILS
-# set -e
+set -e
 
 
 ################# ERROR CATCHING ##########################
@@ -26,22 +26,16 @@ failfunction()
 
 ################################### DOING WORK IN DEV2 DATABASE ####################################
 
-#ysql  --login-path=local -DSRG_dev2 -N -e "SELECT POSkey, COUNT(*) as HOWMANY FROM CardActivity_Live WHERE CardNumber IS NOT NULL group by POSkey HAVING HOWMANY > '1'" | while read -r POSkey HOWMANY;
-#trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-#do
+mysql  --login-path=local -DSRG_dev2 -N -e "SELECT POSkey, COUNT(*) as HOWMANY FROM CardActivity_Live WHERE CardNumber IS NOT NULL group by POSkey HAVING HOWMANY > '1'" | while read -r POSkey HOWMANY;
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+do
 
-######################### only do stuff if variables aren't empty
-
-######################### WHY DOESNT THIS WORK ? / ? ? ? ?
-
-	echo $POSkey" "$HOWMANY 
-	mysql  --login-path=local -DSRG_dev2 -N -e "SELECT DISTINCT(CardNumber) as CardNumber FROM CardActivity_Live WHERE POSkey = '0410590' AND CardNumber IS NOT NULL" | while read -r CardNumber;
-	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+ 
+	mysql  --login-path=local -DSRG_dev2 -N -e "SELECT DISTINCT(CardNumber), RIGHT(CardNumber, 6) FROM CardActivity_Live WHERE POSkey = '$POSkey' 
+						AND CardNumber IS NOT NULL ORDER BY CardNumber ASC" | while read -r CardNumber Lastsix;
 	do
-		echo $CardNumber
 
-		NewPOSkey=$POSkey$CardNumber
-		echo  $NewPOSkey
+		NewPOSkey=$POSkey$Lastsix
 	
 		#### FIX IT IN CARD ACTIVITY
 		mysql  --login-path=local --silent -DSRG_dev2 -N -e "UPDATE CardActivity_Live SET POSkey = '$NewPOSkey' WHERE POSkey = '$POSkey' AND CardNumber = '$CardNumber'"
@@ -50,14 +44,23 @@ failfunction()
 		#### ADD A NEW RECORD FOR IT IN CHECKDETAIL
 		mysql  --login-path=local --silent -DSRG_dev2 -N -e "INSERT INTO CheckDetail_Live SET POSkey = '$NewPOSkey'"
 		trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+	
+		echo $CardNumber" Old POSKEY:"$POSkey" New:"$NewPOSkey" Updated CA, created new record CD"
+
+
 	done
 
 	##### GET RID OF THE (NOW SUPERFLOUS) ENTRY WITH ORIGINAL POSKEY IN CHECKDETAIL
 	mysql  --login-path=local --silent -DSRG_dev2 -N -e "DELETE from CheckDetail_Live WHERE POSkey = '$POSkey'"
 	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+	echo "Deleted original POSkey Entries from CD"
+
 	##### GET RID OF THE (NOW SUPERFLOUS) ENTRY WITH ORIGINAL POSKEY IN CARDACTIVITY
 	mysql  --login-path=local --silent -DSRG_dev2 -N -e "DELETE from CardActivity_Live WHERE POSkey = '$POSkey'"
 	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+	echo "Deleted original POSkey Entries from CA"
 
+done
 
-#done
+echo "Complete"
+
