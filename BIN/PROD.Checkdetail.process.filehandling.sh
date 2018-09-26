@@ -31,7 +31,7 @@ failfunction()
 
 ################################### BACK UP THE 3 LIVE TABLES FOR SAFTEY #####################################
 rm -f /home/ubuntu/db_files/Checkdetail.3tables.bu.sql
-mysqldump -uroot -ps3r3n1t33 SRG_Dev CheckDetail_Live Employees_Live TableTurns_Live >  /home/ubuntu/db_files/Checkdetail.3tables.bu.sql
+mysqldump -uroot -ps3r3n1t33 SRG_Prod CheckDetail_Live Employees_Live TableTurns_Live >  /home/ubuntu/db_files/Checkdetail.3tables.bu.sql
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 
@@ -55,15 +55,15 @@ done
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 ### Drop and recreate temp tableturns table
-mysql  --login-path=local --silent -DSRG_Dev -N -e "DROP TABLE IF EXISTS TableTurns_Temp"
+mysql  --login-path=local --silent -DSRG_Prod -N -e "DROP TABLE IF EXISTS TableTurns_Temp"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 ### Create a empty copy of TableTurns_Temp table from TableTurns_Structure table
-mysql  --login-path=local --silent -DSRG_Dev -N -e "CREATE TABLE TableTurns_Temp AS (SELECT * FROM TableTurns_Structure WHERE 1=0)"
+mysql  --login-path=local --silent -DSRG_Prod -N -e "CREATE TABLE TableTurns_Temp AS (SELECT * FROM TableTurns_Structure WHERE 1=0)"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 ### Load the data from the latest file into the (temp) TableTurns table ########################
-mysql  --login-path=local --silent -DSRG_Dev -N -e "Load data local infile '/home/ubuntu/db_files/incoming/ctuit/Infile.Tableturn.csv' into table TableTurns_Temp fields terminated by ',' lines terminated by '\n'"
+mysql  --login-path=local --silent -DSRG_Prod -N -e "Load data local infile '/home/ubuntu/db_files/incoming/ctuit/Infile.Tableturn.csv' into table TableTurns_Temp fields terminated by ',' lines terminated by '\n'"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 ## Tableturns ## DELETE OLD TABLETURNS FILE TO MAKE READY FOR NEXT TIME
@@ -71,51 +71,51 @@ rm /home/ubuntu/db_files/incoming/ctuit/Infile.Tableturn.csv
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 ### PUT DOB INTO SQL FORMAT
-mysql  --login-path=local --silent -DSRG_Dev -N -e "UPDATE TableTurns_Temp SET DOB= STR_TO_DATE(DOB, '%c/%e/%Y') WHERE STR_TO_DATE(DOB, '%c/%e/%Y') IS NOT NULL"
+mysql  --login-path=local --silent -DSRG_Prod -N -e "UPDATE TableTurns_Temp SET DOB= STR_TO_DATE(DOB, '%c/%e/%Y') WHERE STR_TO_DATE(DOB, '%c/%e/%Y') IS NOT NULL"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 ### Change DOB field to type date
-mysql  --login-path=local --silent -DSRG_Dev -N -e "ALTER TABLE TableTurns_Temp CHANGE DOB DOB DATE"
+mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE TableTurns_Temp CHANGE DOB DOB DATE"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 #### Change OpenTime & CloseTime to SQL format
-mysql  --login-path=local --silent -DSRG_Dev -N -e "UPDATE TableTurns_Temp SET CloseTime= STR_TO_DATE(CloseTime, '%m/%e/%Y %l:%i:%s %p') WHERE STR_TO_DATE(CloseTime, '%m/%e/%Y %l:%i:%s %p')"
+mysql  --login-path=local --silent -DSRG_Prod -N -e "UPDATE TableTurns_Temp SET CloseTime= STR_TO_DATE(CloseTime, '%m/%e/%Y %l:%i:%s %p') WHERE STR_TO_DATE(CloseTime, '%m/%e/%Y %l:%i:%s %p')"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
-mysql  --login-path=local --silent -DSRG_Dev -N -e "UPDATE TableTurns_Temp SET OpenTime= STR_TO_DATE(OpenTime, '%m/%e/%Y %l:%i:%s %p') WHERE STR_TO_DATE(OpenTime,  '%m/%e/%Y %l:%i:%s %p')"
+mysql  --login-path=local --silent -DSRG_Prod -N -e "UPDATE TableTurns_Temp SET OpenTime= STR_TO_DATE(OpenTime, '%m/%e/%Y %l:%i:%s %p') WHERE STR_TO_DATE(OpenTime,  '%m/%e/%Y %l:%i:%s %p')"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 
 ##### CHANGE CLOSETIME FIELD TO DATETIME #################
-mysql  --login-path=local --silent -DSRG_Dev -N -e "ALTER TABLE TableTurns_Temp CHANGE CloseTime CloseTime DATETIME NOT NULL"
+mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE TableTurns_Temp CHANGE CloseTime CloseTime DATETIME NOT NULL"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 #### Create POSkey field          ######################### INDEX #######################
-mysql  --login-path=local --silent -DSRG_Dev -N -e "ALTER TABLE TableTurns_Temp ADD POSkey VARCHAR(30) first"
+mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE TableTurns_Temp ADD POSkey VARCHAR(30) first"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
-mysql  --login-path=local --silent -DSRG_Dev -N -e "ALTER TABLE TableTurns_Temp ADD INDEX(POSkey)"
+mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE TableTurns_Temp ADD INDEX(POSkey)"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 #### Create excel date field
-mysql  --login-path=local --silent -DSRG_Dev -N -e "ALTER TABLE TableTurns_Temp ADD Exceldate INT(100) NOT NULL AFTER LocationID"
+mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE TableTurns_Temp ADD Exceldate INT(100) NOT NULL AFTER LocationID"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 #### Update excel date field
-mysql  --login-path=local --silent -DSRG_Dev -N -e "UPDATE TableTurns_Temp set Exceldate = (((unix_timestamp(DOB) / 86400) + 25569) + (-5/24))"
+mysql  --login-path=local --silent -DSRG_Prod -N -e "UPDATE TableTurns_Temp set Exceldate = (((unix_timestamp(DOB) / 86400) + 25569) + (-5/24))"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 #### fix check numbers (> 6 chars, start with '100') for PX CA join #######
 #### Update POSkey field (location + TransactionDate[excel format][no decimal] + checknumber)
-mysql  --login-path=local --silent -DSRG_Dev -N -e "UPDATE TableTurns_Temp set POSkey = CONCAT_WS('', LocationID, Exceldate, CheckNumbers)"
+mysql  --login-path=local --silent -DSRG_Prod -N -e "UPDATE TableTurns_Temp set POSkey = CONCAT_WS('', LocationID, Exceldate, CheckNumbers)"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 #### INDEX POSkey
-mysql  --login-path=local --silent -DSRG_Dev -N -e "ALTER TABLE TableTurns_Temp ADD INDEX(POSkey)"
+mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE TableTurns_Temp ADD INDEX(POSkey)"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 #### Insert into the LIVE tableTurns table
-mysql  --login-path=local --silent -DSRG_Dev -N -e "INSERT INTO TableTurns_Live SELECT * FROM TableTurns_Temp GROUP BY POSkey"
+mysql  --login-path=local --silent -DSRG_Prod -N -e "INSERT INTO TableTurns_Live SELECT * FROM TableTurns_Temp GROUP BY POSkey"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'TABLETURNS DATA INSERTED INTO LIVE TABLE GROUPED BY POSKEY TO AVOID DUPLICATE ENTRIES'
 
@@ -134,7 +134,7 @@ trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 ########################## CHECK THE WHOLE EMPLOYEE FLOW ####################
 ## EMPLOYEES ##### Load the data from the latest file into the (LIVE) employees table
-mysql  --login-path=local --silent -DSRG_Dev -N -e "Load data local infile '/home/ubuntu/db_files/incoming/ctuit/Infile.Employee.csv' into table Employees_Live fields terminated by ',' lines terminated by '\n'"
+mysql  --login-path=local --silent -DSRG_Prod -N -e "Load data local infile '/home/ubuntu/db_files/incoming/ctuit/Infile.Employee.csv' into table Employees_Live fields terminated by ',' lines terminated by '\n'"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 ## EMPLOYEES ##### DELETE OLD EMPLOYEES FILE TO MAKE READY FOR NEXT TIME
 rm /home/ubuntu/db_files/incoming/ctuit/Infile.Employee.csv
@@ -142,15 +142,15 @@ trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 
 ## EMPLOYEES ##### REMOVE DUPLICATE ROWS FROM EMPLOYEES LIVE TABLE
-mysql  --login-path=local --silent -DSRG_Dev -N -e "DROP TABLE IF EXISTS Employees_Live_temp"
+mysql  --login-path=local --silent -DSRG_Prod -N -e "DROP TABLE IF EXISTS Employees_Live_temp"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-mysql  --login-path=local --silent -DSRG_Dev -N -e "CREATE table Employees_Live_temp LIKE Employees_Live"
+mysql  --login-path=local --silent -DSRG_Prod -N -e "CREATE table Employees_Live_temp LIKE Employees_Live"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-mysql  --login-path=local --silent -DSRG_Dev -N -e "INSERT INTO Employees_Live_temp SELECT * FROM Employees_Live GROUP BY EmployeeID"
+mysql  --login-path=local --silent -DSRG_Prod -N -e "INSERT INTO Employees_Live_temp SELECT * FROM Employees_Live GROUP BY EmployeeID"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-mysql  --login-path=local --silent -DSRG_Dev -N -e "DROP table Employees_Live"
+mysql  --login-path=local --silent -DSRG_Prod -N -e "DROP table Employees_Live"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-mysql  --login-path=local --silent -DSRG_Dev -N -e "RENAME table Employees_Live_temp TO Employees_Live"
+mysql  --login-path=local --silent -DSRG_Prod -N -e "RENAME table Employees_Live_temp TO Employees_Live"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 echo 'FULL SET OF EMPLOYEE DATA PROCESSED AND DEDUPED'
@@ -169,15 +169,15 @@ for file in /home/ubuntu/db_files/incoming/ctuit/*Checkdetail*.csv
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 #### DUMP EXISTING CHECK DETAIL INCOMING TABLE
-mysql  --login-path=local --silent -DSRG_Dev -N -e "DROP TABLE IF EXISTS CheckDetail_Temp"
+mysql  --login-path=local --silent -DSRG_Prod -N -e "DROP TABLE IF EXISTS CheckDetail_Temp"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 #### MAKE A STRUCTURE COPY OF THE CHECK DETAIL TABLE
-mysql  --login-path=local --silent -DSRG_Dev -N -e "CREATE TABLE CheckDetail_Temp AS (SELECT * FROM CheckDetail_Structure WHERE 1=0)"
+mysql  --login-path=local --silent -DSRG_Prod -N -e "CREATE TABLE CheckDetail_Temp AS (SELECT * FROM CheckDetail_Structure WHERE 1=0)"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 #### Load the data from the latest file into the (temp) check detail
-mysql  --login-path=local --silent -DSRG_Dev -N -e "Load data local infile '/home/ubuntu/db_files/incoming/ctuit/Infile.Chkdetail.csv' into table CheckDetail_Temp fields terminated by ',' lines terminated by '\n'"
+mysql  --login-path=local --silent -DSRG_Prod -N -e "Load data local infile '/home/ubuntu/db_files/incoming/ctuit/Infile.Chkdetail.csv' into table CheckDetail_Temp fields terminated by ',' lines terminated by '\n'"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 ## CHECKDETAIL ##### DELETE OLD CHECKDETAIL FILE TO MAKE READY FOR NEXT TIME
@@ -186,52 +186,52 @@ trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 
 #### PUT TransactionDate INTO SQL FORMAT
-mysql  --login-path=local --silent -DSRG_Dev -N -e "UPDATE CheckDetail_Temp SET DOB = STR_TO_DATE(DOB, '%m/%d/%Y') WHERE STR_TO_DATE(DOB, '%m/%d/%Y') IS NOT NULL"
+mysql  --login-path=local --silent -DSRG_Prod -N -e "UPDATE CheckDetail_Temp SET DOB = STR_TO_DATE(DOB, '%m/%d/%Y') WHERE STR_TO_DATE(DOB, '%m/%d/%Y') IS NOT NULL"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 #### Remove records where CheckNumber is null.
-mysql  --login-path=local --silent -DSRG_Dev -N -e "DELETE from CheckDetail_Temp where CheckNumber = '0'"
+mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE from CheckDetail_Temp where CheckNumber = '0'"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 #### Change TransactionDate field to type date
-mysql  --login-path=local --silent -DSRG_Dev -N -e "ALTER TABLE CheckDetail_Temp CHANGE DOB DOB DATE"
+mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE CheckDetail_Temp CHANGE DOB DOB DATE"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 #### Create EMPLOYEE fields
-mysql  --login-path=local --silent -DSRG_Dev -N -e "ALTER TABLE CheckDetail_Temp ADD PayrollID VARCHAR( 26 ) first"
+mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE CheckDetail_Temp ADD PayrollID VARCHAR( 26 ) first"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
-mysql  --login-path=local --silent -DSRG_Dev -N -e "ALTER TABLE CheckDetail_Temp ADD firstname VARCHAR( 255 ) first"
+mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE CheckDetail_Temp ADD firstname VARCHAR( 255 ) first"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
-mysql  --login-path=local --silent -DSRG_Dev -N -e "ALTER TABLE CheckDetail_Temp ADD lastname VARCHAR( 255 ) first"
+mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE CheckDetail_Temp ADD lastname VARCHAR( 255 ) first"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 #### Create POSkey field         ######################### INDEX #######################
-mysql  --login-path=local --silent -DSRG_Dev -N -e "ALTER TABLE CheckDetail_Temp ADD POSkey VARCHAR(30) first"
+mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE CheckDetail_Temp ADD POSkey VARCHAR(30) first"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
-mysql  --login-path=local --silent -DSRG_Dev -N -e "ALTER TABLE CheckDetail_Temp ADD INDEX(POSkey)"
+mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE CheckDetail_Temp ADD INDEX(POSkey)"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 #### Create excel date fieldC
-mysql  --login-path=local --silent -DSRG_Dev -N -e "ALTER TABLE CheckDetail_Temp ADD Exceldate INT(100) NOT NULL AFTER LocationID"
+mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE CheckDetail_Temp ADD Exceldate INT(100) NOT NULL AFTER LocationID"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 #### Update excel date field
-mysql  --login-path=local --silent -DSRG_Dev -N -e "UPDATE CheckDetail_Temp set Exceldate = (((unix_timestamp(DOB) / 86400) + 25569) + (-5/24))"
+mysql  --login-path=local --silent -DSRG_Prod -N -e "UPDATE CheckDetail_Temp set Exceldate = (((unix_timestamp(DOB) / 86400) + 25569) + (-5/24))"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 #### Update POSkey field (location + TransactionDate[excel format][no decimal] + checknumber)
-mysql  --login-path=local --silent -DSRG_Dev -N -e "UPDATE CheckDetail_Temp SET POSkey = CONCAT_WS('', LocationID, Exceldate, CheckNumber)"
+mysql  --login-path=local --silent -DSRG_Prod -N -e "UPDATE CheckDetail_Temp SET POSkey = CONCAT_WS('', LocationID, Exceldate, CheckNumber)"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 #### DROP EXCELDATE FIELD
-mysql  --login-path=local --silent -DSRG_Dev -N -e "ALTER TABLE CheckDetail_Temp DROP COLUMN Exceldate"
+mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE CheckDetail_Temp DROP COLUMN Exceldate"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 #### NAMES QUERIES/UPDATES 
-mysql  --login-path=local --silent -DSRG_Dev -N -e "UPDATE CheckDetail_Temp CDT 
+mysql  --login-path=local --silent -DSRG_Prod -N -e "UPDATE CheckDetail_Temp CDT 
 	INNER JOIN Employees_Live EL ON (CDT.LocationID = EL.LocationID AND CDT.Base_EmployeeID = EL.EmployeeID) 
 	SET CDT.lastname = EL.LastName, CDT.firstname = EL.FirstName, CDT.PayrollID = EL.PayrollID 
 	WHERE CDT.lastname IS NULL AND CDT.firstname IS NULL"
@@ -239,7 +239,7 @@ trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 
 #### LEGACY BAR NAMES
-mysql  --login-path=local --silent -DSRG_Dev -N -e "UPDATE CheckDetail_Temp CDT
+mysql  --login-path=local --silent -DSRG_Prod -N -e "UPDATE CheckDetail_Temp CDT
 	INNER JOIN Employees_Legacy EL ON (CDT.LocationID = EL.LocationID AND CDT.Base_EmployeeID = EL.EmployeeID) 
 	SET CDT.lastname = EL.LastName, CDT.firstname = EL.FirstName
 	WHERE CDT.lastname IS NULL AND CDT.firstname IS NULL"
@@ -247,17 +247,17 @@ trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 
 #### ADD THE TABLETURNS FIELDS SO MATCHES 'LIVE' TABLE
-mysql  --login-path=local --silent -DSRG_Dev -N -e "ALTER TABLE CheckDetail_Temp ADD OpenTime datetime AFTER TransfersOut"
+mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE CheckDetail_Temp ADD OpenTime datetime AFTER TransfersOut"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
-mysql  --login-path=local --silent -DSRG_Dev -N -e "ALTER TABLE CheckDetail_Temp ADD CloseTime datetime AFTER OpenTime"
+mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE CheckDetail_Temp ADD CloseTime datetime AFTER OpenTime"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
-mysql  --login-path=local --silent -DSRG_Dev -N -e "ALTER TABLE CheckDetail_Temp ADD MinutesOpen int(100) AFTER CloseTime"
+mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE CheckDetail_Temp ADD MinutesOpen int(100) AFTER CloseTime"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 #### UPDATE LIVE CHECK DETAIL WITH LIVE TABLE TURNS AND TABLE NAMES
-mysql  --login-path=local --silent -DSRG_Dev -N -e "UPDATE CheckDetail_Temp CDT
+mysql  --login-path=local --silent -DSRG_Prod -N -e "UPDATE CheckDetail_Temp CDT
 	INNER JOIN TableTurns_Live TL 
 	ON CDT.POSkey = TL.POSkey
 	SET CDT.TableName = TL.TableName, 
@@ -268,19 +268,18 @@ trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 
 #### NULL OPEN/CLOSE TIME IF ZERO VALUE IN LIVE CARD DETAIL
-mysql  --login-path=local --silent -DSRG_Dev -N -e "UPDATE CheckDetail_Temp CDT SET CDT.OpenTime = CDT.DOB WHERE CDT.OpenTime < '2001-01-01'"
+mysql  --login-path=local --silent -DSRG_Prod -N -e "UPDATE CheckDetail_Temp CDT SET CDT.OpenTime = CDT.DOB WHERE CDT.OpenTime < '2001-01-01'"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
-mysql  --login-path=local --silent -DSRG_Dev -N -e "UPDATE CheckDetail_Temp CDT SET CDT.CloseTime = CDT.DOB WHERE CDT.CloseTime < '2001-01-01'"
+mysql  --login-path=local --silent -DSRG_Prod -N -e "UPDATE CheckDetail_Temp CDT SET CDT.CloseTime = CDT.DOB WHERE CDT.CloseTime < '2001-01-01'"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 
 ##### ADD INCOMING CHECK DETAIL DATA TO LIVE TABLE
-mysql  --login-path=local --silent -DSRG_Dev -N -e "INSERT INTO CheckDetail_Live SELECT * FROM CheckDetail_Temp"
+mysql  --login-path=local --silent -DSRG_Prod -N -e "INSERT INTO CheckDetail_Live SELECT * FROM CheckDetail_Temp"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 echo 'New Data inserted into CheckDetail Live'
-
 
 
 
