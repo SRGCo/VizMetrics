@@ -13,7 +13,7 @@
 define ('DB_USER', 'root');
 define ('DB_PASSWORD','s3r3n1t33');
 define ('DB_HOST','localhost');
-define ('DB_NAME','SRG_dev2');
+define ('DB_NAME','SRG_Prod');
 
 # Make the connection and then select the database
 # display errors if fail
@@ -56,7 +56,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC))
 		$result4 = mysqli_query($dbc, $query4);
 		ECHO MYSQLI_ERROR($dbc);
 
-		ECHO  'Card: '.$CardNumber_db.' Old POSKEY:'.$POSkey_db.' New:'.$NewPOSkey.' Updated CA, New CD record'.PHP_EOL;
+		# ECHO  'Card: '.$CardNumber_db.' Old POSKEY:'.$POSkey_db.' New:'.$NewPOSkey.' Updated CA, New CD record'.PHP_EOL;
 	}
 
 

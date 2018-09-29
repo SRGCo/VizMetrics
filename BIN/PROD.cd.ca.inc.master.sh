@@ -25,6 +25,12 @@ failfunction()
 	fi
 }
 
+####### FIRST WE TAKE CARE OF DUPE POSKEYS IN CA
+( "/home/ubuntu/bin/PROD.POSkey.dedupe.php" )
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+echo 'DUPLICATE POSKEYS PROCESS/FIXED'
+
+
 ############################## FIRST WE PROCESS/UPDATE THE GUEST DATA #############################
 ################# TABLETURNS ##############################
 ## REMOVE (2) HEADER ROW AND MERGE (IF NECCESSARY) INCOMING GUESTS CSVs
