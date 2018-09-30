@@ -26,8 +26,7 @@ mysqli_select_db($dbc, DB_NAME)
 $counter = 0;
 
 
-$query1 = "SELECT POSkey, COUNT(*) as HowMany FROM CardActivity_squashed_2 WHERE CardNumber IS NOT NULL AND POSkey is NOT NULL 
-		group by POSkey HAVING HowMany > '1'";
+$query1 = "SELECT POSkey, COUNT(*) as HowMany FROM CardActivity_squashed_2 WHERE CardNumber IS NOT NULL AND POSkey is NOT NULL group by POSkey HAVING HowMany > '1'";
 $result1 = mysqli_query($dbc, $query1);
 ECHO MYSQLI_ERROR($dbc);
 while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC))
@@ -47,8 +46,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC))
 
 		$NewPOSkey = $POSkey_db.$LastSix_db;
 
-		$query3 = "UPDATE CardActivity_squashed_2 SET POSkey = '$NewPOSkey' WHERE POSkey = '$POSkey_db' 
-				AND CardNumber = '$CardNumber_db'";
+		$query3 = "UPDATE CardActivity_squashed_2 SET POSkey = '$NewPOSkey' WHERE POSkey = '$POSkey_db' AND CardNumber = '$CardNumber_db'";
 		$result3 = mysqli_query($dbc, $query3);
 		ECHO MYSQLI_ERROR($dbc);
 
@@ -56,7 +54,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC))
 		$result4 = mysqli_query($dbc, $query4);
 		ECHO MYSQLI_ERROR($dbc);
 
-		ECHO  'Card: '.$CardNumber_db.' Old POSKEY:'.$POSkey_db.' New:'.$NewPOSkey.' Updated CA, New CD record'.PHP_EOL;
+		ECHO  'Card: '.$CardNumber_db.' Old POSKEY:'.$POSkey_db.' New:'.$NewPOSkey.' Updated CA, created new record CD'.PHP_EOL;
 	}
 
 
