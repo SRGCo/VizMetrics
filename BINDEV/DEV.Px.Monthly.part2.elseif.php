@@ -2,7 +2,8 @@
 <?php 
 
 ##### Right off we backup the last version of px_monthly while debugging
-exec('mysqldump -uroot -ps3r3n1t33 SRG_Dev Px_Monthly_922_base > /home/ubuntu/db_files/DEV.Px_Monthly_922_base.$(date +%Y-%m-%d-%H.%M.%S).sql');
+exec('mysqldump -uroot -ps3r3n1t33 SRG_Dev Px_Monthly > /home/ubuntu/db_files/DEV.Px_Monthly.$(date +%Y-%m-%d-%H.%M.%S).sql');
+echo 'PX MONTHLY TABLE BACKED UP'
 
 function yrseg ($pastvisitbal, $lifetimevisits)
 {
@@ -40,7 +41,7 @@ mysqli_select_db($dbc, DB_NAME)
 $VisitsAccruedLife_db = '0';
 //QUERY PX_MONTHLY FOR CARDNUMBER
 # NOT USING -- 	AND MOD(CardNumber, 200) = '0'
-$query1 = "SELECT CardNumber as CardNumber, MAX(LifetimeVisitBalance) as VisitsAccruedLife FROM Px_Monthly_922_base	
+$query1 = "SELECT CardNumber as CardNumber, MAX(LifetimeVisitBalance) as VisitsAccruedLife FROM Px_Monthly	
 		GROUP BY CardNumber ORDER BY CardNumber ASC";
 $result1 = mysqli_query($dbc, $query1);
 ECHO MYSQLI_ERROR($dbc);
@@ -56,7 +57,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	$Carryover_LastVisitDate = '';
 	
 	###### NOW SELECT THE FOCUSDATE AND PROCESS
-	$query2 = "SELECT FocusDate FROM Px_Monthly_922_base where CardNumber = '$CardNumber_db'	
+	$query2 = "SELECT FocusDate FROM Px_Monthly where CardNumber = '$CardNumber_db'	
 					ORDER BY FocusDate DESC";
 	$result2 = mysqli_query($dbc, $query2);
 	ECHO MYSQLI_ERROR($dbc);
@@ -67,7 +68,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 
 		#FIELDS = 12MOVISITBALANCE (PHP=PREVYEARVISITBALANCE)
 		$query5= "SELECT 12MoVisitBalance as PrevYearVisitBal
-				FROM Px_Monthly_922_base 
+				FROM Px_Monthly 
 				WHERE CardNumber = '$CardNumber_db'
 				AND FocusDate = '$FocusDate_db'";
 		$result5 = mysqli_query($dbc, $query5);	
@@ -80,7 +81,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 
 		##### RETRIEVE PRIOR VISITBALANCE VALUES
 		#### ONE MONTH BACK
-		$query13 = "SELECT 12MoVisitBalance FROM Px_Monthly_922_base 
+		$query13 = "SELECT 12MoVisitBalance FROM Px_Monthly 
 			WHERE CardNumber = '$CardNumber_db'
 			AND FocusDate = DATE_SUB('$FocusDate_db',INTERVAL 1 MONTH)";
 		$result13 = mysqli_query($dbc, $query13);	
@@ -92,7 +93,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 		IF ($YrMoVisitBal_1MoBack_db == ''){$YrMoVisitBal_1MoBack_db = '0';}
 
 		#### THREE MONTHS BACK
-		$query14 = "SELECT 12MoVisitBalance FROM Px_Monthly_922_base 
+		$query14 = "SELECT 12MoVisitBalance FROM Px_Monthly 
 			WHERE CardNumber = '$CardNumber_db'
 			AND FocusDate = DATE_SUB('$FocusDate_db', INTERVAL 3 MONTH)";
 		$result14 = mysqli_query($dbc, $query14);	
@@ -104,7 +105,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 		IF ($YrMoVisitBal_3MoBack_db == ''){$YrMoVisitBal_3MoBack_db = '0';}
 
 		#### TWELVE MONTHS BACK
-		$query15 = "SELECT 12MoVisitBalance, LapseMonths FROM Px_Monthly_922_base 
+		$query15 = "SELECT 12MoVisitBalance, LapseMonths FROM Px_Monthly 
 			WHERE CardNumber = '$CardNumber_db'
 			AND FocusDate = DATE_SUB('$FocusDate_db', INTERVAL 1 YEAR)";
 		$result15 = mysqli_query($dbc, $query15);
@@ -118,7 +119,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	
 		##### RETRIEVE PRIOR VISITBALANCE VALUES
 		#### TWENTY FOUR MONTHS BACK
-		$query13b = "SELECT 12MoVisitBalance FROM Px_Monthly_922_base 
+		$query13b = "SELECT 12MoVisitBalance FROM Px_Monthly 
 			WHERE CardNumber = '$CardNumber_db'
 			AND FocusDate = DATE_SUB('$FocusDate_db',INTERVAL 2 YEAR)";
 		$result13b = mysqli_query($dbc, $query13b);	
@@ -130,7 +131,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 
 		##### RETRIEVE PRIOR VISITBALANCE VALUES
 		#### THIRTY SIX MONTHS BACK
-		$query13c = "SELECT 12MoVisitBalance FROM Px_Monthly_922_base 
+		$query13c = "SELECT 12MoVisitBalance FROM Px_Monthly 
 			WHERE CardNumber = '$CardNumber_db'
 			AND FocusDate = DATE_SUB('$FocusDate_db',INTERVAL 3 YEAR)";
 		$result13c = mysqli_query($dbc, $query13c);	
@@ -162,7 +163,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 
 
 		/////// INSERT VALUES INTO THE TABLE HERE
-		$query16= "UPDATE Px_Monthly_922_base SET
+		$query16= "UPDATE Px_Monthly SET
 			12MoVisitBal_1MoBack = '$YrMoVisitBal_1MoBack_db',
 			12MoVisitBal_3MoBack = '$YrMoVisitBal_3MoBack_db',
 			12MoVisitBal_12MoBack = '$YrMoVisitBal_12MoBack_db',
@@ -190,24 +191,24 @@ ECHO 'ALL CARDS PAST FREQUENCY UPDATED FOR ALL FOCUSDATES',PHP_EOL;
 
 ############# COPY TO PROD ##############
 # Delete Prod Master table if it exists
-$query_prod1 = "DROP TABLE IF EXISTS SRG_Prod.Px_Monthly_922_base";
+$query_prod1 = "DROP TABLE IF EXISTS SRG_Prod.Px_Monthly";
 #$result_prod1 = mysqli_query($dbc, $query_prod1);
 ECHO MYSQLI_ERROR($dbc);
-ECHO 'NOT___ PROD Px_Monthly_922_base DROPPED'.PHP_EOL;
+ECHO 'NOT___ PROD Px_Monthly DROPPED'.PHP_EOL;
 // SLEEP THE SCRIPT FOR 5 SECONDS TO LET MYSQL CATCH UP
 sleep(5);
 
-$query_prod2 = "CREATE TABLE SRG_Prod.Px_Monthly_922_base LIKE SRG_Dev.Px_Monthly";
+$query_prod2 = "CREATE TABLE SRG_Prod.Px_Monthly LIKE SRG_Dev.Px_Monthly";
 #$result_prod2 = mysqli_query($dbc, $query_prod2);
 ECHO MYSQLI_ERROR($dbc);
-ECHO 'NOT___ PROD Px_Monthly_922_base RECREATED LIKE DEV Px_Monthly_922_base'.PHP_EOL;
+ECHO 'NOT___ PROD Px_Monthly RECREATED LIKE DEV Px_Monthly'.PHP_EOL;
 // SLEEP THE SCRIPT FOR 5 SECONDS TO LET MYSQL CATCH UP
 sleep(5);
 
-$query_prod2 = "INSERT INTO SRG_Prod.Px_Monthly_922_base SELECT * FROM SRG_Dev.Px_Monthly_922_base";
+$query_prod2 = "INSERT INTO SRG_Prod.Px_Monthly SELECT * FROM SRG_Dev.Px_Monthly";
 #$result_prod2 = mysqli_query($dbc, $query_prod2);
 ECHO MYSQLI_ERROR($dbc);
-ECHO 'NOT___ PROD Px_Monthly_922_base POPULATED'.PHP_EOL;
+ECHO 'NOT___ PROD Px_Monthly POPULATED'.PHP_EOL;
 // SLEEP THE SCRIPT FOR 5 SECONDS TO LET MYSQL CATCH UP
 sleep(5);
 
