@@ -38,7 +38,7 @@ echo 0 > $TEMPFILE
 ##########################   WE NEED TO HAVE CARD ACTIVITY SQUASHED BECOME A LIVE TABLE THAT GETS UPDATED INCREMENTALLY
 ########################## THEN WE CAN RUN THIS FIX ON ONLY THE NEW TRANSACTIONS
 ######## Get CardNumber
-mysql  --login-path=local -DSRG_Prod -N -e "SELECT DISTINCT(CardNumber) FROM CardActivity_squashed WHERE CardNumber IS NOT NULL AND TransactionTime > '21:00:00' ORDER BY CardNumber ASC" | while read -r CardNumber;
+mysql  --login-path=local -DSRG_Prod -N -e "SELECT DISTINCT(CardNumber) FROM CardActivity_squashed WHERE CardNumber IS NOT NULL AND TransactionTime > '16:00:00' ORDER BY CardNumber ASC" | while read -r CardNumber;
 do
 	######### GET DATA IF CHECK FROM BETWEEN MIDNIGHT AND 4 AM 
 	mysql  --login-path=local -DSRG_Prod -N -e "SELECT POSkey, TransactionDate, CheckNo FROM CardActivity_squashed where cardnumber like $CardNumber
