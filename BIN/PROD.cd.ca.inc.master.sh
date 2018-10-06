@@ -152,21 +152,23 @@ trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'MASTER POPULATED FROM MASTER TEMP'
 
 
+
+################# PROCESS EXCHANGES WITH PHP SUBROUTINE
+( "/home/ubuntu/bin/PROD.px.exchanges.process.php" )
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+echo 'MASTER- EXCHANGED CARDS PROCESS/FIXED'
+
+####### SHOW WHICH HAVE BEEN EXCHANGED IN MASTER ACCOUNT STATUSES
+mysql  --login-path=local -DSRG_Prod -N -e "UPDATE Master JOIN Px_exchanges ON Master.CardNumber = Px_exchanges.CurrentCardNumber SET Master.Account_status = 'Exchange' "
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+echo 'MASTER- EXCHANGED ACCOUNTS STATUSES UPDATED FROM PX EXCHANGES TABLE'
+
+
 ####### MASTER TABLE GUEST INFO UPDATE
 mysql  --login-path=local -DSRG_Prod -N -e "UPDATE Master JOIN Guests_Master ON Master.CardNumber = Guests_Master.CardNumber 
 							SET Master.EnrollDate = Guests_Master.EnrollDate, Master.Account_status = Guests_Master.AccountStatus"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'MASTER ACCOUNT STATUSES UPDATED FROM GUESTS MASTER TABLE'
-
-mysql  --login-path=local -DSRG_Prod -N -e "UPDATE Master JOIN Px_exchanges ON Master.CardNumber = Px_exchanges.CurrentCardNumber SET Master.Account_status = 'Exchange' "
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER EXCHANGED ACCOUNTS STATUSES UPDATED FROM PX EXCHANGES TABLE'
-
-
-
-
-####################### process exchanged cards may be more than one exchange
-
 
 
 
@@ -190,6 +192,12 @@ mysql  --login-path=local -DSRG_Prod -N -e "UPDATE Master SET POSkey = POSKey_px
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo MASTER EMPTY POS KEYS POPULATED FROM PX DATA
 
+mysql  --login-path=local -DSRG_Prod -N -e "UPDATE Master SET DOB = TransactionDate WHERE DOB IS NULL "
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+echo MASTER EMPTY DOB POPULATED FROM PX DATA
+
+
+
 mysql  --login-path=local -DSRG_Prod -N -e "UPDATE Master SET GrossSalesCoDefined = DollarsSpentAccrued WHERE GrossSalesCoDefined IS NULL 
 						AND Master.Account_status <> 'TERMIN' AND Master.Account_status <> 'SUSPEN' 
 						AND Master.Account_status <> 'Exchanged' AND Master.Account_status <> 'Exchange' 
@@ -203,8 +211,8 @@ echo '(PROMOS OR COMPS COULD NOT BE ADDED, LOWBALL FIGURES)'
 ###### -e is the 'read statement and quit'
 ######## WE ARE ###
 
-mysql  --login-path=local -DSRG_Prod -N -e "SELECT Master.DOB FROM Master  WHERE Master.DOB IS NOT NULL AND DOB >= DATE_SUB(NOW(),INTERVAL 14 DAY) 
-				GROUP BY Master.DOB ORDER BY Master.DOB DESC" | while read -r TransactionDate;
+mysql  --login-path=local -DSRG_Prod -N -e "SELECT Master.TransactionDate FROM Master WHERE Master.TransactionDate IS NOT NULL AND TransactionDate >= DATE_SUB(NOW(),INTERVAL 14 DAY) 
+				GROUP BY Master.TransactionDate ORDER BY Master.TransactionDate DESC" | while read -r TransactionDate;
 do
 
 		######## GET FY FOR THIS TransactionDate (DOB)
@@ -223,7 +231,7 @@ do
 		fi
 
 		##### UPDATE FISCAL YEAR FROM TRANSACTIONDATE
-		mysql  --login-path=local -DSRG_Prod -N -e "UPDATE Master SET FY = '$FY',YLuna = '$YLuna', Luna='$Luna' WHERE Master.DOB = '$TransactionDate'"
+		mysql  --login-path=local -DSRG_Prod -N -e "UPDATE Master SET FY = '$FY',YLuna = '$YLuna', Luna='$Luna' WHERE Master.TransactionDate = '$TransactionDate'"
 		#echo $TransactionDate updated FY= $FY YLuna = $YLuna  Luna = $Luna
 
 done
