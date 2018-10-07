@@ -241,9 +241,10 @@ echo 'MASTER FY YLUNA FIELDS UPATED WITH DATA FROM LUNA TABLE'
 
 
 ################################ VISIT BALANCE FIX SECTION ########################################
-### what if more than one transaction per day
+### what if more than one transaction per day ? ? ? ? ? ? ? 
 
-mysql  --login-path=local -DSRG_Prod -N -e "SELECT DISTINCT(CardNumber) FROM Master WHERE CardNumber IS NOT NULL ORDER BY CardNumber ASC" | while read -r CardNumber;
+mysql  --login-path=local -DSRG_Prod -N -e "SELECT DISTINCT(CardNumber) FROM Master WHERE CardNumber IS NOT NULL AND DOB >= DATE_SUB(NOW(),INTERVAL 14 DAY) 
+													ORDER BY CardNumber ASC" | while read -r CardNumber;
 do
 	
 		# GET FIRST TRANSACTION
