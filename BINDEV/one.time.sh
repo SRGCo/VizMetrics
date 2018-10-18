@@ -36,18 +36,18 @@ failfunction()
 
 
 
-mysql  --login-path=local -DSRG_Prod -N -e "SELECT Master.TransactionDate FROM Master WHERE Master.TransactionDate IS NOT NULL 
-				GROUP BY Master.TransactionDate ORDER BY Master.TransactionDate DESC" | while read -r TransactionDate;
+mysql  --login-path=local -DSRG_Prod -N -e "SELECT Master.DOB FROM Master WHERE Master.DOB IS NOT NULL 
+				GROUP BY Master.DOB ORDER BY Master.DOB DESC" | while read -r DOB;
 do
 
-		######## GET FY FOR THIS TransactionDate (DOB)
-		FY=$(mysql  --login-path=local -DSRG_Prod -N -e "SELECT FY from Lunas WHERE DOB = '$TransactionDate'")
+		######## GET FY FOR THIS DOB (DOB)
+		FY=$(mysql  --login-path=local -DSRG_Prod -N -e "SELECT FY from Lunas WHERE DOB = '$DOB'")
 
-		######## GET FY FOR THIS TransactionDate (DOB)
-		YLuna=$(mysql  --login-path=local -DSRG_Prod -N -e "SELECT YLuna from Lunas WHERE DOB = '$TransactionDate'")
+		######## GET FY FOR THIS DOB (DOB)
+		YLuna=$(mysql  --login-path=local -DSRG_Prod -N -e "SELECT YLuna from Lunas WHERE DOB = '$DOB'")
 
-		######## GET FY FOR THIS TransactionDate (DOB)
-		Luna=$(mysql  --login-path=local -DSRG_Prod -N -e "SELECT Luna from Lunas WHERE DOB = '$TransactionDate'")
+		######## GET FY FOR THIS DOB (DOB)
+		Luna=$(mysql  --login-path=local -DSRG_Prod -N -e "SELECT Luna from Lunas WHERE DOB = '$DOB'")
 
 		######## IF VARIABLE HAS NO VALUE SET TO NULL
 		if [ -z $Luna ] 
@@ -55,9 +55,9 @@ do
 		Luna='0'
 		fi
 
-		##### UPDATE FISCAL YEAR FROM TRANSACTIONDATE
-		mysql  --login-path=local -DSRG_Prod -N -e "UPDATE Master SET FY = '$FY',YLuna = '$YLuna', Luna='$Luna' WHERE Master.TransactionDate = '$TransactionDate'"
-		#echo $TransactionDate updated FY= $FY YLuna = $YLuna  Luna = $Luna
+		##### UPDATE FISCAL YEAR FROM DOB
+		mysql  --login-path=local -DSRG_Prod -N -e "UPDATE Master SET FY = '$FY',YLuna = '$YLuna', Luna='$Luna' WHERE Master.DOB = '$DOB'"
+		#echo $DOB updated FY= $FY YLuna = $YLuna  Luna = $Luna
 
 done
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
