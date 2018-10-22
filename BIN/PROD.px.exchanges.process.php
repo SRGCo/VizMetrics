@@ -50,7 +50,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 		}
 		$counter++;
 		# echo $counter.') This card '.$CardNumber_db.' was exchanged for '.$CurrentCardNumber_db.PHP_EOL;
-		$query3 = "UPDATE Master SET CardNumber = '$CurrentCardNumber_db' WHERE CardNumber = '$CardNumber_db'";
+		$query3 = "UPDATE Master SET CardNumber = '$CurrentCardNumber_db', Account_status = 'Exchange' WHERE CardNumber = '$CardNumber_db'";
 		$result3 = mysqli_query($dbc, $query3);
 		ECHO MYSQLI_ERROR($dbc);
 	}

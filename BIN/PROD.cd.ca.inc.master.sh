@@ -27,7 +27,7 @@ failfunction()
 
 ####### FIRST WE TAKE CARE OF DUPE POSKEYS IN CA
 ( "/home/ubuntu/bin/PROD.POSkey.dedupe.php" )
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ER
 echo 'DUPLICATE POSKEYS PROCESS/FIXED'
 
 
@@ -153,22 +153,25 @@ echo 'MASTER POPULATED FROM MASTER TEMP'
 
 
 
-################# PROCESS EXCHANGES WITH PHP SUBROUTINE
-( "/home/ubuntu/bin/PROD.px.exchanges.process.php" )
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER- EXCHANGED CARDS PROCESS/FIXED'
-
-####### SHOW WHICH HAVE BEEN EXCHANGED IN MASTER ACCOUNT STATUSES
-mysql  --login-path=local -DSRG_Prod -N -e "UPDATE Master JOIN Px_exchanges ON Master.CardNumber = Px_exchanges.CurrentCardNumber SET Master.Account_status = 'Exchange' "
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER- EXCHANGED ACCOUNTS STATUSES UPDATED FROM PX EXCHANGES TABLE'
-
-
+############## THE NEXT SECTIONS WILL GET MOVED AROUND IF WE ADD CARD STATUS FIELDS
 ####### MASTER TABLE GUEST INFO UPDATE
 mysql  --login-path=local -DSRG_Prod -N -e "UPDATE Master JOIN Guests_Master ON Master.CardNumber = Guests_Master.CardNumber 
 							SET Master.EnrollDate = Guests_Master.EnrollDate, Master.Account_status = Guests_Master.AccountStatus"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER ACCOUNT STATUSES UPDATED FROM GUESTS MASTER TABLE'
+echo 'MASTER ACCOUNT STATUSES UPDATED FROM GUESTS MASTER TABLE '
+
+
+################# PROCESS EXCHANGES WITH PHP SUBROUTINE
+( "/home/ubuntu/bin/PROD.px.exchanges.process.php" )
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+echo 'MASTER- EXCHANGED CARDS PROCESS/FIXED, ACCOUNT STATUS UPDATED TO -Exchange-'
+
+####### SHOW WHICH HAVE BEEN EXCHANGED IN MASTER ACCOUNT STATUSES
+# mysql  --login-path=local -DSRG_Prod -N -e "UPDATE Master JOIN Px_exchanges ON Master.CardNumber = Px_exchanges.CurrentCardNumber SET Master.Account_status = 'Exchange' "
+# trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+# echo 'MASTER- EXCHANGED ACCOUNTS STATUSES UPDATED FROM PX EXCHANGES TABLE'
+
+
 
 
 
