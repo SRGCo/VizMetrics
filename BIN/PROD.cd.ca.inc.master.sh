@@ -27,7 +27,7 @@ failfunction()
 
 ####### FIRST WE TAKE CARE OF DUPE POSKEYS IN CA
 ( "/home/ubuntu/bin/PROD.POSkey.dedupe.php" )
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ER
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'DUPLICATE POSKEYS PROCESS/FIXED'
 
 
@@ -222,7 +222,7 @@ echo '(PROMOS OR COMPS COULD NOT BE ADDED, LOWBALL FIGURES)'
 ###### -e is the 'read statement and quit'
 ######## WE ARE ###
 
-mysql  --login-path=local -DSRG_Prod -N -e "SELECT Master.DOB FROM Master WHERE Master.DOB IS NOT NULL AND DOB >= DATE_SUB(NOW(),INTERVAL 30 DAY) 
+mysql  --login-path=local -DSRG_Prod -N -e "SELECT Master.DOB FROM Master WHERE Master.DOB IS NOT NULL AND DOB >= DATE_SUB(NOW(),INTERVAL 150 DAY) 
 				GROUP BY Master.DOB ORDER BY Master.DOB DESC" | while read -r DOB;
 do
 
