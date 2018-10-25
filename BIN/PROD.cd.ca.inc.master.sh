@@ -142,12 +142,12 @@ trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'MASTER TEMP ENROLLDATE AND ACCOUNT STATUS FIELDS CREATED'
 
 # AVOID DUPES DELETE SAME INTERVAL BACK
-mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM Master WHERE DOB >= DATE_SUB(CURDATE(), INTERVAL 120 DAY) "
+mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM Master WHERE DOB >= DATE_SUB(CURDATE(), INTERVAL 150 DAY) "
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'MASTER TRUNCATED - USING DOB'
 
 # AVOID DUPES DELETE SAME INTERVAL BACK
-mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM Master WHERE TransactionDate >= DATE_SUB(CURDATE(), INTERVAL 120 DAY) "
+mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM Master WHERE TransactionDate >= DATE_SUB(CURDATE(), INTERVAL 150 DAY) "
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'MASTER TRUNCATED - USING TRANSACTIONDATE'
 
@@ -254,7 +254,7 @@ echo 'MASTER FY YLUNA FIELDS UPATED WITH DATA FROM LUNA TABLE'
 ################################ VISIT BALANCE FIX SECTION ########################################
 ### what if more than one transaction per day ? ? ? ? ? ? ? 
 
-mysql  --login-path=local -DSRG_Prod -N -e "SELECT DISTINCT(CardNumber) FROM Master WHERE CardNumber IS NOT NULL AND DOB >= DATE_SUB(NOW(),INTERVAL 120 DAY) 
+mysql  --login-path=local -DSRG_Prod -N -e "SELECT DISTINCT(CardNumber) FROM Master WHERE CardNumber IS NOT NULL AND DOB >= DATE_SUB(NOW(),INTERVAL 150 DAY) 
 													ORDER BY CardNumber ASC" | while read -r CardNumber;
 do
 	
