@@ -120,10 +120,10 @@ echo 'MASTER TEMP CREATED'
 ###### WE ONLY GET THE LAST WEEKS WORTH OF DATA
 mysql  --login-path=local -DSRG_Prod -N -e "INSERT INTO Master_temp SELECT CD.*, CA.* FROM CheckDetail_Live AS CD 
 						LEFT JOIN CardActivity_squashed_2 AS CA ON CD.POSkey = CA.POSkey 
-						WHERE CD.DOB >= DATE_SUB(CURDATE(), INTERVAL 120 DAY) 
+						WHERE CD.DOB >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) 
 						UNION SELECT CD.*, CA.* FROM .CheckDetail_Live as CD 
 						RIGHT JOIN CardActivity_squashed_2 AS CA ON CD.POSkey = CA.POSkey 
-						WHERE CA.TransactionDate >= DATE_SUB(CURDATE(), INTERVAL 120 DAY)"
+						WHERE CA.TransactionDate >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 # echo 'UBER JOIN COMPLETED'
 echo 'MASTER TEMP UPDATED WITH UBER CARD ACTIVITY AND CHECK DETAIL FROM PAST TWO WEEKS'
@@ -141,13 +141,18 @@ mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE Master_temp ADD
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'MASTER TEMP ENROLLDATE AND ACCOUNT STATUS FIELDS CREATED'
 
+# Create ACCOUNT STATUS
+mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE Master_temp ADD Card_status VARCHAR(26)"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+
+
 # AVOID DUPES DELETE SAME INTERVAL BACK
-mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM Master WHERE DOB >= DATE_SUB(CURDATE(), INTERVAL 150 DAY) "
+mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM Master WHERE DOB >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) "
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'MASTER TRUNCATED - USING DOB'
 
 # AVOID DUPES DELETE SAME INTERVAL BACK
-mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM Master WHERE TransactionDate >= DATE_SUB(CURDATE(), INTERVAL 150 DAY) "
+mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM Master WHERE TransactionDate >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) "
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'MASTER TRUNCATED - USING TRANSACTIONDATE'
 
@@ -222,7 +227,7 @@ echo '(PROMOS OR COMPS COULD NOT BE ADDED, LOWBALL FIGURES)'
 ###### -e is the 'read statement and quit'
 ######## WE ARE ###
 
-mysql  --login-path=local -DSRG_Prod -N -e "SELECT Master.DOB FROM Master WHERE Master.DOB IS NOT NULL AND DOB >= DATE_SUB(NOW(),INTERVAL 150 DAY) 
+mysql  --login-path=local -DSRG_Prod -N -e "SELECT Master.DOB FROM Master WHERE Master.DOB IS NOT NULL AND DOB >= DATE_SUB(NOW(),INTERVAL 30 DAY) 
 				GROUP BY Master.DOB ORDER BY Master.DOB DESC" | while read -r DOB;
 do
 
@@ -254,7 +259,7 @@ echo 'MASTER FY YLUNA FIELDS UPATED WITH DATA FROM LUNA TABLE'
 ################################ VISIT BALANCE FIX SECTION ########################################
 ### what if more than one transaction per day ? ? ? ? ? ? ? 
 
-mysql  --login-path=local -DSRG_Prod -N -e "SELECT DISTINCT(CardNumber) FROM Master WHERE CardNumber IS NOT NULL AND DOB >= DATE_SUB(NOW(),INTERVAL 150 DAY) 
+mysql  --login-path=local -DSRG_Prod -N -e "SELECT DISTINCT(CardNumber) FROM Master WHERE CardNumber IS NOT NULL AND DOB >= DATE_SUB(NOW(),INTERVAL 30 DAY) 
 													ORDER BY CardNumber ASC" | while read -r CardNumber;
 do
 	
