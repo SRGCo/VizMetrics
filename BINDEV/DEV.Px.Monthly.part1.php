@@ -52,6 +52,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	$LastVisitDate_db = $PrevYearVisitBal_db = $LapseDays_db = $RecentFreqDays_db = $ProgAge_db = '';	
 	$TwoVisitsBack_db = $FocusDate_php = $TwoVisitsBack_php = $MonthsEnrolled_db = $LifetimeFreq = '';
 	$YearFreqSeg = $RecentFreqMonths_db = $TwoVisitsBack_php = $YrAgoFreq = $LastVisitBalance_db = '';
+	$Discounts_db = $Account_status_db = $Card_status_db = '';
 
 	
 	$Carryover_LastVisitDate = '';
@@ -141,8 +142,9 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 
 	
 		#####GET NUMBERS FOR FOCUSMONTH
-		#FIELDS = DOLLARSSPENTMONTH, POINTSREDEEMEDMONTH, POINTSACCRUEDMONTH, VISITSACCRUEDMONTH
+		#FIELDS = DISCOUNTS(CALCD), DOLLARSSPENTMONTH, POINTSREDEEMEDMONTH, POINTSACCRUEDMONTH, VISITSACCRUEDMONTH
 		$query4 = "SELECT
+			ROUND((GrossSalesCoDefined - NetSalesCoDefined), 2) as DiscountsMonth,
 			ROUND(SUM(DollarsSpentAccrued), 2) as DollarsSpentMonth,
 			SUM(SereniteePointsRedeemed) as PointsRedeemedMonth,
 			SUM(SereniteePointsAccrued) as PointsAccruedMonth,
@@ -155,6 +157,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 		$result4 = mysqli_query($dbc, $query4);	
 		ECHO MYSQLI_ERROR($dbc);
 		while($row1 = mysqli_fetch_array($result4, MYSQLI_ASSOC)){
+			$DiscountsMonth_db = $row1['DiscountsMonth'];
 			$DollarsSpentMonth_db = $row1['DollarsSpentMonth'];
 			$PointsRedeemedMonth_db = $row1['PointsRedeemedMonth'];
 			$PointsAccruedMonth_db = $row1['PointsAccruedMonth'];
@@ -164,9 +167,13 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 		IF (EMPTY($DollarsSpentMonth_db)){
 			$DollarsSpentMonth_db = '0.00';
 		}
+		IF (EMPTY($DiscountsMonth_db)){
+			$DiscountsMonth_db = '0.00';
+		}
 
 
 
+	$YearFreqSeg = $RecentFreqMonths_db = $TwoVisitsBack_php = $YrAgoFreq = $LastVisitBalance_db = '';
 				#echo ' DolSpentMo'.$DollarsSpentMonth_db.' PtsRedeemMo'.$PointsRedeemedMonth_db;
 				#echo ' PtsAccrMo'.$PointsAccruedMonth_db.' TranMo'.$TransMonth_db.PHP_EOL;
 
@@ -299,6 +306,15 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 			# ECHO 'LapseMonths_db'.$LapseMonths_db.PHP_EOL;
 		}
 
+		#ACCOUNT AND STATUS
+		$query7f= "SELECT Account_status, Card_status FROM Master WHERE CardNumber = '$CardNumber_db' LIMIT 1";
+		$result7f = mysqli_query($dbc, $query7f);	
+		ECHO MYSQLI_ERROR($dbc);
+		while($row1 = mysqli_fetch_array($result7f, MYSQLI_ASSOC)){
+			$Account_status_db = $row1['Account_status'];
+			$Card_status_db = $row1['Card_status'];
+		}
+
 
 		/////// INSERT VALUES INTO THE TABLE HERE
 		$query8= "INSERT INTO Px_Monthly SET CardNumber = '$CardNumber_db',
@@ -308,6 +324,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 				EnrollDate = '$EnrollDate_db',
 				Zip = '$Zip_db',
 				Tier = '$Tier_db',
+				Discounts = '$DiscountsMonth_db',
 				DollarsSpentMonth = '$DollarsSpentMonth_db',
 				PointsRedeemedMonth = '$PointsRedeemedMonth_db',
 				PointsAccruedMonth = '$PointsAccruedMonth_db',
@@ -323,7 +340,8 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 				LifetimeFreq = ROUND('$LifetimeFreq',8),
 				RecentFreqMonths = '$RecentFreqMonths_db',
 				LapseMonths = '$LapseMonths_db',
-				LifetimeVisitBalance = '$VisitsAccruedLife_db'";
+				Account_status = '$Account_status_db',
+				Card_status = '$Card_status_db'";
 				// ECHO $query8.PHP_EOL;
 		$result8 = mysqli_query($dbc, $query8);	
 		if(!$result8){ECHO $query8.' ';}
