@@ -3,25 +3,20 @@
 
 ##### Right off we backup the last version of px_monthly while debugging
 exec('mysqldump -uroot -ps3r3n1t33 SRG_Dev Px_Monthly > /home/ubuntu/db_files/DEV.Px_Monthly.$(date +%Y-%m-%d-%H.%M.%S).sql');
+echo 'PX MONTHLY TABLE BACKED UP';
 
 function yrseg ($pastvisitbal, $lifetimevisits)
 {
 	 $segment_txt = '';
 
-	if (($pastvisitbal == '0') AND ($lifetimevisits > '0')) {$segment_txt = 'Dropout';
-	} ELSE {
-	if (($pastvisitbal == '0') AND ( $lifetimevisits == '0')) {$segment_txt = 'Zombie';
-	} ELSE {
-	if (($pastvisitbal >= '1') AND ($pastvisitbal <= '2'))  {$segment_txt = '1-2';
-	} ELSE {
-	if (($pastvisitbal >= '3') AND ($pastvisitbal <= '4')) {$segment_txt = '3-4';
-	} ELSE {
-	if (($pastvisitbal >= '5') AND ($pastvisitbal <= '10'))  {$segment_txt = '5-10';
-	} ELSE {
-	if (($pastvisitbal >= '11') AND ($pastvisitbal <= '25'))  {$segment_txt = '11-25';
-	} ELSE {
-	if ($pastvisitbal >= '26') {$segment_txt = '26+';} 
-	} } } } } } 
+	if (($pastvisitbal == '0') AND ($lifetimevisits > '0')) $segment_txt = 'Dropout';
+	elseif (($pastvisitbal == '0') AND ( $lifetimevisits == '0')) $segment_txt = 'Zombie';
+	elseif (($pastvisitbal >= '1') AND ($pastvisitbal <= '2'))  $segment_txt = '1-2';
+	elseif (($pastvisitbal >= '3') AND ($pastvisitbal <= '4')) $segment_txt = '3-4';
+	elseif (($pastvisitbal >= '5') AND ($pastvisitbal <= '10'))  $segment_txt = '5-10';
+	elseif (($pastvisitbal >= '11') AND ($pastvisitbal <= '25'))  $segment_txt = '11-25';
+	elseif ($pastvisitbal >= '26') $segment_txt = '26+';
+
 	# UNCOMMENT NEXT LINE FOR DEBUG
 	# echo $segment_txt.PHP_EOL;
 	RETURN $segment_txt;
@@ -43,38 +38,23 @@ $dbc = mysqli_connect(DB_HOST, DB_USER, DB_PASSWORD)
 mysqli_select_db($dbc, DB_NAME)
 	OR die('Could not connect to the database:'.MYSQLI_ERROR($dbc));
 
-
+$VisitsAccruedLife_db = '0';
 //QUERY PX_MONTHLY FOR CARDNUMBER
 # NOT USING -- 	AND MOD(CardNumber, 200) = '0'
-$query1 = "SELECT DISTINCT(CardNumber) as CardNumber FROM Px_Monthly	
-					ORDER BY CardNumber ASC";
+$query1 = "SELECT CardNumber as CardNumber, MAX(LifetimeVisitBalance) as VisitsAccruedLife FROM Px_Monthly	
+		GROUP BY CardNumber ORDER BY CardNumber ASC";
 $result1 = mysqli_query($dbc, $query1);
 ECHO MYSQLI_ERROR($dbc);
 while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	$CardNumber_db = $row1['CardNumber'];
+	$VisitsAccruedLife_db = $row1['VisitsAccruedLife'];
 	
 	#INIT THE VARS
 	$YrMoVisitBal_1MoBack_db = $YrMoVisitBal_3MoBack_db = $LapseMo_12MoBack_db = $YrMoVisitBal_12MoBack_db = '';
 	$YrMoVisitBal_24MoBack_db = $YrMoVisitBal_36MoBack_db = $YrMoFreqSeg_24MoBack_txt = $YrMoFreqSeg_36MoBack_txt = '';
-
 	$YrMoFreqSeg_12MoBack_txt = $YrMoFreqSeg_3MoBack_txt = $YrMoFreqSeg_1MoBack_txt = $YrMoFreq_1YrBack_txt = '';
-
-	$VisitsAccruedLife_db = '0';
-	
 	$LastVisitDate_db = $PrevYearVisitBal_db = $LapseDays_db = $RecentFreqDays_db = $ProgAge_db = '';	
-
-	
 	$Carryover_LastVisitDate = '';
-	
-	#### GET THE MAX VISIT BALANCE
-	$query2 = "SELECT LifetimeVisitBalance as VisitsAccruedLife
-				FROM Px_Monthly WHERE CardNumber = '$CardNumber_db'";
-	$result2 = mysqli_query($dbc, $query2);	
-	ECHO MYSQLI_ERROR($dbc);
-	while($row1 = mysqli_fetch_array($result2, MYSQLI_ASSOC)){
-		$VisitsAccruedLife_db = $row1['VisitsAccruedLife'];
-	}
-
 	
 	###### NOW SELECT THE FOCUSDATE AND PROCESS
 	$query2 = "SELECT FocusDate FROM Px_Monthly where CardNumber = '$CardNumber_db'	
@@ -83,10 +63,8 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	ECHO MYSQLI_ERROR($dbc);
 	while($row1 = mysqli_fetch_array($result2, MYSQLI_ASSOC)){
 		$FocusDate_db = $row1['FocusDate'];
-
-
-	 $segment_txt = '';
-
+	
+	 	$segment_txt = '';
 
 		#FIELDS = 12MOVISITBALANCE (PHP=PREVYEARVISITBALANCE)
 		$query5= "SELECT 12MoVisitBalance as PrevYearVisitBal
@@ -203,13 +181,13 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 		// ECHO $query8.PHP_EOL;
 		$result16 = mysqli_query($dbc, $query16);	
 		ECHO MYSQLI_ERROR($dbc);
-	ECHO 'Cardnumber: '.$CardNumber_db.' FocusDate: '.$FocusDate_db.PHP_EOL;
+	# ECHO 'Cardnumber: ',$CardNumber_db,' FocusDate: ',$FocusDate_db,PHP_EOL;
 	//END OF FOCUSMONTH LOOP
 	}
-ECHO '+++++++++++++++ Cardnumber: '.$CardNumber_db.' FocusDate: '.$FocusDate_db.PHP_EOL;
+# ECHO '+++++++++++++++ Cardnumber: ',$CardNumber_db,' FocusDate: ',$FocusDate_db,PHP_EOL;
 // END OF CARD NUMBER WHILE LOOP
 }
-
+ECHO 'ALL CARDS PAST FREQUENCY UPDATED FOR ALL FOCUSDATES',PHP_EOL;
 
 ############# COPY TO PROD ##############
 # Delete Prod Master table if it exists
