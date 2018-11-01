@@ -21,19 +21,20 @@ mysqli_select_db($dbc, DB_NAME)
 $counter = 0;
 
 //QUERY MASTER FOR CARDNUMBER
-$query1 = "SELECT DISTINCT(CardNumber) FROM Master WHERE CardNumber IS NOT NULL ORDER BY CardNumber ASC";
+$query1 = "SELECT DISTINCT(CardNumber), EnrollDate FROM Master WHERE CardNumber IS NOT NULL ORDER BY CardNumber ASC";
 $result1 = mysqli_query($dbc, $query1);
 ECHO MYSQLI_ERROR($dbc);
 while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	$CardNumber_db = $row1['CardNumber'];
+	$EnrollDate_db = $row1['EnrollDate'];
 	$counter ++;
 	IF (($counter % 1000) == '0'){ECHO $counter.' '.$CardNumber_db.PHP_EOL;}
-	$query2 = "SELECT TransactionDate as FocusDate from Master WHERE CardNumber = '$CardNumber_db' ORDER BY TransactionDate ASC";
+	$query2 = "SELECT TransactionDate as FocusDate from Master WHERE CardNumber = '$CardNumber_db' AND TransactionDate > '$EnrollDate_db' ORDER BY TransactionDate ASC";
 	$result2 = mysqli_query($dbc, $query2);
 	ECHO MYSQLI_ERROR($dbc);
 	while($row1 = mysqli_fetch_array($result2, MYSQLI_ASSOC)){
 		$FocusDate_db = $row1['FocusDate'];
-
+		# ECHO $query2.PHP_EOL;
 		// WE WILL PROCESS ONE TRANSACTIONDATE AT A TIME UPDATING ALL (ESPECIALLY NULLS/O) TO MAX VISITBALANCE FOR THAT DATE
 		$query3 = "SELECT MAX(Vm_VisitsBalance) as MaxBal FROM Master WHERE TransactionDate = '$FocusDate_db' AND CardNumber = '$CardNumber_db'";
 		$result3 = mysqli_query($dbc, $query3);
@@ -51,7 +52,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 					$MaxBalLast_db = $row1['MaxBalLast'];
 					IF($MaxBalLast_db == ''){$MaxBalLast_db = '0';}
 					IF($MaxBalLast_db != '0'){	
-						echo $CardNumber_db.' This card had a '.$MaxBal_db.' vm_visitsbalance as its max on '.$FocusDate_db.' it is now '.$MaxBalLast_db.PHP_EOL;
+						echo '*********'.$CardNumber_db.' This card had a '.$MaxBal_db.' vm_visitsbalance as its max on '.$FocusDate_db.' it is now '.$MaxBalLast_db.PHP_EOL;
 					}
 					$query4 = "UPDATE Master SET Vm_VisitsBalance = '$MaxBalLast_db' WHERE CardNumber = '$CardNumber_db' AND Transactiondate = '$FocusDate_db'";
 					$result4 = mysqli_query($dbc, $query4);

@@ -123,7 +123,7 @@ mysql  --login-path=local -DSRG_Prod -N -e "INSERT INTO Master_temp SELECT CD.*,
 						WHERE CD.DOB >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) 
 						UNION SELECT CD.*, CA.* FROM .CheckDetail_Live as CD 
 						RIGHT JOIN CardActivity_squashed_2 AS CA ON CD.POSkey = CA.POSkey 
-						WHERE CD.DOB >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)"
+						WHERE CA.TransactionDate >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 # echo 'UBER JOIN COMPLETED'
 echo 'MASTER TEMP UPDATED WITH UBER CARD ACTIVITY AND CHECK DETAIL FROM PAST TWO WEEKS'
@@ -133,7 +133,7 @@ mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE Master_temp ADD
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 # Create ACCOUNT STATUS
-mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE Master_temp ADD Account_status VARCHAR(26)"
+mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE Master_temp ADD Account_status VARCHAR(15)"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 # Create ACCOUNT STATUS INDEX
@@ -141,34 +141,50 @@ mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE Master_temp ADD
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'MASTER TEMP ENROLLDATE AND ACCOUNT STATUS FIELDS CREATED'
 
+# Create ACCOUNT STATUS
+mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE Master_temp ADD Card_status VARCHAR(15)"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+
+
 # AVOID DUPES DELETE SAME INTERVAL BACK
 mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM Master WHERE DOB >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) "
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER TRUNCATED BACK TWO WEEKS'
+echo 'MASTER TRUNCATED - USING DOB'
 
-# Copy Dev Master to Prod
+# AVOID DUPES DELETE SAME INTERVAL BACK
+mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM Master WHERE TransactionDate >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) "
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+echo 'MASTER TRUNCATED - USING TRANSACTIONDATE'
+
+
+
+# COPY THE NEW TRANSACTIONS INTO MASTER
+### WE COULD HAVE THIS TO MAKE SURE THERE ARE RECORDS IN THE TEMP TABLE(?)
 mysql  --login-path=local --silent -DSRG_Prod -N -e "INSERT INTO Master SELECT * FROM Master_temp"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'MASTER POPULATED FROM MASTER TEMP'
 
 
 
-################# PROCESS EXCHANGES WITH PHP SUBROUTINE
-( "/home/ubuntu/bin/PROD.px.exchanges.process.php" )
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER- EXCHANGED CARDS PROCESS/FIXED'
-
-####### SHOW WHICH HAVE BEEN EXCHANGED IN MASTER ACCOUNT STATUSES
-mysql  --login-path=local -DSRG_Prod -N -e "UPDATE Master JOIN Px_exchanges ON Master.CardNumber = Px_exchanges.CurrentCardNumber SET Master.Account_status = 'Exchange' "
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER- EXCHANGED ACCOUNTS STATUSES UPDATED FROM PX EXCHANGES TABLE'
-
-
+############## THE NEXT SECTIONS WILL GET MOVED AROUND IF WE ADD CARD STATUS FIELDS
 ####### MASTER TABLE GUEST INFO UPDATE
 mysql  --login-path=local -DSRG_Prod -N -e "UPDATE Master JOIN Guests_Master ON Master.CardNumber = Guests_Master.CardNumber 
 							SET Master.EnrollDate = Guests_Master.EnrollDate, Master.Account_status = Guests_Master.AccountStatus"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER ACCOUNT STATUSES UPDATED FROM GUESTS MASTER TABLE'
+echo 'MASTER ACCOUNT STATUSES UPDATED FROM GUESTS MASTER TABLE '
+
+
+################# PROCESS EXCHANGES WITH PHP SUBROUTINE
+( "/home/ubuntu/bin/PROD.px.exchanges.process.php" )
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+echo 'MASTER- EXCHANGED CARDS PROCESS/FIXED, ACCOUNT STATUS UPDATED TO -Exchange-'
+
+####### SHOW WHICH HAVE BEEN EXCHANGED IN MASTER ACCOUNT STATUSES
+# mysql  --login-path=local -DSRG_Prod -N -e "UPDATE Master JOIN Px_exchanges ON Master.CardNumber = Px_exchanges.CurrentCardNumber SET Master.Account_status = 'Exchange' "
+# trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+# echo 'MASTER- EXCHANGED ACCOUNTS STATUSES UPDATED FROM PX EXCHANGES TABLE'
+
+
 
 
 
@@ -211,7 +227,7 @@ echo '(PROMOS OR COMPS COULD NOT BE ADDED, LOWBALL FIGURES)'
 ###### -e is the 'read statement and quit'
 ######## WE ARE ###
 
-mysql  --login-path=local -DSRG_Prod -N -e "SELECT Master.DOB FROM Master WHERE Master.DOB IS NOT NULL AND DOB >= DATE_SUB(NOW(),INTERVAL 30 DAY) 
+mysql  --login-path=local -DSRG_Prod -N -e "SELECT Master.DOB FROM Master WHERE Master.DOB IS NOT NULL AND DOB >= DATE_SUB(NOW(),INTERVAL 45 DAY) 
 				GROUP BY Master.DOB ORDER BY Master.DOB DESC" | while read -r DOB;
 do
 
@@ -422,7 +438,6 @@ echo 'MASTER TABLE FREQUENCY FIELDS UPDATED AND VISIT BALANCE FIX APPLIED'
 ( "/home/ubuntu/bin/PROD.visitbalance.fix.php" )
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo '0 VM_VISITBALANCE ENTRIES LATER THAN ENROLLDATE PROCESS/FIXED'
-
 
 
 

@@ -13,7 +13,7 @@
 define ('DB_USER', 'root');
 define ('DB_PASSWORD','s3r3n1t33');
 define ('DB_HOST','localhost');
-define ('DB_NAME','SRG_Dev');
+define ('DB_NAME','SRG_Prod');
 
 # Make the connection and then select the database
 # display errors if fail
@@ -60,9 +60,9 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	
 	#firstrun is for debugging
 	$Firstrun = 'Yes';
-
+	// PRINT COUNT EVERY 5000 CARDNUMBERS
 	$counter++;
-	$printcount = fmod($counter, 100);
+	$printcount = fmod($counter, 5000);
 	IF ($printcount == '0'){
 	ECHO PHP_EOL.$counter++.'  card:';
 	ECHO $CardNumber_db;

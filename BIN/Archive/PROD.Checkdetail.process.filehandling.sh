@@ -279,7 +279,23 @@ trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 mysql  --login-path=local --silent -DSRG_Prod -N -e "INSERT INTO CheckDetail_Live SELECT * FROM CheckDetail_Temp"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
-echo 'New Data inserted into CheckDetail Live'
+## CHECKDETAIL ##### REMOVE DUPLICATE ROWS FROM CHECKDETAIL LIVE TABLE
+mysql  --login-path=local --silent -DSRG_Prod -N -e "DROP TABLE IF EXISTS CheckDetail_Live_temp"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+mysql  --login-path=local --silent -DSRG_Prod -N -e "CREATE table CheckDetail_Live_temp LIKE CheckDetail_Live"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+mysql  --login-path=local --silent -DSRG_Prod -N -e "INSERT INTO CheckDetail_Live_temp SELECT * FROM CheckDetail_Live GROUP BY POSkey"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+mysql  --login-path=local --silent -DSRG_Prod -N -e "DROP table CheckDetail_Live"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+mysql  --login-path=local --silent -DSRG_Prod -N -e "RENAME table CheckDetail_Live_temp TO CheckDetail_Live"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+
+
+echo '======================================================'
+echo 'CHECKDETAIL LIVE TABLE POPULATED WITH MOST RECENT DATA DEDUPED USING POSKEY GROUPED'
+
+
 
 
 
