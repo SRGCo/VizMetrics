@@ -33,7 +33,7 @@ trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'Part 1 of Px Monthly completed'
 
 ####### PX MONTHLY PART 2
-( "/home/ubuntu/bin/PROD.Monthly.part2.php" )
+( "/home/ubuntu/bin/PROD.Px.Monthly.part2.php" )
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'Part 2 of Px Monthly completed'
 
