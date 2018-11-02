@@ -30,8 +30,6 @@ $query_table= "TRUNCATE table Px_Monthly";
 $result_table = mysqli_query($dbc, $query_table);	
 ECHO MYSQLI_ERROR($dbc);
 ECHO 'Px_Monthly TRUNCATED FOR FULL RUN!!!!!!'.PHP_EOL;
-#ECHO 'Px_Monthly ##NOT## TRUNCATED FOR Partial RUN!!!!!!';
-
 
 //QUERY MASTER FOR CARDNUMBER
 # NOT USING -- 	AND MOD(CardNumber, 200) = '0'
@@ -116,8 +114,6 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	# ECHO ' MinDateMo'.$MinDateMonth_db.' MinDateYr '.$MinDateYear_db;
 	# ECHO ' CurDate'.$CurrentDate_db.' Focusdate '.$FocusDate.PHP_EOL;
 
-
-
 	// WHILE FOCUSDATE IS LESS THAN TODAYS DATE REPEAT QUERIES
 	WHILE ($FocusDate <= $CurrentDate_db){
 	
@@ -139,8 +135,6 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 			$DollarsSpentLife_db = '0.00';
 		}
 
-
-	
 		#####GET NUMBERS FOR FOCUSMONTH
 		#FIELDS = DISCOUNTS(CALCD), DOLLARSSPENTMONTH, POINTSREDEEMEDMONTH, POINTSACCRUEDMONTH, VISITSACCRUEDMONTH
 		$query4 = "SELECT

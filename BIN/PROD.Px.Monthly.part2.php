@@ -1,9 +1,6 @@
 #!/usr/bin/php
 <?php 
 
-##### Right off we backup the last version of px_monthly while debugging
-exec('mysqldump -uroot -ps3r3n1t33 SRG_Dev Px_Monthly > /home/ubuntu/db_files/DEV.Px_Monthly.$(date +%Y-%m-%d-%H.%M.%S).sql');
-echo 'PX MONTHLY TABLE BACKED UP';
 
 function yrseg ($pastvisitbal, $lifetimevisits)
 {
@@ -199,29 +196,12 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 # ECHO '+++++++++++++++ Cardnumber: ',$CardNumber_db,' FocusDate: ',$FocusDate_db,PHP_EOL;
 // END OF CARD NUMBER WHILE LOOP
 }
-ECHO 'ALL CARDS PAST FREQUENCY UPDATED FOR ALL FOCUSDATES',PHP_EOL;
+ECHO 'ALL CARDS PAST FREQUENCY UPDATED FOR ALL FOCUSDATES'.PHP_EOL;
 
-############# COPY TO PROD ##############
-# Delete Prod Master table if it exists
-$query_prod1 = "DROP TABLE IF EXISTS SRG_Prod.Px_Monthly";
-#$result_prod1 = mysqli_query($dbc, $query_prod1);
-ECHO MYSQLI_ERROR($dbc);
-ECHO 'NOT___ PROD Px_Monthly DROPPED'.PHP_EOL;
-// SLEEP THE SCRIPT FOR 5 SECONDS TO LET MYSQL CATCH UP
-sleep(5);
 
-$query_prod2 = "CREATE TABLE SRG_Prod.Px_Monthly LIKE SRG_Dev.Px_Monthly";
-#$result_prod2 = mysqli_query($dbc, $query_prod2);
-ECHO MYSQLI_ERROR($dbc);
-ECHO 'NOT___ PROD Px_Monthly RECREATED LIKE DEV Px_Monthly'.PHP_EOL;
-// SLEEP THE SCRIPT FOR 5 SECONDS TO LET MYSQL CATCH UP
-sleep(5);
+##### AFTER WE FINISH ALL THAT PROCESSING LETS MAKE A BACK UP JUST IN CASE
+exec('mysqldump -uroot -ps3r3n1t33 SRG_Dev Px_Monthly > /home/ubuntu/db_files/DEV.Px_Monthly.$(date +%Y-%m-%d-%H.%M.%S).sql');
+echo 'PX MONTHLY TABLE BACKED UP';
 
-$query_prod2 = "INSERT INTO SRG_Prod.Px_Monthly SELECT * FROM SRG_Dev.Px_Monthly";
-#$result_prod2 = mysqli_query($dbc, $query_prod2);
-ECHO MYSQLI_ERROR($dbc);
-ECHO 'NOT___ PROD Px_Monthly POPULATED'.PHP_EOL;
-// SLEEP THE SCRIPT FOR 5 SECONDS TO LET MYSQL CATCH UP
-sleep(5);
 
 ?>
