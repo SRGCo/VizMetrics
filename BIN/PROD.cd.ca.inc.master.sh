@@ -36,74 +36,81 @@ echo 'DUPLICATE POSKEYS PROCESS/FIXED'
 ## REMOVE (2) HEADER ROW AND MERGE (IF NECCESSARY) INCOMING GUESTS CSVs
 ## INTO SINGLE CARD ACTIVITY FILE IN DB_FILES/incoming/px
 for file in /home/ubuntu/db_files/incoming/px/Guest*.csv
-  do
+do
 	#### MAKE A COPY OF THE FILE IN BACKUP DIR
 	cp "$file" //home/ubuntu/db_files/incoming/px/backup/	
-     	 tail -n+3 "$file"  >> /home/ubuntu/db_files/incoming/px/guests.infile.csv	
+     	tail -n+3 "$file"  >> /home/ubuntu/db_files/incoming/px/guests.infile.csv	
 	rm "$file"
 done
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'INCOMING guest DATA FILES CLEANED AND MERGED'
 
-## TRUNCATE GUESTS TABLE BEFORE LOADING W NEW
-# Delete Temp table if it exists
-mysql  --login-path=local --silent -DSRG_Prod -N -e "DROP TABLE IF EXISTS Guests_temp"
-echo 'GUESTS TEMP NEW TABLE DROPPED, STARTING NEW GUESTS TEMP NEW TABLE CREATION'
+####
+#### WE CAN PROCESS GUEST INFO AS ITS OWN SUBROUTINE TO AVOID FAILURES STOPPING WHOLE SCRIPT
 
-# Create a empty copy of CardActivity table from CardActivityStructure table
-mysql  --login-path=local --silent -DSRG_Prod -N -e "CREATE TABLE Guests_temp LIKE Guests_Structure"
-echo 'Guests_temp TABLE CREATED, LOADING DATA FILE TO Guests_temp TABLE'
+	## TRUNCATE GUESTS TABLE BEFORE LOADING W NEW
+	# Delete Temp table if it exists
+	mysql  --login-path=local --silent -DSRG_Prod -N -e "DROP TABLE IF EXISTS Guests_temp"
+	echo 'GUESTS TEMP NEW TABLE DROPPED, STARTING NEW GUESTS TEMP NEW TABLE CREATION'
 
-# Load the data from the latest file into the (temp) CardActivity table
-mysql  --login-path=local --silent -DSRG_Prod -N -e "Load data local infile '/home/ubuntu/db_files/incoming/px/guests.infile.csv' into table Guests_temp fields terminated by ','  lines terminated by '\n'"
-echo 'Guests_temp loaded'
+	# Create a empty copy of CardActivity table from CardActivityStructure table
+	mysql  --login-path=local --silent -DSRG_Prod -N -e "CREATE TABLE Guests_temp LIKE Guests_Structure"
+	echo 'Guests_temp TABLE CREATED, LOADING DATA FILE TO Guests_temp TABLE'
 
-
-### UPDATE TO NULLS FOR ZERO DATES FOR ANNIVERSARY
-mysql  --login-path=local --silent -DSRG_Prod -N -e "UPDATE Guests_temp SET AnniversaryDate = NULL WHERE CAST(AnniversaryDate AS CHAR(10)) = '0000-00-00'"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-
-## UPDATE TO NULLS FOR ZERO DATES FOR REG DATE
-mysql  --login-path=local --silent -DSRG_Prod -N -e "UPDATE Guests_temp SET RegisterDate = NULL WHERE CAST(RegisterDate AS CHAR(10)) = '0000-00-00'"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-
-### UPDATE TO NULLS FOR ZERO DATES FOR ENROLL DATE
-mysql  --login-path=local --silent -DSRG_Prod -N -e "UPDATE Guests_temp SET EnrollDate = NULL WHERE CAST(EnrollDate AS CHAR(10)) = '0000-00-00'"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-
-### UPDATE TO NULLS FOR ZERO DATES FOR BIRTHDATE
-mysql  --login-path=local --silent -DSRG_Prod -N -e "UPDATE Guests_temp SET DateofBirth = NULL WHERE CAST(DateofBirth AS CHAR(10)) = '0000-00-00'"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+	# Load the data from the latest file into the (temp) CardActivity table
+	mysql  --login-path=local --silent -DSRG_Prod -N -e "Load data local infile '/home/ubuntu/db_files/incoming/px/guests.infile.csv' into table Guests_temp fields terminated by ','  lines terminated by '\n'"
+	echo 'Guests_temp loaded'
 
 
-####### IF THIS CARDNUMBER ALREADY EXISTS IN GUESTS MASTER DELETE IT
-####### INSERT DATA FROM TEMP BY CARDNUMBER
-####### UPDATE THE TOWN INFO BY CARDNUMBER IN GUESTS MASTER
-mysql  --login-path=local -DSRG_Prod -N -e "SELECT DISTINCT(CardNumber) FROM Guests_temp" | while read -r CardNumber;
-do
-	# DELETE CARDS FROM GUEST MASTER IF ALREADY EXISTS
-	mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE from Guests_Master WHERE CardNumber = '$CardNumber'"
-	# INSERT LATEST INFO ABOUT THIS GUEST
-	mysql  --login-path=local -DSRG_Prod -N -e "INSERT INTO Guests_Master SELECT Guests_temp.*,NULL,NULL,NULL FROM Guests_temp WHERE CardNumber = '$CardNumber'"
-	#### UPDATE TOWN INFO IN GUESTS_MASTER FOR THIS CARD
-	mysql  --login-path=local -DSRG_Prod -N -e "SELECT Zip FROM Guests_Master WHERE CardNumber = '$CardNumber'" | while read -r Zip;
+	### UPDATE TO NULLS FOR ZERO DATES FOR ANNIVERSARY
+	mysql  --login-path=local --silent -DSRG_Prod -N -e "UPDATE Guests_temp SET AnniversaryDate = NULL WHERE CAST(AnniversaryDate AS CHAR(10)) = '0000-00-00'"
+	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+
+	## UPDATE TO NULLS FOR ZERO DATES FOR REG DATE
+	mysql  --login-path=local --silent -DSRG_Prod -N -e "UPDATE Guests_temp SET RegisterDate = NULL WHERE CAST(RegisterDate AS CHAR(10)) = '0000-00-00'"
+	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+
+	### UPDATE TO NULLS FOR ZERO DATES FOR ENROLL DATE
+	mysql  --login-path=local --silent -DSRG_Prod -N -e "UPDATE Guests_temp SET EnrollDate = NULL WHERE CAST(EnrollDate AS CHAR(10)) = '0000-00-00'"
+	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+
+	### UPDATE TO NULLS FOR ZERO DATES FOR BIRTHDATE
+	mysql  --login-path=local --silent -DSRG_Prod -N -e "UPDATE Guests_temp SET DateofBirth = NULL WHERE CAST(DateofBirth AS CHAR(10)) = '0000-00-00'"
+	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+
+
+	####### IF THIS CARDNUMBER ALREADY EXISTS IN GUESTS MASTER DELETE IT
+	####### INSERT DATA FROM TEMP BY CARDNUMBER
+	####### UPDATE THE TOWN INFO BY CARDNUMBER IN GUESTS MASTER
+	mysql  --login-path=local -DSRG_Prod -N -e "SELECT DISTINCT(CardNumber) FROM Guests_temp" | while read -r CardNumber;
 	do
-		mysql  --login-path=local -DSRG_Prod -N -e "SELECT Population, AvgIncome, Town FROM MA_Zips WHERE Zip = '$Zip'" | while read -r population income town;
+		# DELETE CARDS FROM GUEST MASTER IF ALREADY EXISTS
+		mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE from Guests_Master WHERE CardNumber = '$CardNumber'"
+		# INSERT LATEST INFO ABOUT THIS GUEST
+		mysql  --login-path=local -DSRG_Prod -N -e "INSERT INTO Guests_Master SELECT Guests_temp.*,NULL,NULL,NULL FROM Guests_temp WHERE CardNumber = '$CardNumber'"
+		#### UPDATE TOWN INFO IN GUESTS_MASTER FOR THIS CARD
+		mysql  --login-path=local -DSRG_Prod -N -e "SELECT Zip FROM Guests_Master WHERE CardNumber = '$CardNumber'" | while read -r Zip;
 		do
-			mysql  --login-path=local -DSRG_Prod -N -e "UPDATE Guests_Master SET Population = '$population', AvgIncome = '$income', Town = '$town' WHERE CardNumber = '$CardNumber'"
-		done	
-	done 
+			mysql  --login-path=local -DSRG_Prod -N -e "SELECT Population, AvgIncome, Town FROM MA_Zips WHERE Zip = '$Zip'" | while read -r population income town;
+			do
+				mysql  --login-path=local -DSRG_Prod -N -e "UPDATE Guests_Master SET Population = '$population', AvgIncome = '$income', Town = '$town' WHERE CardNumber = '$CardNumber'"
+			done	
+		done 
 
-done
-echo 'GUESTS_MASTER TABLE UPDATED WITH NEW GUEST INFO'
+	done
+	echo 'GUESTS_MASTER TABLE UPDATED WITH NEW GUEST INFO'
 
 
-# DELETE CARDS WITH NO ACCOUNT INFO (not active)
-# mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE from Guests_temp WHERE AccountStatus = 'EXISTS'"
-# echo 'non active cards removed'
+	# DELETE CARDS WITH NO ACCOUNT INFO (not active)
+	# mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE from Guests_temp WHERE AccountStatus = 'EXISTS'"
+	# echo 'non active cards removed'
 
 # DELETE CURRENT INFILE TO READY FOR NEXT RUN
 rm -f   /home/ubuntu/db_files/incoming/px/guests.infile.csv
+
+################### THIS WOULD BE WHERE GUEST SUBROUTINE WOULD END
+
+
 
 
 ######### UBER JOIN LIVE CHECK DETAIL WITH LIVE SQUASHED CARD ACTIVITY
