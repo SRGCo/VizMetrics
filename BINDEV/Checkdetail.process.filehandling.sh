@@ -30,27 +30,27 @@ failfunction()
 }
 
 ################################### BACK UP THE 3 LIVE TABLES FOR SAFTEY #####################################
-rm -f /home/ubuntu/db_files/Checkdetail.3tables.bu.sql
-mysqldump -uroot -ps3r3n1t33 SRG_Prod CheckDetail_Live Employees_Live TableTurns_Live >  /home/ubuntu/db_files/Checkdetail.3tables.bu.sql
+# rm -f /home/ubuntu/db_files/Checkdetail.3tables.bu.sql
+# mysqldump -uroot -ps3r3n1t33 SRG_Prod CheckDetail_Live Employees_Live TableTurns_Live >  /home/ubuntu/db_files/Checkdetail.3tables.bu.sql
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 
 ###### FIRST WE GET THE FILES FROM PX
-( "/home/ubuntu/bin/CRON.lftp.ctuit.daily.sh" )
+# ( "/home/ubuntu/bin/CRON.lftp.ctuit.daily.sh" )
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'CTUIT FILES RETRIEVED FROM BERTHA FTP SITE'
 sleep 5s
 
 
 ###### TABLETURNS PROCESSING AS A SUBROUTINE
-( "/home/ubuntu/bin/CD.process.tableturns.sh" )
+# ( "/home/ubuntu/bin/CD.process.tableturns.sh" )
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'TABLETURNS PROCESSED'
 sleep 5s
 
 
 ###### EMPLOYEES PROCESSING AS A SUBROUTINE
-( "/home/ubuntu/bin/CD.process.employees.sh" )
+# ( "/home/ubuntu/bin/CD.process.employees.sh" )
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'EMPLOYEES PROCESSED'
 sleep 5s
@@ -132,6 +132,8 @@ trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 #### DROP EXCELDATE FIELD
 mysql  --login-path=local --silent -DSRG_Dev -N -e "ALTER TABLE CheckDetail_Temp DROP COLUMN Exceldate"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+echo 'CHECKDETAIL TEMP TABLE POPULATED AND REVISED'
+
 
 #### NAMES QUERIES/UPDATES 
 mysql  --login-path=local --silent -DSRG_Dev -N -e "UPDATE CheckDetail_Temp CDT 
@@ -159,7 +161,7 @@ trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 mysql  --login-path=local --silent -DSRG_Dev -N -e "ALTER TABLE CheckDetail_Temp ADD MinutesOpen int(100) AFTER CloseTime"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
-#### UPDATE LIVE CHECK DETAIL WITH LIVE TABLE TURNS AND TABLE NAMES
+#### UPDATE TEMP CHECK DETAIL WITH TABLE TURNS AND TABLE NAMES
 mysql  --login-path=local --silent -DSRG_Dev -N -e "UPDATE CheckDetail_Temp CDT
 	INNER JOIN TableTurns_Live TL 
 	ON CDT.POSkey = TL.POSkey
@@ -168,6 +170,7 @@ mysql  --login-path=local --silent -DSRG_Dev -N -e "UPDATE CheckDetail_Temp CDT
 	CDT.CloseTime = TL.CloseTime,
 	CDT.MinutesOpen = TIMESTAMPDIFF(minute, TL.OpenTime, TL.CloseTime)"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+echo 'TABLE TURNS AND NAMES UPDATED IN TEMP CHECKDETAIL TABLE'
 
 
 #### NULL OPEN/CLOSE TIME IF ZERO VALUE IN LIVE CARD DETAIL

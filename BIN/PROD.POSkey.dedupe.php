@@ -13,7 +13,7 @@
 define ('DB_USER', 'root');
 define ('DB_PASSWORD','s3r3n1t33');
 define ('DB_HOST','localhost');
-define ('DB_NAME','SRG_Prod');
+define ('DB_NAME','SRG_Dev');
 
 # Make the connection and then select the database
 # display errors if fail
@@ -42,21 +42,45 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC))
 	ECHO MYSQLI_ERROR($dbc);
 	while($row1 = mysqli_fetch_array($result2, MYSQLI_ASSOC))
 	{
+	
 		$CardNumber_db = $row1['CardNumber'];
 		$LastSix_db = $row1['LastSix'];
-
 		$NewPOSkey = $POSkey_db.$LastSix_db;
+		
 
+		$query2a = "SELECT * FROM CheckDetail_Live WHERE POSkey = '$POSkey_db'";
+		$result2a = mysqli_query($dbc, $query2a);
+		if (mysqli_num_rows($result2a)==0) {
+			echo 'num rows = 0 '.PHP_EOL;
+			#### IF THIS POSKEY DOES NOT EXIST IN CHECKDETAIL
+			#### WE NEED TO CREATE A NEW RECORD IN CHECKDETAIL
+			$query4 = "INSERT INTO CheckDetail_Live SET POSkey = '$NewPOSkey'";
+			$result4 = mysqli_query($dbc, $query4);
+			ECHO MYSQLI_ERROR($dbc);
+
+ECHO  'Card: '.$CardNumber_db.' Old POSKEY:'.$POSkey_db.' New:'.$NewPOSkey.' INSERTED >>>checkdetail<<<<'.PHP_EOL;
+
+		} ELSE {
+			echo 'num rows >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 0 '.PHP_EOL;
+
+			#### IF THIS POSKEY ALREADY EXISTS IN CHECKDETAIL
+			#### WE SHOULD UPDATE THE EXISTING RECORD IN CHECKDETAIL
+			$query3a = "UPDATE CheckDetail_Live SET POSkey = '$NewPOSkey' WHERE POSkey = '$POSkey_db'";
+			$result3a = mysqli_query($dbc, $query3a);
+			ECHO MYSQLI_ERROR($dbc);
+ECHO  'Card: '.$CardNumber_db.' Old POSKEY:'.$POSkey_db.' New:'.$NewPOSkey.' UPDATED ~~~CHECKDETAIL~~~~'.PHP_EOL;
+
+		}
+		
+		#### IN BOTH CASES WE SHOULD UPDATE THE CARD ACTIVITY SQUASHED2 TABLE TO REFLECT NEW POSkey
 		$query3 = "UPDATE CardActivity_squashed_2 SET POSkey = '$NewPOSkey' WHERE POSkey = '$POSkey_db' 
 				AND CardNumber = '$CardNumber_db'";
 		$result3 = mysqli_query($dbc, $query3);
 		ECHO MYSQLI_ERROR($dbc);
 
-		$query4 = "INSERT INTO CheckDetail_Live SET POSkey = '$NewPOSkey'";
-		$result4 = mysqli_query($dbc, $query4);
-		ECHO MYSQLI_ERROR($dbc);
+ECHO  'Card: '.$CardNumber_db.' Old POSKEY:'.$POSkey_db.' New:'.$NewPOSkey.' UPDATED ~~~CARD ACTIVITY SQAUSHED2~~~~'.PHP_EOL;
 
-		ECHO  'Card: '.$CardNumber_db.' Old POSKEY:'.$POSkey_db.' New:'.$NewPOSkey.' Updated CA, New CD record'.PHP_EOL;
+
 	}
 
 
