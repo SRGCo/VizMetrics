@@ -1,18 +1,14 @@
-#! /bin/bash
-### OK 8-29-18 #####
-
-# UNCOMMENT TO LOG IT TO SYSLOG
+#! //bin/bash
+# LOG IT TO SYSLOG
 # exec 1> >(logger -s -t $(basename $0)) 2>&1
 
-# Next line turns echo on
-#set -x
+# UNCOMMENT NEXT FOR VERBOSE
+# set -x
+##### HALT AND CATCH FIRE IF ANY COMMAND FAILS
+# set -e
 
-####### USES CTUIT EXPORTS #########
-## 1 ## TableTurn [all company by date][TableTurns.raw.csv]
-## 2 ## Employees
-## 3 ## CheckDetail - Full by date [CheckDetail.update.raw.csv]
+##### USE time command to calc runtime "time DEV.cd.ca.into.master.sh"
 
-########### FUNCTIONS #####################################
 ################# ERROR CATCHING ##########################
 failfunction()
 {
@@ -28,6 +24,12 @@ failfunction()
         	exit
 	fi
 }
+
+####### FIRST WE TAKE CARE OF DUPE POSKEYS IN CA
+( "/home/ubuntu/bin/PROD.POSkey.dedupe.php" )
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+echo 'DUPLICATE POSKEYS PROCESS/FIXED'
+
 
 
 
