@@ -276,7 +276,7 @@ trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 
 #### SET CHECKS IN BAR REV CTRS (#4) TABLENAME = BAR WHERE TABLENAME IS EMPTY
-mysql  --login-path=local --silent -DSRG_Prod -N -e "UPDATE Checkdetail_Temp SET TableName = 'Bar' WHERE Base_RevenueCenterID = '4' AND TableName IS NULL"
+mysql  --login-path=local --silent -DSRG_Prod -N -e "UPDATE CheckDetail_Temp SET TableName = 'Bar' WHERE Base_RevenueCenterID = '4' AND TableName IS NULL"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 
