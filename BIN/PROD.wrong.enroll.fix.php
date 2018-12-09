@@ -13,7 +13,7 @@
 define ('DB_USER', 'root');
 define ('DB_PASSWORD','s3r3n1t33');
 define ('DB_HOST','localhost');
-define ('DB_NAME','SRG_Dev');
+define ('DB_NAME','SRG_Prod');
 
 # Make the connection and then select the database
 # display errors if fail
@@ -28,7 +28,7 @@ $counter = 0;
 $query1a = "DROP TABLE IF EXISTS Master_temp";
 $result1a = mysqli_query($dbc, $query1a);
 ECHO MYSQLI_ERROR($dbc);
-
+:set 
 $query1b = "CREATE TABLE Master_temp LIKE Master_structure";
 $result1b = mysqli_query($dbc, $query1b);
 ECHO MYSQLI_ERROR($dbc);
@@ -92,9 +92,9 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	}
 echo PHP_EOL;
 }
-# $query5 = "INSERT INTO Master SELECT * FROM Master_temp";
-# $result5 = mysqli_query($dbc, $query5);
-# ECHO MYSQLI_ERROR($dbc);
+$query5 = "INSERT INTO Master SELECT * FROM Master_temp";
+$result5 = mysqli_query($dbc, $query5);
+ECHO MYSQLI_ERROR($dbc);
 
 
 ECHO $counter.PHP_EOL;

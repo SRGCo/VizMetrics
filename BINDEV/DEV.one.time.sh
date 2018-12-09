@@ -25,41 +25,121 @@ failfunction()
 	fi
 }
 
-################# PROCESS EXCHANGES
-## REMOVE (1) HEADER ROW AND MERGE (IF NECCESSARY) INCOMING EXCHANGES CSVs
-## INTO SINGLE CARD ACTIVITY FILE IN DB_FILES
-for file in /home/ubuntu/db_files/incoming/px/MediaExchanges*.csv
-  do
-	#### MAKE A COPY OF THE FILE IN BACKUP DIR
-	cp "$file" //home/ubuntu/db_files/incoming/px/backup/
-	tail -n+2 "$file"  >> /home/ubuntu/db_files/incoming/px/Infile.MediaExchanges.csv
-	rm "$file"
-  done || trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'INCOMING EXCHANGES DATA FILES BACKEDUP, CLEANED AND MERGED'
+mysql  --login-path=local -DSRG_Dev -N -e "SELECT Master.DOB FROM Master WHERE Master.DOB IS NOT NULL GROUP BY Master.DOB ORDER BY Master.DOB DESC" | while read -r DOB;
+do
 
-## TRUNCATE GUESTS TABLE BEFORE LOADING W NEW
-# Delete Temp table if it exists
-mysql  --login-path=local --silent -DSRG_Dev -N -e "DROP TABLE IF EXISTS Px_exchanges_temp"
-echo 'PX EXCHANGES TEMP TABLE DROPPED, STARTING NEW PX EXCHANGES TEMP TABLE CREATION'
+		######## GET FY FOR THIS DOB (DOB)
+		FY=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT FY from Lunas WHERE DOB = '$DOB'")
 
-# Create a empty copy of CardActivity table from CardActivityStructure table
-mysql  --login-path=local --silent -DSRG_Dev -N -e "CREATE TABLE Px_exchanges_temp LIKE Px_exchanges_structure"
-echo 'PX EXCHANGES TEMP TABLE CREATED, LOADING DATA FILE TO PX EXCHANGES TEMP TABLE'
+		######## GET FY FOR THIS DOB (DOB)
+		YLuna=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT YLuna from Lunas WHERE DOB = '$DOB'")
 
-# Load the data from the latest file into the (temp) CardActivity table
-mysql  --login-path=local --silent -DSRG_Dev -N -e "Load data local infile '/home/ubuntu/db_files/incoming/px/Infile.MediaExchanges.csv' into table Px_exchanges_temp fields terminated by ','  lines terminated by '\n'"
-echo 'PX EXCHANGES TEMP loaded'
-	
-#Load the temp data into the live table
-mysql  --login-path=local -DSRG_Dev -N -e "INSERT INTO Px_exchanges SELECT * FROM Px_exchanges_temp WHERE CardNumber = '$CardNumber'"
-echo 'PX EXCHANGES TABLE LOADED WITH DATA FROM TEMP TABLE'
+		######## GET FY FOR THIS DOB (DOB)
+		Luna=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT Luna from Lunas WHERE DOB = '$DOB'")
 
+		######## IF VARIABLE HAS NO VALUE SET TO NULL
+		if [ -z $Luna ] 
+		then 
+		Luna='0'
+		fi
 
-# DELETE CURRENT INFILE TO READY FOR NEXT RUN
-rm -f   /home/ubuntu/db_files/incoming/px/Infile.MediaExchanges.csv
+		##### UPDATE FISCAL YEAR FROM DOB
+		mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET FY = '$FY',YLuna = '$YLuna', Luna='$Luna' WHERE Master.DOB = '$DOB'"
+		echo $DOB updated FY= $FY YLuna = $YLuna  Luna = $Luna
 
-################# PROCESS EXCHANGES WITH PHP SUBROUTINE
-( "/home/ubuntu/bindev/DEV.px.exchanges.process.php" )
+done
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER- EXCHANGED CARDS PROCESS/FIXED, ACCOUNT STATUS UPDATED TO -Exchange-'
+echo 'MASTER FY YLUNA FIELDS UPATED WITH DATA FROM LUNA TABLE'
+
+################################ VISIT BALANCE FIX SECTION ########################################
+### what if more than one transaction per day ? ? ? ? ? ? ? 
+
+mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(CardNumber) FROM Master WHERE CardNumber IS NOT NULL ORDER BY CardNumber ASC" | while read -r CardNumber;
+do
+
+	######### THESE ARE THE FIELDS WE WILL CALCULATE EVERY DAY #################################
+	#1.	 Historical Current Frequency (Hist_current_freq): Transaction Date (DOB) - Last visit date
+	#2.      Current Frequency (Current_freq): Today-Last visit date
+	#3.      Recent Frequency (Recent_freq): Last Visit Date-Previous visit date (2 visits back)
+	#4.      Previous Frequency: Previous visit date (2 visits back)- 3 visits back
+	#5.      12 Month Frequency (Year_freq): Count Visits over the previous 12 months
+	#6.      Lifetime Frequency (Life_freq): Count Visits since Enrollment date
+
+	####### CALC-ing OFF Vm_VisitsAccrued
+
+
+
+	######## COUNT VISITS OVER PREVIOUS 12 MONTHS AND LIFETIME
+	PrevYear=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT COUNT(*) from Master WHERE CardNumber = '$CardNumber' AND TransactionDate <> EnrollDate 
+								AND Vm_VisitsAccrued = '1' AND TransactionDate >= DATE_SUB(NOW(),INTERVAL 1 YEAR)")
+	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+	######## MINIMUM VISITBALNCE
+	MinBal=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT MIN(Vm_Visitsbalance) from Master WHERE CardNumber = '$CardNumber'")
+	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+
+	######## COUNT VISITS OVER LIFETIME
+	Lifetime=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT COUNT(*) from Master WHERE CardNumber = '$CardNumber' 
+								AND Vm_VisitsAccrued = '1'")
+	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+	######## 
+	Lifetimereal="$(($MinBal+$Lifetime))"
+	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+	######## MINIMUM VISITBALNCE
+	VmVB=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT MAX(Vm_Visitsbalance) from Master WHERE CardNumber = '$CardNumber'")
+	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+
+	##### GET MAX  TRANSACTIONDATE
+	MaxDate=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT MAX(TransactionDate) from Master WHERE CardNumber = '$CardNumber'")
+	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR	
+
+	##### GET 2ND TO MAX TRANSACTIONDATE
+	SecondMax=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT TransactionDate from Master WHERE CardNumber = '$CardNumber' 
+										AND Vm_VisitsAccrued = '1' ORDER BY TransactionDate DESC limit 1,1") 
+	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+	##### IF SECONDMAX IS NULL / EMPTY
+	if [ -z $SecondMax ]
+	then
+
+		##### UPDATE ONLY FIRST FREQUENCIES
+		mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET FreqCurrent = DATEDIFF(NOW(), '$MaxDate'), Freq12mos = '$PrevYear', 
+									FreqLifetime = '$Lifetimereal'  WHERE CardNumber = '$CardNumber'"
+		trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR	
+		#echo $CardNumber" first only MAX "$MaxDate" 2ND "$SecondMax"  Prevyr "$PrevYear" VmVB "$VmVB 
+		#echo "PrevLifereal "$Lifetimereal" prevlifenotreal"$Lifetime" MinBal "$MinBal
+
+		##### IF SECONDMAX HAS A VALUE
+		else
+			##### GET 3RD TO MAX TRANSACTIONDATE
+			ThirdMax=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT transactiondate from Master WHERE CardNumber = '$CardNumber' 
+										AND Vm_VisitsAccrued = '1' ORDER BY TransactionDate DESC limit 2,1") 
+			trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+			##### IF THIRDMAX IS NULL / EMPTY
+			if [ -z $ThirdMax ]
+			then
+				##### UPDATE ONLY FIRST AND SECOND FREQUENCIES
+				mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET FreqCurrent = DATEDIFF(NOW(), '$MaxDate'), 
+										FreqRecent = DATEDIFF('$MaxDate', '$SecondMax'), Freq12mos = '$PrevYear', 
+										FreqLifetime = '$Lifetimereal'  WHERE CardNumber = '$CardNumber'"
+				trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR			   
+				echo $CardNumber" first and second MAX "$MaxDate" 2ND "$SecondMax" Prevyr "$PrevYear" VmVB "$VmVB
+				#echo " PrevLifereal "$Lifetimereal" prevlifenotreal "$Lifetime" MinBal "$MinBal
+				
+			##### IF THIRDMAX HAS A VALUE
+			else
+				##### UPDATE ALL FREQUENCIES
+				mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET FreqCurrent = DATEDIFF(NOW(), '$MaxDate'), 
+										FreqRecent = DATEDIFF('$MaxDate', '$SecondMax'), 
+										FreqPrevious = DATEDIFF('$SecondMax', '$ThirdMax'), Freq12mos = '$PrevYear', 
+										FreqLifetime = '$Lifetimereal'   WHERE CardNumber = '$CardNumber'"
+			trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+			#echo $CardNumber" first second third MAX "$MaxDate" 2ND "$SecondMax" 3RD "$ThirdMax" Prevyr "$PrevYear" VmVB "$VmVB
+			#echo " PrevLifereal "$Lifetimereal" prevlifenotreal "$Lifetime" MinBal "$MinBal
+
+				
+			fi
+
+		fi
+done || trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+echo 'MASTER TABLE FREQUENCY FIELDS UPDATED AND VISIT BALANCE FIX APPLIED'
+
 

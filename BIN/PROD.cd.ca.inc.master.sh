@@ -100,15 +100,15 @@ echo 'INCOMING guest DATA FILES CLEANED AND MERGED'
 	done
 	echo 'GUESTS_MASTER TABLE UPDATED WITH NEW GUEST INFO'
 
-
-	# DELETE CARDS WITH NO ACCOUNT INFO (not active)
-	# mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE from Guests_temp WHERE AccountStatus = 'EXISTS'"
-	# echo 'non active cards removed'
-
 # DELETE CURRENT INFILE TO READY FOR NEXT RUN
 rm -f   /home/ubuntu/db_files/incoming/px/guests.infile.csv
 
-################### THIS WOULD BE WHERE GUEST SUBROUTINE WOULD END
+
+
+#### PHP NO ROW IN MASTER FOR ENROLLDATE IN GUESTS MASTER FIX
+( "/home/ubuntu/bin/PROD.wrong.enroll.fix.php" )
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+echo 'PHP NO ROW IN MASTER FOR ENROLLDATE IN GUESTS MASTER PROCESS/FIXED'
 
 
 
