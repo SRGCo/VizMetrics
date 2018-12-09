@@ -28,7 +28,7 @@ $counter = 0;
 $query1a = "DROP TABLE IF EXISTS Master_temp";
 $result1a = mysqli_query($dbc, $query1a);
 ECHO MYSQLI_ERROR($dbc);
-:set 
+ 
 $query1b = "CREATE TABLE Master_temp LIKE Master_structure";
 $result1b = mysqli_query($dbc, $query1b);
 ECHO MYSQLI_ERROR($dbc);

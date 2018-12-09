@@ -240,11 +240,11 @@ echo 'MASTER EMPTY LOCATION ID POPULATED FROM PX DATA'
 
 mysql  --login-path=local -DSRG_Prod -N -e "UPDATE Master SET POSkey = POSKey_px WHERE POSkey IS NULL "
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo MASTER EMPTY POS KEYS POPULATED FROM PX DATA
+echo 'MASTER EMPTY POS KEYS POPULATED FROM PX DATA'
 
 mysql  --login-path=local -DSRG_Prod -N -e "UPDATE Master SET DOB = TransactionDate WHERE DOB IS NULL "
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo MASTER EMPTY DOB POPULATED FROM PX DATA
+echo 'MASTER EMPTY DOB POPULATED FROM PX DATA'
 
 
 
@@ -305,17 +305,21 @@ do
 		VisitsAccrued=$(mysql  --login-path=local -DSRG_Prod -N -e "SELECT MAX(VisitsAccrued) from Master WHERE TransactionDate = '$Min_dob' and CardNumber = '$CardNumber'")
 		trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 		##### CAN NOT BE NULL
-		if [ -z $VisitsAccrued ] 
+		if [ -z $VisitsAccrued ] || [ $VisitsAccrued = NULL ] 
 		then 
+			#echo $VisitsAccrued" was supposedly NULL or not set"
 			VisitsAccrued='0'
+			#echo $VisitsAccrued" should now be 0"
 		fi
 
 		CarriedBal=$(mysql  --login-path=local -DSRG_Prod -N -e "SELECT MAX(VisitsBalance) from Master WHERE TransactionDate = '$Min_dob' AND CardNumber = '$CardNumber'")
 		trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 			##### CAN NOT BE NULL
-		if [ -z $CarriedBal ] 
+		if [ -z $CarriedBal ]  || [ $CarriedBal = NULL ]   
 		then 
+			#echo $CarriedBal" was supposedly NULL or not set"
 			CarriedBal='0'
+			#echo $CarriedBal" should now be 0"
 		fi
 
 	

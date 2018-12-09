@@ -25,7 +25,42 @@ failfunction()
 	fi
 }
 
-mysql  --login-path=local -DSRG_Dev -N -e "SELECT Master.DOB FROM Master WHERE Master.DOB IS NOT NULL GROUP BY Master.DOB ORDER BY Master.DOB DESC" | while read -r DOB;
+
+######## UPDATE THE EMPTY CHECKDETAIL FIELDS WITH PX DATA
+mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET CheckNumber = CheckNo_px WHERE CheckNumber IS NULL "
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+echo 'MASTER EMPTY CHECKNO POPULATED FROM PX DATA'
+
+
+mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET LocationID = LocationID_px WHERE LocationID IS NULL "
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+echo 'MASTER EMPTY LOCATION ID POPULATED FROM PX DATA'
+
+mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET POSkey = POSKey_px WHERE POSkey IS NULL "
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+echo 'MASTER EMPTY POS KEYS POPULATED FROM PX DATA'
+
+mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET DOB = TransactionDate WHERE DOB IS NULL "
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+echo 'MASTER EMPTY DOB POPULATED FROM PX DATA'
+
+
+
+mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET GrossSalesCoDefined = DollarsSpentAccrued WHERE GrossSalesCoDefined IS NULL 
+						AND Master.Account_status <> 'TERMIN' AND Master.Account_status <> 'SUSPEN' 
+						AND Master.Account_status <> 'Exchanged' AND Master.Account_status <> 'Exchange' 
+						AND Master.Account_status <> 'Exclude' AND DollarsSpentAccrued IS NOT NULL"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+echo 'MASTER GROSSSALESCODEFINED FIELD POPULATED'
+echo '(PROMOS OR COMPS COULD NOT BE ADDED, LOWBALL FIGURES)'
+
+
+###### -N is the No Headers in Output option
+###### -e is the 'read statement and quit'
+######## WE ARE ###
+
+mysql  --login-path=local -DSRG_Dev -N -e "SELECT Master.DOB FROM Master WHERE Master.DOB IS NOT NULL AND DOB >= DATE_SUB(NOW(),INTERVAL 45 DAY) 
+				GROUP BY Master.DOB ORDER BY Master.DOB DESC" | while read -r DOB;
 do
 
 		######## GET FY FOR THIS DOB (DOB)
@@ -45,17 +80,110 @@ do
 
 		##### UPDATE FISCAL YEAR FROM DOB
 		mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET FY = '$FY',YLuna = '$YLuna', Luna='$Luna' WHERE Master.DOB = '$DOB'"
-		echo $DOB updated FY= $FY YLuna = $YLuna  Luna = $Luna
+		#echo $DOB updated FY= $FY YLuna = $YLuna  Luna = $Luna
 
 done
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'MASTER FY YLUNA FIELDS UPATED WITH DATA FROM LUNA TABLE'
 
+
+
 ################################ VISIT BALANCE FIX SECTION ########################################
 ### what if more than one transaction per day ? ? ? ? ? ? ? 
 
-mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(CardNumber) FROM Master WHERE CardNumber IS NOT NULL ORDER BY CardNumber ASC" | while read -r CardNumber;
+mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(CardNumber) FROM Master WHERE CardNumber IS NOT NULL AND DOB >= DATE_SUB(NOW(),INTERVAL 30 DAY) 
+													ORDER BY CardNumber ASC" | while read -r CardNumber;
 do
+	
+		# GET FIRST TRANSACTION
+		Min_dob=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT MIN(TransactionDate) from Master WHERE CardNumber = '$CardNumber'")
+		trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+
+		######## GET visitsaccrued FOR THIS TransactionDate (DOB)
+		VisitsAccrued=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT MAX(VisitsAccrued) from Master WHERE TransactionDate = '$Min_dob' and CardNumber = '$CardNumber'")
+		trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+		##### CAN NOT BE NULL
+		if [ -z $VisitsAccrued ] || [ $VisitsAccrued = NULL ] 
+		then 
+			#echo $VisitsAccrued" was supposedly NULL or not set"
+			VisitsAccrued='0'
+			#echo $VisitsAccrued" should now be 0"
+		fi
+
+		CarriedBal=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT MAX(VisitsBalance) from Master WHERE TransactionDate = '$Min_dob' AND CardNumber = '$CardNumber'")
+		trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+			##### CAN NOT BE NULL
+		if [ -z $CarriedBal ]  || [ $CarriedBal = NULL ]   
+		then 
+			#echo $CarriedBal" was supposedly NULL or not set"
+			CarriedBal='0'
+			#echo $CarriedBal" should now be 0"
+		fi
+
+	
+		#### NOT AN EXCHANGE
+		######## VISIT ACCRUED ON FIRST TRANSACTIONDATE
+		if [[ $CarriedBal -eq 1 && $VisitsAccrued -eq 1 ]]
+		then
+			# echo $CardNumber"          Accrued on First Day!!!!       "$Min_dob"       no exchange       "$CarriedBal
+			##### UPDATE SUBTRACTING 1 FROM ALL VisitsBalance VALUES (to account for visit counted on enrollment day)
+			mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET Vm_VisitsBalance = VisitsBalance -1 WHERE CardNumber = '$CardNumber' AND VisitsBalance IS NOT NULL AND VisitsBalance != '0'"
+			trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+
+			##### UPDATE SUBTRACTING 1 FROM ALL VisitsBalance VALUES (to account for visit counted on enrollment day)
+			mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET Vm_VisitsAccrued = '0' WHERE CardNumber = '$CardNumber' and TransactionDate > '$Min_dob'"
+			trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+
+			##### UPDATE SUBTRACTING 1 FROM ALL VisitsBalance VALUES (to account for visit counted on enrollment day)
+			mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET Vm_VisitsAccrued = VisitsAccrued WHERE CardNumber = '$CardNumber' and TransactionDate > '$Min_dob'"
+			trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+
+		fi
+
+
+
+		#### NOT AN EXCHANGE
+		if [[ $CarriedBal = 0 ]]
+		then
+		
+			########### VISIT ACCRUED NULL
+			if  [ $VisitsAccrued -eq 0 ] ||  [ -z $VisitsAccrued  ] 
+			then
+				# echo $CardNumber" DID NOT Accrue First Day "$Min_dob" no exchange "$CarriedBal
+				##### UPDATE SUBTRACTING 1 FROM ALL VisitsBalance VALUES (to account for visit counted on enrollment day)
+				mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET Vm_VisitsBalance = VisitsBalance, Vm_VisitsAccrued = VisitsAccrued WHERE CardNumber = '$CardNumber' "
+				trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+			else
+				##### ODD CASES - NO BALANCE BUT 1 VISIT ACCRUED
+				# echo $CardNumber" Odd Case Min_dob:"$Min_dob" Visits Accrued:"$VisitsAccrued" Carried Balance"$CarriedBal
+				##### SET FIRST DATES visitsaccrued to 0 (to account for visit counted on enrollment day), vm_visitsbalance = visitsbalance
+				mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET Vm_VisitsAccrued = '0' WHERE CardNumber = '$CardNumber' and TransactionDate = '$Min_dob'"
+				trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+
+				##### UPDATE SUBTRACTING 1 FROM ALL VisitsBalance VALUES (to account for visit counted on enrollment day)
+				mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET Vm_VisitsAccrued = VisitsAccrued, Vm_VisitsBalance = VisitsBalance WHERE CardNumber = '$CardNumber' and TransactionDate > '$Min_dob'"
+				trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+	
+			fi
+		fi
+
+
+		####  AN EXCHANGE
+		if [ $CarriedBal  -gt 1 ]
+		then
+			# echo 'XXX '$CardNumber' Carried Bal should be greater than 1' $CarriedBal
+			# echo $CardNumber"        First Day         "$Min_dob"       EXCHANGED!!! "$CarriedBal
+			##### PX counts are correct
+			mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET Vm_VisitsBalance = VisitsBalance, Vm_VisitsAccrued = VisitsAccrued WHERE CardNumber = '$CardNumber' "
+			trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR	
+
+		fi
+
+		##### FIX THE MULTI TRANS ON DAY 1
+		############## AFTER WE FIGURE OUT WHY IT HAPPENS
+		mysql  --login-path=local -DSRG_Dev -N -e "UPDATE Master SET Vm_VisitsBalance = '0' WHERE Vm_VisitsBalance ='-1'"
+		trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+
 
 	######### THESE ARE THE FIELDS WE WILL CALCULATE EVERY DAY #################################
 	#1.	 Historical Current Frequency (Hist_current_freq): Transaction Date (DOB) - Last visit date
@@ -121,7 +249,7 @@ do
 										FreqRecent = DATEDIFF('$MaxDate', '$SecondMax'), Freq12mos = '$PrevYear', 
 										FreqLifetime = '$Lifetimereal'  WHERE CardNumber = '$CardNumber'"
 				trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR			   
-				echo $CardNumber" first and second MAX "$MaxDate" 2ND "$SecondMax" Prevyr "$PrevYear" VmVB "$VmVB
+				#echo $CardNumber" first and second MAX "$MaxDate" 2ND "$SecondMax" Prevyr "$PrevYear" VmVB "$VmVB
 				#echo " PrevLifereal "$Lifetimereal" prevlifenotreal "$Lifetime" MinBal "$MinBal
 				
 			##### IF THIRDMAX HAS A VALUE
@@ -141,5 +269,10 @@ do
 		fi
 done || trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'MASTER TABLE FREQUENCY FIELDS UPDATED AND VISIT BALANCE FIX APPLIED'
+
+####### 0 VM_VISITBALANCE ENTRIES LATER THAN ENROLLDATE PROCESS/FIXED
+#( "/home/ubuntu/bin/PROD.visitbalance.fix.php" )
+#trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+#echo '0 VM_VISITBALANCE ENTRIES LATER THAN ENROLLDATE PROCESS/FIXED'
 
 

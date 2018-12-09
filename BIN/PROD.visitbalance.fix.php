@@ -19,6 +19,7 @@ mysqli_select_db($dbc, DB_NAME)
 
 ### INIT Variables
 $counter = 0;
+$Fixed_counter = 0;
 
 //QUERY MASTER FOR CARDNUMBER
 $query1 = "SELECT DISTINCT(CardNumber), EnrollDate FROM Master WHERE CardNumber IS NOT NULL ORDER BY CardNumber ASC";
@@ -28,7 +29,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	$CardNumber_db = $row1['CardNumber'];
 	$EnrollDate_db = $row1['EnrollDate'];
 	$counter ++;
-	IF (($counter % 1000) == '0'){ECHO $counter.' '.$CardNumber_db.PHP_EOL;}
+	IF (($counter % 1000) == '0'){ECHO $counter.' ********* '.$CardNumber_db.' Fixed:'.$Fixed_counter.PHP_EOL;}
 	$query2 = "SELECT TransactionDate as FocusDate from Master WHERE CardNumber = '$CardNumber_db' AND TransactionDate > '$EnrollDate_db' ORDER BY TransactionDate ASC";
 	$result2 = mysqli_query($dbc, $query2);
 	ECHO MYSQLI_ERROR($dbc);
@@ -53,6 +54,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 					IF($MaxBalLast_db == ''){$MaxBalLast_db = '0';}
 					IF($MaxBalLast_db != '0'){	
 						echo '*********'.$CardNumber_db.' This card had a '.$MaxBal_db.' vm_visitsbalance as its max on '.$FocusDate_db.' it is now '.$MaxBalLast_db.PHP_EOL;
+						$Fixed_counter ++;
 					}
 					$query4 = "UPDATE Master SET Vm_VisitsBalance = '$MaxBalLast_db' WHERE CardNumber = '$CardNumber_db' AND Transactiondate = '$FocusDate_db'";
 					$result4 = mysqli_query($dbc, $query4);
