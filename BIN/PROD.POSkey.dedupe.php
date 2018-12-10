@@ -58,7 +58,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 		
 		#### IF THIS POSKEY DOES NOT EXIST IN CHECKDETAIL
 		if (mysqli_num_rows($result2a)==0) {
-			echo 'num rows = 0 '.PHP_EOL;
+			#echo 'num rows = 0 '.PHP_EOL;
 			#### WE NEED TO CREATE A NEW RECORD IN CHECKDETAIL WITH NOTHING BUT A POSKEY
 			$query4 = "INSERT INTO CheckDetail_Live SET POSkey = '$NewPOSkey'";
 			$result4 = mysqli_query($dbc, $query4);
@@ -66,7 +66,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 			#ECHO  'Card: '.$CardNumber_db.' Old POSKEY:'.$POSkey_db.' New:'.$NewPOSkey.' INSERTED >>>checkdetail<<<<'.PHP_EOL;
 
 		} ELSE {
-			echo 'num rows >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 0 '.PHP_EOL;
+			# echo 'num rows >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 0 '.PHP_EOL;
 
 			#### IF THIS POSKEY ALREADY EXISTS IN CHECKDETAIL
 			#### WE SHOULD UPDATE THE EXISTING RECORD IN CHECKDETAIL WITH THE NEW POSKEY
