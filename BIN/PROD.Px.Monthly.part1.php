@@ -335,7 +335,8 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 				RecentFreqMonths = '$RecentFreqMonths_db',
 				LapseMonths = '$LapseMonths_db',
 				Account_status = '$Account_status_db',
-				Card_status = '$Card_status_db'";
+				Card_status = '$Card_status_db',
+				LifetimeVisitBalance = '$VisitsAccruedLife_db'";
 				// ECHO $query8.PHP_EOL;
 		$result8 = mysqli_query($dbc, $query8);	
 		if(!$result8){ECHO $query8.' ';}
