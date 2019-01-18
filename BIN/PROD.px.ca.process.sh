@@ -5,7 +5,7 @@
 # THIS SCRIPT HAS TO RUN AFTER CHECKDETAIL IS PROCESSED SO THAT THE CHECK NUMBER FIX RUNS CORRECTLY
 
 # UNCOMMENT NEXT FOR VERBOSE
-# set -x
+#set -x
 
 
 
@@ -316,7 +316,11 @@ echo 'SQUASHED DATA TABLE POPULATED'
 
 ########################## 
 ##########################   WE NEED TO HAVE CARD ACTIVITY SQUASHED BECOME A LIVE TABLE THAT GETS UPDATED INCREMENTALLY
-########################## THEN WE CAN RUN THIS FIX ON ONLY THE NEW TRANSACTIONS
+##########################          THEN WE CAN RUN THIS FIX ON ONLY THE NEW TRANSACTIONS
+############################          STILL NEED TO DO THIS 1-18-19 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+
 ######## Get CardNumber
 mysql  --login-path=local -DSRG_Prod -N -e "SELECT DISTINCT(CardNumber) FROM CardActivity_squashed WHERE CardNumber IS NOT NULL AND TransactionTime > '21:00:00' ORDER BY CardNumber ASC" | while read -r CardNumber;
 do
