@@ -36,7 +36,7 @@ for file in /home/ubuntu/db_files/incoming/dev/CardActivity*.csv
   do
 	#### MAKE A COPY OF THE FILE IN BACKUP DIR
 	cp "$file" //home/ubuntu/db_files/incoming/dev/backup/
-	tail -n+2 "$file"  >> /home/ubuntu/db_files/incoming/dev/Infile.CardActivity.csv
+	tail -n+3 "$file"  >> /home/ubuntu/db_files/incoming/dev/Infile.CardActivity.csv
   done || trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'INCOMING -dev- DATA FILES CLEANED AND MERGED, ARCHIVING ORIGINAL FILES'
 
