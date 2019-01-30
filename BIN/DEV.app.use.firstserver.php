@@ -52,10 +52,23 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 			$location_db = $row1['Name'];
 		}
 
-		echo $CardNumber_db.' '.$location_db.' '.$mindate_db.' '.$GrossSalesCoDefined_db.PHP_EOL;
+		##### CHECK USEAGE TABLE FOR TO AVOID DUPES
+		$query3a = "SELECT Record_id FROM App_Use1 WHERE CardNumber = '$CardNumber_db'";
+		$result3a = mysqli_query($dbc, $query3a);
+		ECHO MYSQLI_ERROR($dbc);
+		if(mysqli_num_rows($result3a)==0){
+			# ECHO 'Rows: '.(mysqli_num_rows($result3a)).PHP_EOL;
+			$Not_dupe = 'T';
+		} ELSE {
+			# ECHO 'Rows: '.(mysqli_num_rows($result3a)).PHP_EOL;
+			$Not_dupe = 'F';
+		}
 		
 
-		If ($mindate_db <> ''){
+		echo $CardNumber_db.' Not Dupe = '.$Not_dupe.' '.$location_db.' '.$lastname_db.' '.$mindate_db.' '.$GrossSalesCoDefined_db.PHP_EOL;
+		
+
+		If (($mindate_db <> '') && ($Not_dupe <> 'F')) {
 			##### INSERT IT INTO TABLE
 			$query4 = "INSERT INTO App_Use1 set CardNumber = '$CardNumber_db',
 							Firstname = '$firstname_db',
