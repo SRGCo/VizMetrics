@@ -2,7 +2,17 @@
 # LOG IT TO SYSLOG
 # exec 1> >(logger -s -t $(basename $0)) 2>&1
 
-# THIS SCRIPT HAS TO RUN AFTER CHECKDETAIL IS PROCESSED SO THAT THE CHECK NUMBER FIX RUNS CORRECTLY
+
+################################################
+#### THIS SCRIPT IMPORTS DATA INTO CA TABLE AND INCLUDES
+#### MUST BE RUN ON A CARDACTIVITY DATA FILES WITH LAST DEV DB DATE
+
+#### COPIED FROM /home/ubuntu/db_files/incoming/px/backup TO
+
+#### /home/ubuntu/db_files/incoming/dev/CardActivity*.csv
+
+
+
 
 # UNCOMMENT NEXT FOR VERBOSE
 #set -x

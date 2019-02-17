@@ -3,9 +3,6 @@
 
 
 
-###### could we check to see when the last real transaction is and then just replicate entires for everyone 
-### between that date and the focusmonth ? ? 
-
 # Start database interaction with
 # localhost
 # Sets the database access information as constants
@@ -26,15 +23,17 @@ mysqli_select_db($dbc, DB_NAME)
 $counter = 0;
 
 
-##### GET ALL DUPLICATE POSKEYS ENTRIES IN SQUASHED 2
+##### GET ALL THE Activation CARDNUMBERS
+##### THE STANDARD CARD ACTIVITY 
 $query1 = "SELECT CardNumber FROM `CardActivity_Live` WHERE TransactionType = 'Activate' AND (CheckNo like 'i%' or CheckNo LIKE 'And%') GROUP BY CardNumber";
 $result1 = mysqli_query($dbc, $query1);
 ECHO MYSQLI_ERROR($dbc);
 while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	$CardNumber_db = $row1['CardNumber'];
+	echo $CardNumber_db.PHP_EOL;
 
-	##### FIND THE CARDNUMBER ASSOCIATED WITH THESE DUPLICATE POSKEYS IN SQUASHED 2
-	$query2 = "SELECT MIN(transactiondate) as mindate, firstname, lastname, CheckNumber, GrossSalesCoDefined, LocationID FROM Master WHERE CardNumber = '$CardNumber_db' and GrossSalesCoDefined > '0'";
+	##### QUERY FOR THE MIN TRANSACTION WHERE MORE THAN 0 WAS SPENT
+	$query2 = "SELECT MIN(transactiondate) as mindate, firstname, lastname, CheckNumber, GrossSalesCoDefined, LocationID FROM SRG_Prod.Master WHERE CardNumber = '$CardNumber_db' and SereniteePointsAccrued > '0'";
 	$result2 = mysqli_query($dbc, $query2);
 	ECHO MYSQLI_ERROR($dbc);
 	while($row1 = mysqli_fetch_array($result2, MYSQLI_ASSOC)){
@@ -52,7 +51,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 			$location_db = $row1['Name'];
 		}
 
-		##### CHECK USEAGE TABLE FOR TO AVOID DUPES
+		##### CHECK USEAGE TABLE FOR TO AVOID DUPES FROM PAST RUNS
 		$query3a = "SELECT Record_id FROM App_Use1 WHERE CardNumber = '$CardNumber_db'";
 		$result3a = mysqli_query($dbc, $query3a);
 		ECHO MYSQLI_ERROR($dbc);
