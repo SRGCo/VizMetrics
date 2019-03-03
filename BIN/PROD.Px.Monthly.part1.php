@@ -31,8 +31,7 @@ $result_table = mysqli_query($dbc, $query_table);
 ECHO MYSQLI_ERROR($dbc);
 ECHO 'Px_Monthly TRUNCATED FOR FULL RUN!!!!!!'.PHP_EOL;
 
-//QUERY MASTER FOR CARDNUMBER
-# NOT USING -- 	AND MOD(CardNumber, 200) = '0'
+//QUERY MASTER FOR CARDNUMBER (MAIN QUERY1)
 $query1 = "SELECT DISTINCT(CardNumber) as CardNumber FROM Guests_Master WHERE CardNumber IS NOT NULL 	
 					AND EnrollDate IS NOT NULL ORDER BY CardNumber ASC";
 $result1 = mysqli_query($dbc, $query1);
@@ -41,7 +40,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	$CardNumber_db = $row1['CardNumber'];
 
 	#INIT THE VARS
-	$MaxDate_db = $MinDateMonth_db = $MinDateYear_db = $FocusDate = $FocusDateEnd = '';
+	$MinDateMonth_db = $MinDateYear_db = $FocusDate = $FocusDateEnd = '';
 	$CurrentDate_db = $FirstName_db = $LastName_db = $EnrollDate_db = $Zip_db = '';	
 
 	$DollarsSpentLife_db = $PointsRedeemedLife_db = $PointsAccruedLife_db = $VisitsAccruedLife_db = '0';
@@ -58,23 +57,22 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	
 	#firstrun is for debugging
 	$Firstrun = 'Yes';
-	// PRINT COUNTER ENTRY EVERY 2000 CARDNUMBERS
+	// PRINT COUNTER ENTRY EVERY 1000 CARDNUMBERS
 	$counter++;
-	$printcount = fmod($counter, 2000);
+	$printcount = fmod($counter, 1000);
 	IF ($printcount == '0'){
 		ECHO PHP_EOL.$counter++.'  card:';
 		ECHO $CardNumber_db;
 	}
 
 	#### GET THE MIN AND MAX TRANSACTIONDATE AND THE MAX VISIT BALANCE
-	$query2 = "SELECT MAX(TransactionDate) as MaxDate,  
-				MAX(VM_VisitsBalance) as VisitsAccruedLife, 
+##### WE AREN'T USING MAXDATE / END AS A MEANS OF ITERATING ANYMORE, SHOULD WE REMOVE IT?
+	$query2 = "SELECT MAX(VM_VisitsBalance) as VisitsAccruedLife, 
 				CURDATE() as TodayDate 
 				FROM Master WHERE CardNumber = '$CardNumber_db'";
 	$result2 = mysqli_query($dbc, $query2);	
 	ECHO MYSQLI_ERROR($dbc);
-	while($row1 = mysqli_fetch_array($result2, MYSQLI_ASSOC)){	
-		$MaxDate_db = $row1['MaxDate'];
+	while($row1 = mysqli_fetch_array($result2, MYSQLI_ASSOC)){
 		$VisitsAccruedLife_db = $row1['VisitsAccruedLife'];
 		$CurrentDate_db = $row1['TodayDate'];
 	}
@@ -238,7 +236,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 			ECHO MYSQLI_ERROR($dbc);
 			while($row1 = mysqli_fetch_array($result7b, MYSQLI_ASSOC)){
 				$RecentFreqDays_db = $row1['FreqRecentDays'];	
-				# ECHO 'RecentFrequencyDays_db='.$RecentFreqDays_db.PHP_EOL;	
+				
 			}
 		}
 
@@ -327,29 +325,24 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 		if(!$result8){ECHO $query8.' ';}
 		ECHO MYSQLI_ERROR($dbc);
 
-		### WE'LL PRINT EXTENDED INFO FOR COUNTER ACCOUNTS, JUST TO SEE IF ANYTHING LOOKS WONKY
-		IF ($printcount == '0'){
-				ECHO ' FirstName: '.$FirstName_db.' LastName: '.$LastName_db.' FirstRun:'.$Firstrun;
-			ECHO PHP_EOL.'             Zip:'.$Zip_db.' Tier:'.$Tier_db.' Enrolled: '.$EnrollDate_db;
-			ECHO PHP_EOL.'             FocusDate:'.$FocusDate.' Last Visit Date: '.$LastVisitDate_db;
-			ECHO PHP_EOL.'             LifetimeSpend:'.$DollarsSpendLife_db.' LapseMonths: '.$LapseMonths_db;
-			ECHO PHP_EOL.'             Lifetime Visits: '.$VisitsAccruedLife_db;
-		}
-
-
-		// IF NO MAX TRANSACTIONDATE FOR THIS CARD END 
-		end:
-
-
-		
-
 		$FocusDate = date("Y-m-d",strtotime($FocusDate." +1 month "));
 		$FocusDateEnd = date("Y-m-d",strtotime($FocusDate." +2 month - 1 day "));
 		$Carryover_LastVisitDate = $LastVisitDate_db;
 
-	// END OF WHILE FOCUSDATE LESS THAN TODAY
+	// END OF WHILE FOCUSDATE LESS THAN TODAY (MAIN QUERY2)
 	}
-// END OF CARD NUMBER WHILE LOOP
+
+	### WE'LL PRINT EXTENDED INFO FOR COUNTER ACCOUNTS, JUST TO SEE IF ANYTHING LOOKS WONKY
+	IF ($printcount == '0'){
+			ECHO ' FirstName: '.$FirstName_db.' LastName: '.$LastName_db.' FirstRun:'.$Firstrun;
+		ECHO PHP_EOL.'             Zip:'.$Zip_db.' Tier:'.$Tier_db.' Enrolled: '.$EnrollDate_db;
+		ECHO PHP_EOL.'             FocusDate:'.$FocusDate.' Last Visit Date: '.$LastVisitDate_db;
+		ECHO PHP_EOL.'             LifetimeSpend:'.$DollarsSpentLife_db.' LapseMonths: '.$LapseMonths_db;
+		ECHO PHP_EOL.'             Lifetime Visits: '.$VisitsAccruedLife_db;
+	}
+
+
+// END OF CARD NUMBER WHILE LOOP (MAIN QUERY1)
 }
 
 
