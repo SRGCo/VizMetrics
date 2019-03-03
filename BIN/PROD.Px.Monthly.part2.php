@@ -196,11 +196,11 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 # ECHO '+++++++++++++++ Cardnumber: ',$CardNumber_db,' FocusDate: ',$FocusDate_db,PHP_EOL;
 // END OF CARD NUMBER WHILE LOOP
 }
-ECHO 'ALL CARDS PAST FREQUENCY UPDATED FOR ALL FOCUSDATES'.PHP_EOL;
+ECHO PHP_EOL.'ALL CARDS PAST FREQUENCY UPDATED FOR ALL FOCUSDATES'.PHP_EOL;
 
 
 ##### AFTER WE FINISH ALL THAT PROCESSING LETS MAKE A BACK UP JUST IN CASE
-exec('mysqldump -uroot -ps3r3n1t33 SRG_Dev Px_Monthly > /home/ubuntu/db_files/DEV.Px_Monthly.$(date +%Y-%m-%d-%H.%M.%S).sql');
+exec('mysqldump -uroot -ps3r3n1t33 SRG_Prod Px_Monthly > /home/ubuntu/db_files/PROD.Px_Monthly.$(date +%Y-%m-%d-%H.%M.%S).sql');
 echo 'PX MONTHLY TABLE BACKED UP';
 
 

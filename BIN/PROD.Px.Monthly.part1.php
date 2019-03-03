@@ -3,7 +3,7 @@
 
 
 
-###### could we check to see when the last real transaction is and then just replicate entires for everyone 
+###### could we check to see when the last real transaction is and then just replicate entries for everyone 
 ### between that date and the focusmonth ? ? 
 
 # Start database interaction with
@@ -58,12 +58,12 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	
 	#firstrun is for debugging
 	$Firstrun = 'Yes';
-	// PRINT COUNT EVERY 5000 CARDNUMBERS
+	// PRINT COUNTER ENTRY EVERY 2000 CARDNUMBERS
 	$counter++;
-	$printcount = fmod($counter, 5000);
+	$printcount = fmod($counter, 2000);
 	IF ($printcount == '0'){
-	ECHO PHP_EOL.$counter++.'  card:';
-	ECHO $CardNumber_db;
+		ECHO PHP_EOL.$counter++.'  card:';
+		ECHO $CardNumber_db;
 	}
 
 	#### GET THE MIN AND MAX TRANSACTIONDATE AND THE MAX VISIT BALANCE
@@ -96,8 +96,6 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 		$Zip_db = $row1['Zip'];		
 		$Tier_db = $row1['Tier'];
 	}
-	# echo ' FirstName:'.$FirstName_db.' LastName:'.$LastName_db.' Enrolled:'.$EnrollDate_db;
-	IF ($printcount == '0'){echo ' Zip:'.$Zip_db.' Tier:'.$Tier_db;}
 	
 	// FORMAT FOCUSDATE
 	$FocusDate = $MinDateYear_db."-".$MinDateMonth_db."-01"; 
@@ -109,10 +107,6 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 		$FocusDate = date("Y-m-d",strtotime($FocusDate."+1 month"));
 		$FocusDateEnd = date("Y-m-d",strtotime($FocusDateEnd."+1 month"));
 	}
-	# ECHO 'FocusDate: '. $FocusDate;
-	# ECHO ' FDend:'.$FocusDateEnd.' MaxDate'.$MaxDate_db.';
-	# ECHO ' MinDateMo'.$MinDateMonth_db.' MinDateYr '.$MinDateYear_db;
-	# ECHO ' CurDate'.$CurrentDate_db.' Focusdate '.$FocusDate.PHP_EOL;
 
 	// WHILE FOCUSDATE IS LESS THAN TODAYS DATE REPEAT QUERIES
 	WHILE ($FocusDate <= $CurrentDate_db){
@@ -167,7 +161,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 
 
 
-	$YearFreqSeg = $RecentFreqMonths_db = $TwoVisitsBack_php = $YrAgoFreq = $LastVisitBalance_db = '';
+		$YearFreqSeg = $RecentFreqMonths_db = $TwoVisitsBack_php = $YrAgoFreq = $LastVisitBalance_db = '';
 				#echo ' DolSpentMo'.$DollarsSpentMonth_db.' PtsRedeemMo'.$PointsRedeemedMonth_db;
 				#echo ' PtsAccrMo'.$PointsAccruedMonth_db.' TranMo'.$TransMonth_db.PHP_EOL;
 
@@ -207,17 +201,8 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 				$Firstrun = 'No';
 			}
 		} ELSE { $Firstrun = 'No';}
-		#	ECHO 'Card: '.$CardNumber_db.'  FocusDate:'.$FocusDate.'  Last Visit Date: ';
-		#	ECHO $LastVisitDate_db.' Firstrun:'.$Firstrun.PHP_EOL;
-	
-##################### NEED TO VERIFY BOTH LAPSEDAYS AND FREQRECENTDAYS (RECENTLAPSE)
-########### old query
-# $query6= "SELECT DATEDIFF('$FocusDate', MAX(TransactionDate)) as LapseDays
-#	FROM Master
-#       	WHERE TransactionDate < '$FocusDate' 
-#		AND CardNumber = '$CardNumber_db' 
-#		AND Vm_VisitsAccrued > '0'";
 
+		##################### NEED TO VERIFY BOTH LAPSEDAYS AND FREQRECENTDAYS (RECENTLAPSE)
 		#FIELD = LAPSEDAYS
 		$query6= "SELECT DATEDIFF('$FocusDate', '$LastVisitDate_db') as LapseDays";
 		$result6 = mysqli_query($dbc, $query6);	
@@ -229,7 +214,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 			$LapseDays_db = '0';
 		}
 
-####### IF LAPSE WASN'T CORRECT THIS IS MOST LIKELY WRONG
+		####### IF LAPSE WASN'T CORRECT THIS IS MOST LIKELY WRONG
 			##### GET RECENT FREQ (2 visits back) AS OF FOCUS DATE
 			#FIELD = FREQRECENTDAYS
 		$query7a = "SELECT TransactionDate FROM Master
@@ -342,6 +327,16 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 		if(!$result8){ECHO $query8.' ';}
 		ECHO MYSQLI_ERROR($dbc);
 
+		### WE'LL PRINT EXTENDED INFO FOR COUNTER ACCOUNTS, JUST TO SEE IF ANYTHING LOOKS WONKY
+		IF ($printcount == '0'){
+				ECHO ' FirstName: '.$FirstName_db.' LastName: '.$LastName_db.' FirstRun:'.$Firstrun;
+			ECHO PHP_EOL.'             Zip:'.$Zip_db.' Tier:'.$Tier_db.' Enrolled: '.$EnrollDate_db;
+			ECHO PHP_EOL.'             FocusDate:'.$FocusDate.' Last Visit Date: '.$LastVisitDate_db;
+			ECHO PHP_EOL.'             LifetimeSpend:'.$DollarsSpendLife_db.' LapseMonths: '.$LapseMonths_db;
+			ECHO PHP_EOL.'             Lifetime Visits: '.$VisitsAccruedLife_db;
+		}
+
+
 		// IF NO MAX TRANSACTIONDATE FOR THIS CARD END 
 		end:
 
@@ -364,7 +359,7 @@ $Query18 = "DELETE FROM Px_Monthly WHERE LastName = 'Test' or LastName = 'test' 
 $result18 = mysqli_query($dbc, $Query18);
 ECHO MYSQLI_ERROR($dbc);
 ################ WE COULE BREAK THE SCRIPT HERE AND POSSIBLY GET IT TO RUN FASTER
-ECHO PHP_EOL.'COUNTER'.$counter
+ECHO PHP_EOL.'Count of accounts processed: '.$counter
 ?>
 
 
