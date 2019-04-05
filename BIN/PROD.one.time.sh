@@ -26,88 +26,6 @@ failfunction()
 }
 
 
-####### FIRST WE TAKE CARE OF DUPE POSKEYS IN CA
-( "/home/ubuntu/bin/PROD.POSkey.dedupe.php" )
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'DUPLICATE POSKEYS PROCESS/FIXED'
-
-
-#### PHP NO ROW IN MASTER FOR ENROLLDATE IN GUESTS MASTER FIX
-( "/home/ubuntu/bin/PROD.wrong.enroll.fix.php" )
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'PHP NO ROW IN MASTER FOR ENROLLDATE IN GUESTS MASTER PROCESS/FIXED'
-
-
-
-
-######### UBER JOIN LIVE CHECK DETAIL WITH LIVE SQUASHED CARD ACTIVITY
-# Delete Temp table if it exists
-mysql  --login-path=local --silent -DSRG_Prod -N -e "DROP TABLE IF EXISTS Master_temp"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER TEMP TABLE DROPPED'
-
-# Create a empty copy of CardActivity table from CardActivityStructure table
-mysql  --login-path=local --silent -DSRG_Prod -N -e "CREATE TABLE Master_temp LIKE Master_structure"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER TEMP CREATED'
-
-###### WE ONLY GET THE LAST WEEKS WORTH OF DATA
-mysql  --login-path=local -DSRG_Prod -N -e "INSERT INTO Master_temp SELECT CD.*, CA.* FROM CheckDetail_Live AS CD 
-						LEFT JOIN CardActivity_squashed_2 AS CA ON CD.POSkey = CA.POSkey 
-						WHERE CD.DOB >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) 
-						UNION SELECT CD.*, CA.* FROM .CheckDetail_Live as CD 
-						RIGHT JOIN CardActivity_squashed_2 AS CA ON CD.POSkey = CA.POSkey 
-						WHERE CA.TransactionDate >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-# echo 'UBER JOIN COMPLETED'
-echo 'MASTER TEMP UPDATED WITH UBER CARD ACTIVITY AND CHECK DETAIL FROM PAST TWO WEEKS'
-
-# Create enroll_date and Account_status fields
-mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE Master_temp ADD EnrollDate VARCHAR(11)"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-
-# Create ACCOUNT STATUS
-mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE Master_temp ADD Account_status VARCHAR(15)"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-
-# Create ACCOUNT STATUS INDEX
-mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE Master_temp ADD INDEX(Account_status)"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER TEMP ENROLLDATE AND ACCOUNT STATUS FIELDS CREATED'
-
-# Create ACCOUNT STATUS
-mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE Master_temp ADD Card_status VARCHAR(15)"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-
-
-# AVOID DUPES DELETE SAME INTERVAL BACK
-mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM Master WHERE DOB >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) "
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER TRUNCATED - USING DOB'
-
-# AVOID DUPES DELETE SAME INTERVAL BACK
-mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM Master WHERE TransactionDate >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) "
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER TRUNCATED - USING TRANSACTIONDATE'
-
-
-
-# COPY THE NEW TRANSACTIONS INTO MASTER
-### WE COULD HAVE THIS TO MAKE SURE THERE ARE RECORDS IN THE TEMP TABLE(?)
-mysql  --login-path=local --silent -DSRG_Prod -N -e "INSERT INTO Master SELECT * FROM Master_temp"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER POPULATED FROM MASTER TEMP'
-
-
-
-############## THE NEXT SECTIONS WILL GET MOVED AROUND IF WE ADD CARD STATUS FIELDS
-####### MASTER TABLE GUEST INFO UPDATE
-mysql  --login-path=local -DSRG_Prod -N -e "UPDATE Master JOIN Guests_Master ON Master.CardNumber = Guests_Master.CardNumber 
-							SET Master.EnrollDate = Guests_Master.EnrollDate, Master.Account_status = Guests_Master.AccountStatus"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER ACCOUNT STATUSES UPDATED FROM GUESTS MASTER TABLE '
-
-
 
 
 ################# PROCESS EXCHANGES
@@ -221,9 +139,5 @@ do
 done
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'MASTER FY YLUNA FIELDS UPATED WITH DATA FROM LUNA TABLE'
-
-
-
-
 
 
