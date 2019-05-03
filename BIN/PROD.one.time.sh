@@ -2,12 +2,12 @@
 # LOG IT TO SYSLOG
 # exec 1> >(logger -s -t $(basename $0)) 2>&1
 
-# UNCOMMENT NEXT FOR VERBOSE
-# set -x
-##### HALT AND CATCH FIRE IF ANY COMMAND FAILS
-# set -e
+# THIS SCRIPT HAS TO RUN AFTER CHECKDETAIL IS PROCESSED SO THAT THE CHECK NUMBER FIX RUNS CORRECTLY
 
-##### USE time command to calc runtime "time DEV.cd.ca.into.master.sh"
+# UNCOMMENT NEXT FOR VERBOSE
+#set -x
+
+
 
 ################# ERROR CATCHING ##########################
 failfunction()
@@ -26,277 +26,211 @@ failfunction()
 }
 
 
-####### FIRST WE TAKE CARE OF DUPE POSKEYS IN CA
-( "/home/ubuntu/bin/PROD.POSkey.dedupe.php" )
+
+############################ THE SQUASH ####################################
+############## SQUASH AND INSERT DATA FROM LIVE CardActivity ###############
+####### should we do the FY and luna inserts here
+mysql  --login-path=local --silent -DSRG_Prod -N -e "INSERT INTO CardActivity_squashed
+SELECT
+DISTINCT(POSKey), LocationID, CardNumber, CardTemplate, TransactionDate, MIN(TransactionTime), MIN(checkno),
+SUM(Dummy1),SUM(Dummy2),MAX(Dummy3),
+SUM(Dummy4),SUM(Dummy5),MAX(Dummy6),
+SUM(SurveyAccrued),SUM(SurveyRedeemed),MAX(SurveyBalance),
+SUM(NewsletterAccrued),SUM(NewsletterRedeemed),MAX(NewsletterBalance),
+SUM(LifetimeSpendAccrued),SUM(LifetimeSpendRedeemed),MAX(LifetimeSpendBalance),
+SUM(3000BonusPointsAccrued),SUM(3000BonusPointsRedeemed),MAX(3000BonusPointsBalance),
+SUM(RegAppAccrued),SUM(RegAppRedeemed),MAX(RegAppBalance),
+SUM(BdayEntreeAccrued),SUM(BdayEntreeRedeemed),MAX(BdayEntreeBalance),
+SUM(Dummy7),SUM(Dummy8),MAX(Dummy9),
+SUM(LTOAccrued),SUM(LTORedeemed),MAX(LTOBalance),
+SUM(LTObucksAccrued),SUM(LTObucksRedeemed),MAX(LTObucksBalance),
+SUM(CheckSubtotalAccrued),SUM(CheckSubtotalRedeemed),MAX(CheckSubtotalBalance),
+SUM(DollarsSpentAccrued),SUM(DollarsSpentRedeemed),MAX(DollarsSpentBalance),
+SUM(KidsMenuTrackingAccrued),SUM(KidsMenuTrackingRedeemed),MAX(KidsMenuTrackingBalance),
+SUM(BeerTrackingAccrued),SUM(BeerTrackingRedeemed),MAX(BeerTrackingBalance),
+SUM(SushiTrackingAccrued),SUM(SushiTrackingRedeemed),MAX(SushiTrackingBalance),
+SUM(WineTrackingAccrued),SUM(WineTrackingRedeemed),MAX(WineTrackingBalance),
+SUM(StoreRegisteredAccrued),SUM(StoreRegisteredRedeemed),MAX(StoreRegisteredBalance),
+SUM(SereniteePointsAccrued),SUM(SereniteePointsRedeemed),MAX(SereniteePointsBalance),
+SUM(LifetimePointsAccrued),SUM(LifetimePointsRedeemed),MAX(LifetimePointsBalance),
+SUM(100PointsIncrementAccrued),SUM(100PointsIncrementRedeemed),MAX(100PointsIncrementBalance),
+SUM(FreeAppAccrued),SUM(FreeAppRedeemed),MAX(FreeAppBalance),
+SUM(Dummy10),SUM(Dummy11),MAX(Dummy12),
+SUM(FreeEntreeAccrued),SUM(FreeEntreeRedeemed),MAX(FreeEntreeBalance),
+SUM(FreeDessertAccrued),SUM(FreeDessertRedeemed),MAX(FreeDessertBalance),
+SUM(FreePizzaAccrued),SUM(FreePizzaRedeemed),MAX(FreePizzaBalance),
+SUM(FreeSushiAccrued),SUM(FreeSushiRedeemed),MAX(FreeSushiBalance),
+SUM(5500PointsAccrued),SUM(5500PointsRedeemed),MAX(5500PointsBalance),
+SUM(3500PointsAccrued),SUM(3500PointsRedeemed),MAX(3500PointsBalance),
+SUM(2500PointsAccrued),SUM(2500PointsRedeemed),MAX(2500PointsBalance),
+SUM(1Kpts5bksAccrued),SUM(1Kpts5bksRedeemed),MAX(1Kpts5bksBalance), 
+MAX(VisitsAccrued),SUM(VisitsRedeemed),MAX(VisitsBalance), 
+SUM(TWKTripAccrued),SUM(TWKTripRedeemed),MAX(TWKTripBalance),
+SUM(SpotTripAccrued),SUM(SpotTripRedeemed),MAX(SpotTripBalance),
+SUM(MagsTripAccrued),SUM(MagsTripRedeemed),MAX(MagsTripBalance),
+SUM(OpusTripAccrued),SUM(OpusTripRedeemed),MAX(OpusTripBalance),
+SUM(WalnutTripAccrued),SUM(WalnutTripRedeemed),MAX(WalnutTripBalance),
+SUM(HaleTripAccrued),SUM(HaleTripRedeemed),MAX(HaleTripBalance),
+SUM(CalasTripAccrued),SUM(CalasTripRedeemed),MAX(CalasTripBalance),
+SUM(LatTripAccrued),SUM(LatTripRedeemed),MAX(LatTripBalance),
+SUM(HBTripAccrued),SUM(HBTripRedeemed),MAX(HBTripBalance),
+SUM(SereniteebucksAccrued),SUM(SereniteebucksRedeemed),MAX(SereniteebucksBalance),
+SUM(BandCompbucksAccrued),SUM(BandCompbucksRedeemed),MAX(BandCompbucksBalance),
+SUM(GreenDollarsAccrued),SUM(GreenDollarsRedeemed),MAX(GreenDollarsBalance),
+SUM(GreenLATAppAccrued),SUM(GreenLATAppRedeemed),MAX(GreenLATAppBalance),
+SUM(GreenALCAppAccrued),SUM(GreenALCAppRedeemed),MAX(GreenALCAppBalance),
+SUM(GreenOPUSAppAccrued),SUM(GreenOPUSAppRedeemed),MAX(GreenOPUSAppBalance),
+SUM(GreenCALAppAccrued),SUM(GreenCALAppRedeemed),MAX(GreenCALAppBalance),
+SUM(GreenSPOTAppAccrued),SUM(GreenSPOTAppRedeemed),MAX(GreenSPOTAppBalance),
+SUM(GreenHALEAppAccrued),SUM(GreenHALEAppRedeemed),MAX(GreenHALEAppBalance),
+SUM(GreenWINCAppAccrued),SUM(GreenWINCAppRedeemed),MAX(GreenWINCAppBalance),
+SUM(GreenMAGsAppAccrued),SUM(GreenMAGsAppRedeemed),MAX(GreenMAGsAppBalance),
+SUM(GreenWALAppAccrued),SUM(GreenWALAppRedeemed),MAX(GreenWALAppBalance),
+SUM(CompbucksAccrued),SUM(CompbucksRedeemed),MAX(CompbucksBalance),
+SUM(SereniteeGiftCardAccrued),SUM(SereniteeGiftCardRedeemed),MAX(SereniteeGiftCardBalance),
+SUM(SVDiscountTrackingAccrued),SUM(SVDiscountTrackingRedeemed),MAX(SVDiscountTrackingBalance),
+'0',
+'0',
+'0',
+'0',
+'0',
+'0',
+'0',
+'0',
+'0',
+'0',
+'0',
+''
+
+FROM CardActivity_Live
+
+WHERE LocationID IS NOT NULL AND CardTemplate = 'Serenitee Loyalty'  AND CheckNo <> '9999999'
+AND (TransactionType = 'Accrual / Redemption' OR TransactionType = 'Activate')
+GROUP by POSKey, LocationID, CardNumber, CardTemplate, TransactionDate"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'DUPLICATE POSKEYS PROCESS/FIXED'
+echo 'SQUASHED DATA TABLE POPULATED'
 
 
-############################## FIRST WE PROCESS/UPDATE THE GUEST DATA #############################
-################# TABLETURNS ##############################
-## REMOVE (2) HEADER ROW AND MERGE (IF NECCESSARY) INCOMING GUESTS CSVs
-## INTO SINGLE CARD ACTIVITY FILE IN DB_FILES/incoming/px
-#for file in /home/ubuntu/db_files/incoming/px/Guest*.csv
-#do
-	#### MAKE A COPY OF THE FILE IN BACKUP DIR
-#	cp "$file" //home/ubuntu/db_files/incoming/px/backup/	
-#     	tail -n+3 "$file"  >> /home/ubuntu/db_files/incoming/px/guests.infile.csv	
-#	rm "$file"
-#done
-#trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-#echo 'INCOMING guest DATA FILES CLEANED AND MERGED'
+########################## 
+##########################   WE NEED TO HAVE CARD ACTIVITY SQUASHED BECOME A LIVE TABLE THAT GETS UPDATED INCREMENTALLY
+##########################          THEN WE CAN RUN THIS FIX ON ONLY THE NEW TRANSACTIONS
+############################          STILL NEED TO DO THIS 1-18-19 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-####
-#### WE CAN PROCESS GUEST INFO AS ITS OWN SUBROUTINE TO AVOID FAILURES STOPPING WHOLE SCRIPT
 
-	## TRUNCATE GUESTS TABLE BEFORE LOADING W NEW
-	# Delete Temp table if it exists
-	mysql  --login-path=local --silent -DSRG_Prod -N -e "DROP TABLE IF EXISTS Guests_temp"
-	echo 'GUESTS TEMP NEW TABLE DROPPED, STARTING NEW GUESTS TEMP NEW TABLE CREATION'
 
-	# Create a empty copy of CardActivity table from CardActivityStructure table
-	mysql  --login-path=local --silent -DSRG_Prod -N -e "CREATE TABLE Guests_temp LIKE Guests_Structure"
-	echo 'Guests_temp TABLE CREATED, LOADING DATA FILE TO Guests_temp TABLE'
-
-	# Load the data from the latest file into the (temp) CardActivity table
-	mysql  --login-path=local --silent -DSRG_Prod -N -e "Load data local infile '/home/ubuntu/db_files/incoming/px/guests.infile.csv' into table Guests_temp fields terminated by ','  lines terminated by '\n'"
-	echo 'Guests_temp loaded'
-
-
-	### UPDATE TO NULLS FOR ZERO DATES FOR ANNIVERSARY
-	mysql  --login-path=local --silent -DSRG_Prod -N -e "UPDATE Guests_temp SET AnniversaryDate = NULL WHERE CAST(AnniversaryDate AS CHAR(10)) = '0000-00-00'"
-	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-
-	## UPDATE TO NULLS FOR ZERO DATES FOR REG DATE
-	mysql  --login-path=local --silent -DSRG_Prod -N -e "UPDATE Guests_temp SET RegisterDate = NULL WHERE CAST(RegisterDate AS CHAR(10)) = '0000-00-00'"
-	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-
-	### UPDATE TO NULLS FOR ZERO DATES FOR ENROLL DATE
-	mysql  --login-path=local --silent -DSRG_Prod -N -e "UPDATE Guests_temp SET EnrollDate = NULL WHERE CAST(EnrollDate AS CHAR(10)) = '0000-00-00'"
-	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-
-	### UPDATE TO NULLS FOR ZERO DATES FOR BIRTHDATE
-	mysql  --login-path=local --silent -DSRG_Prod -N -e "UPDATE Guests_temp SET DateofBirth = NULL WHERE CAST(DateofBirth AS CHAR(10)) = '0000-00-00'"
-	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-
-
-	####### IF THIS CARDNUMBER ALREADY EXISTS IN GUESTS MASTER DELETE IT
-	####### INSERT DATA FROM TEMP BY CARDNUMBER
-	####### UPDATE THE TOWN INFO BY CARDNUMBER IN GUESTS MASTER
-	mysql  --login-path=local -DSRG_Prod -N -e "SELECT DISTINCT(CardNumber) FROM Guests_temp" | while read -r CardNumber;
-	do
-		# DELETE CARDS FROM GUEST MASTER IF ALREADY EXISTS
-		mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE from Guests_Master WHERE CardNumber = '$CardNumber'"
-		# INSERT LATEST INFO ABOUT THIS GUEST
-		mysql  --login-path=local -DSRG_Prod -N -e "INSERT INTO Guests_Master SELECT Guests_temp.*,NULL,NULL,NULL FROM Guests_temp WHERE CardNumber = '$CardNumber'"
-		#### UPDATE TOWN INFO IN GUESTS_MASTER FOR THIS CARD
-		mysql  --login-path=local -DSRG_Prod -N -e "SELECT Zip FROM Guests_Master WHERE CardNumber = '$CardNumber'" | while read -r Zip;
-		do
-			mysql  --login-path=local -DSRG_Prod -N -e "SELECT Population, AvgIncome, Town FROM MA_Zips WHERE Zip = '$Zip'" | while read -r population income town;
-			do
-				mysql  --login-path=local -DSRG_Prod -N -e "UPDATE Guests_Master SET Population = '$population', AvgIncome = '$income', Town = '$town' WHERE CardNumber = '$CardNumber'"
-			done	
-		done 
-
-	done
-	echo 'GUESTS_MASTER TABLE UPDATED WITH NEW GUEST INFO'
-
-# DELETE CURRENT INFILE TO READY FOR NEXT RUN
-rm -f   /home/ubuntu/db_files/incoming/px/guests.infile.csv
-
-
-
-#### PHP NO ROW IN MASTER FOR ENROLLDATE IN GUESTS MASTER FIX
-( "/home/ubuntu/bin/PROD.wrong.enroll.fix.php" )
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'PHP NO ROW IN MASTER FOR ENROLLDATE IN GUESTS MASTER PROCESS/FIXED'
-
-
-
-
-######### UBER JOIN LIVE CHECK DETAIL WITH LIVE SQUASHED CARD ACTIVITY
-# Delete Temp table if it exists
-mysql  --login-path=local --silent -DSRG_Prod -N -e "DROP TABLE IF EXISTS Master_temp"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER TEMP TABLE DROPPED'
-
-# Create a empty copy of CardActivity table from CardActivityStructure table
-mysql  --login-path=local --silent -DSRG_Prod -N -e "CREATE TABLE Master_temp LIKE Master_structure"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER TEMP CREATED'
-
-###### WE ONLY GET THE LAST WEEKS WORTH OF DATA
-mysql  --login-path=local -DSRG_Prod -N -e "INSERT INTO Master_temp SELECT CD.*, CA.* FROM CheckDetail_Live AS CD 
-						LEFT JOIN CardActivity_squashed_2 AS CA ON CD.POSkey = CA.POSkey 
-						WHERE CD.DOB >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) 
-						UNION SELECT CD.*, CA.* FROM .CheckDetail_Live as CD 
-						RIGHT JOIN CardActivity_squashed_2 AS CA ON CD.POSkey = CA.POSkey 
-						WHERE CA.TransactionDate >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-# echo 'UBER JOIN COMPLETED'
-echo 'MASTER TEMP UPDATED WITH UBER CARD ACTIVITY AND CHECK DETAIL FROM PAST TWO WEEKS'
-
-# Create enroll_date and Account_status fields
-mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE Master_temp ADD EnrollDate VARCHAR(11)"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-
-# Create ACCOUNT STATUS
-mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE Master_temp ADD Account_status VARCHAR(15)"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-
-# Create ACCOUNT STATUS INDEX
-mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE Master_temp ADD INDEX(Account_status)"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER TEMP ENROLLDATE AND ACCOUNT STATUS FIELDS CREATED'
-
-# Create ACCOUNT STATUS
-mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE Master_temp ADD Card_status VARCHAR(15)"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-
-
-# AVOID DUPES DELETE SAME INTERVAL BACK
-mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM Master WHERE DOB >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) "
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER TRUNCATED - USING DOB'
-
-# AVOID DUPES DELETE SAME INTERVAL BACK
-mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM Master WHERE TransactionDate >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) "
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER TRUNCATED - USING TRANSACTIONDATE'
-
-
-
-# COPY THE NEW TRANSACTIONS INTO MASTER
-### WE COULD HAVE THIS TO MAKE SURE THERE ARE RECORDS IN THE TEMP TABLE(?)
-mysql  --login-path=local --silent -DSRG_Prod -N -e "INSERT INTO Master SELECT * FROM Master_temp"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER POPULATED FROM MASTER TEMP'
-
-
-
-############## THE NEXT SECTIONS WILL GET MOVED AROUND IF WE ADD CARD STATUS FIELDS
-####### MASTER TABLE GUEST INFO UPDATE
-mysql  --login-path=local -DSRG_Prod -N -e "UPDATE Master JOIN Guests_Master ON Master.CardNumber = Guests_Master.CardNumber 
-							SET Master.EnrollDate = Guests_Master.EnrollDate, Master.Account_status = Guests_Master.AccountStatus"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER ACCOUNT STATUSES UPDATED FROM GUESTS MASTER TABLE '
-
-
-
-
-################# PROCESS EXCHANGES
-## REMOVE (1) HEADER ROW AND MERGE (IF NECCESSARY) INCOMING EXCHANGES CSVs
-## INTO SINGLE CARD ACTIVITY FILE IN DB_FILES
-for file in /home/ubuntu/db_files/incoming/px/MediaExchanges*.csv
-  do
-	#### MAKE A COPY OF THE FILE IN BACKUP DIR
-	cp "$file" //home/ubuntu/db_files/incoming/px/backup/
-	tail -n+2 "$file"  >> /home/ubuntu/db_files/incoming/px/Infile.MediaExchanges.csv
-	rm "$file"
-  done || trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'INCOMING EXCHANGES DATA FILES BACKEDUP, CLEANED AND MERGED'
-
-## TRUNCATE GUESTS TABLE BEFORE LOADING W NEW
-# Delete Temp table if it exists
-mysql  --login-path=local --silent -DSRG_Prod -N -e "DROP TABLE IF EXISTS Px_exchanges_temp"
-echo 'PX EXCHANGES TEMP TABLE DROPPED, STARTING NEW PX EXCHANGES TEMP TABLE CREATION'
-
-# Create a empty copy of CardActivity table from CardActivityStructure table
-mysql  --login-path=local --silent -DSRG_Prod -N -e "CREATE TABLE Px_exchanges_temp LIKE Px_exchanges_structure"
-echo 'PX EXCHANGES TEMP TABLE CREATED, LOADING DATA FILE TO PX EXCHANGES TEMP TABLE'
-
-# Load the data from the latest file into the (temp) CardActivity table
-mysql  --login-path=local --silent -DSRG_Prod -N -e "Load data local infile '/home/ubuntu/db_files/incoming/px/Infile.MediaExchanges.csv' into table Px_exchanges_temp fields terminated by ','  lines terminated by '\n'"
-echo 'PX EXCHANGES TEMP loaded'
-	
-#Load the temp data into the live table
-mysql  --login-path=local -DSRG_Prod -N -e "INSERT INTO Px_exchanges SELECT * FROM Px_exchanges_temp"
-echo 'PX EXCHANGES TABLE LOADED WITH DATA FROM TEMP TABLE'
-
-
-# DELETE CURRENT INFILE TO READY FOR NEXT RUN
-rm -f   /home/ubuntu/db_files/incoming/px/Infile.MediaExchanges.csv
-
-
-################# PROCESS EXCHANGES WITH PHP SUBROUTINE
-( "/home/ubuntu/bin/PROD.px.exchanges.process.php" )
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER- EXCHANGED CARDS PROCESS/FIXED, ACCOUNT STATUS UPDATED TO -Exchange-'
-
-
-######### EXCLUDES SECTION USE OR NOT ? ? ?
-# mysql  --login-path=local -DSRG_Prod -N -e "UPDATE Master JOIN Excludes ON Master.CardNumber = Excludes.CardNumber SET Master.Account_status = 'Exclude' "
-# trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER - NO ACCOUNTS EXCLUDED!!! (Exclusion routine commented out)'
-
-
-
-
-
-
-
-
-######## UPDATE THE EMPTY CHECKDETAIL FIELDS WITH PX DATA
-mysql  --login-path=local -DSRG_Prod -N -e "UPDATE Master SET CheckNumber = CheckNo_px WHERE CheckNumber IS NULL "
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER EMPTY CHECKNO POPULATED FROM PX DATA'
-
-
-mysql  --login-path=local -DSRG_Prod -N -e "UPDATE Master SET LocationID = LocationID_px WHERE LocationID IS NULL "
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER EMPTY LOCATION ID POPULATED FROM PX DATA'
-
-mysql  --login-path=local -DSRG_Prod -N -e "UPDATE Master SET POSkey = POSKey_px WHERE POSkey IS NULL "
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER EMPTY POS KEYS POPULATED FROM PX DATA'
-
-mysql  --login-path=local -DSRG_Prod -N -e "UPDATE Master SET DOB = TransactionDate WHERE DOB IS NULL "
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER EMPTY DOB POPULATED FROM PX DATA'
-
-
-
-mysql  --login-path=local -DSRG_Prod -N -e "UPDATE Master SET GrossSalesCoDefined = DollarsSpentAccrued WHERE GrossSalesCoDefined IS NULL 
-						AND Master.Account_status <> 'TERMIN' AND Master.Account_status <> 'SUSPEN' 
-						AND Master.Account_status <> 'Exchanged' AND Master.Account_status <> 'Exchange' 
-						AND Master.Account_status <> 'Exclude' AND DollarsSpentAccrued IS NOT NULL"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER GROSSSALESCODEFINED FIELD POPULATED'
-echo '(PROMOS OR COMPS COULD NOT BE ADDED, LOWBALL FIGURES)'
-
-
-###### -N is the No Headers in Output option
-###### -e is the 'read statement and quit'
-######## WE ARE ###
-
-mysql  --login-path=local -DSRG_Prod -N -e "SELECT Master.DOB FROM Master WHERE Master.DOB IS NOT NULL AND DOB >= DATE_SUB(NOW(),INTERVAL 45 DAY) 
-				GROUP BY Master.DOB ORDER BY Master.DOB DESC" | while read -r DOB;
+######## Get CardNumber
+mysql  --login-path=local -DSRG_Prod -N -e "SELECT DISTINCT(CardNumber) FROM CardActivity_squashed WHERE CardNumber IS NOT NULL AND TransactionTime > '21:00:00' ORDER BY CardNumber ASC" | while read -r CardNumber;
 do
-
-		######## GET FY FOR THIS DOB (DOB)
-		FY=$(mysql  --login-path=local -DSRG_Prod -N -e "SELECT FY from Lunas WHERE DOB = '$DOB'")
-
-		######## GET FY FOR THIS DOB (DOB)
-		YLuna=$(mysql  --login-path=local -DSRG_Prod -N -e "SELECT YLuna from Lunas WHERE DOB = '$DOB'")
-
-		######## GET FY FOR THIS DOB (DOB)
-		Luna=$(mysql  --login-path=local -DSRG_Prod -N -e "SELECT Luna from Lunas WHERE DOB = '$DOB'")
-
-		######## IF VARIABLE HAS NO VALUE SET TO NULL
-		if [ -z $Luna ] 
-		then 
-		Luna='0'
+	######### GET DATA IF CHECK FROM BETWEEN MIDNIGHT AND 4 AM 
+	mysql  --login-path=local -DSRG_Prod -N -e "SELECT POSkey, TransactionDate, CheckNo FROM CardActivity_squashed where cardnumber like $CardNumber
+	AND TransactionTime > '00:00' and TransactionTime < '04:00'"| while read -r POSkey TransactionDate CheckNo;
+	do
+		
+		########## GET THE POSkey FOR SAME CHECK FROM PREVIOUS DAY IF IT EXISTS
+		POSkey_prev=$(mysql  --login-path=local -DSRG_Prod -N -e "SELECT POSkey FROM CardActivity_squashed where cardnumber like '$CardNumber' 
+		AND TransactionDate = DATE_SUB('$TransactionDate', INTERVAL 1 DAY) AND CheckNo = '$CheckNo'")
+		#### SET POSkey FOR LATER RECORD TO EARLIER DATES POSkey (IF PREVIOUS POSKEY EXISTS)
+		if [ -n "$POSkey_prev" ]
+		then		
+			mysql  --login-path=local -DSRG_Prod -N -e "UPDATE CardActivity_squashed SET POSkey = '$POSkey_prev' WHERE POSkey = '$POSkey'"
+		#	echo "CARD: "$CardNumber" Transdate1: "$TransactionDate" Check: "$CheckNo" Key1: "$POSkey" Key2: "$POSkey_prev 
 		fi
+	done
 
-		##### UPDATE FISCAL YEAR FROM DOB
-		mysql  --login-path=local -DSRG_Prod -N -e "UPDATE Master SET FY = '$FY',YLuna = '$YLuna', Luna='$Luna' WHERE Master.DOB = '$DOB'"
-		#echo $DOB updated FY= $FY YLuna = $YLuna  Luna = $Luna
+done || trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
-done
+
+########### DROP AND RECREATE THE 2ND 'squashed' TABLE to READY FOR RELOAD
+mysql  --login-path=local --silent -DSRG_Prod -N -e "DROP TABLE IF EXISTS CardActivity_squashed_2"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER FY YLUNA FIELDS UPATED WITH DATA FROM LUNA TABLE'
+echo 'EXISTING 2ND SQUASHED TABLE DROPPED, CREATING SQUASHED TABLE FROM STRUCTURE'
 
+# Create a empty copy of CardActivity table from CardActivityStructure table
+mysql  --login-path=local --silent -DSRG_Prod -N -e "CREATE TABLE CardActivity_squashed_2 LIKE CardActivity_squashed_structure"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+echo 'NEW 2ND SQUASHED TABLE CREATED, SQUASHING 1ST SQUASHED TABLE'
 
+############## SQUASH AND INSERT DATA FROM FIRST SQUASHED TABLE ###############
+######### THIS ACCOUNTS FOR THE CARDS THAT GOT A WRONG POSKEY BECAUSE THEY WERE OPEN ACROSS MIDNIGHT
+############# THIS IS ANOTHER REASON WE SHOULD HAVE SQUASH ONLY PROCESSING INCREMENTALLY 
+
+###################################### SQUASH2 #########################################
+mysql  --login-path=local --silent -DSRG_Prod -N -e "INSERT INTO CardActivity_squashed_2
+SELECT
+DISTINCT(POSKey), LocationID, CardNumber, CardTemplate, MIN(TransactionDate), MIN(TransactionTime), MIN(checkno),
+
+SUM(Dummy1),SUM(Dummy2),MAX(Dummy3),
+SUM(Dummy4),SUM(Dummy5),MAX(Dummy6),
+SUM(SurveyAccrued),SUM(SurveyRedeemed),MAX(SurveyBalance),
+SUM(NewsletterAccrued),SUM(NewsletterRedeemed),MAX(NewsletterBalance),
+SUM(LifetimeSpendAccrued),SUM(LifetimeSpendRedeemed),MAX(LifetimeSpendBalance),
+SUM(3000BonusPointsAccrued),SUM(3000BonusPointsRedeemed),MAX(3000BonusPointsBalance),
+SUM(RegAppAccrued),SUM(RegAppRedeemed),MAX(RegAppBalance),
+SUM(BdayEntreeAccrued),SUM(BdayEntreeRedeemed),MAX(BdayEntreeBalance),
+SUM(Dummy7),SUM(Dummy8),MAX(Dummy9),
+SUM(LTOAccrued),SUM(LTORedeemed),MAX(LTOBalance),
+SUM(LTObucksAccrued),SUM(LTObucksRedeemed),MAX(LTObucksBalance),
+SUM(CheckSubtotalAccrued),SUM(CheckSubtotalRedeemed),MAX(CheckSubtotalBalance),
+SUM(DollarsSpentAccrued),SUM(DollarsSpentRedeemed),MAX(DollarsSpentBalance),
+SUM(KidsMenuTrackingAccrued),SUM(KidsMenuTrackingRedeemed),MAX(KidsMenuTrackingBalance),
+SUM(BeerTrackingAccrued),SUM(BeerTrackingRedeemed),MAX(BeerTrackingBalance),
+SUM(SushiTrackingAccrued),SUM(SushiTrackingRedeemed),MAX(SushiTrackingBalance),
+SUM(WineTrackingAccrued),SUM(WineTrackingRedeemed),MAX(WineTrackingBalance),
+SUM(StoreRegisteredAccrued),SUM(StoreRegisteredRedeemed),MAX(StoreRegisteredBalance),
+SUM(SereniteePointsAccrued),SUM(SereniteePointsRedeemed),MAX(SereniteePointsBalance),
+SUM(LifetimePointsAccrued),SUM(LifetimePointsRedeemed),MAX(LifetimePointsBalance),
+SUM(100PointsIncrementAccrued),SUM(100PointsIncrementRedeemed),MAX(100PointsIncrementBalance),
+SUM(FreeAppAccrued),SUM(FreeAppRedeemed),MAX(FreeAppBalance),
+SUM(Dummy10),SUM(Dummy11),MAX(Dummy12),
+SUM(FreeEntreeAccrued),SUM(FreeEntreeRedeemed),MAX(FreeEntreeBalance),
+SUM(FreeDessertAccrued),SUM(FreeDessertRedeemed),MAX(FreeDessertBalance),
+SUM(FreePizzaAccrued),SUM(FreePizzaRedeemed),MAX(FreePizzaBalance),
+SUM(FreeSushiAccrued),SUM(FreeSushiRedeemed),MAX(FreeSushiBalance),
+SUM(5500PointsAccrued),SUM(5500PointsRedeemed),MAX(5500PointsBalance),
+SUM(3500PointsAccrued),SUM(3500PointsRedeemed),MAX(3500PointsBalance),
+SUM(2500PointsAccrued),SUM(2500PointsRedeemed),MAX(2500PointsBalance),
+SUM(1Kpts5bksAccrued),SUM(1Kpts5bksRedeemed),MAX(1Kpts5bksBalance), 
+MAX(VisitsAccrued),SUM(VisitsRedeemed),MAX(VisitsBalance), 
+SUM(TWKTripAccrued),SUM(TWKTripRedeemed),MAX(TWKTripBalance),
+SUM(SpotTripAccrued),SUM(SpotTripRedeemed),MAX(SpotTripBalance),
+SUM(MagsTripAccrued),SUM(MagsTripRedeemed),MAX(MagsTripBalance),
+SUM(OpusTripAccrued),SUM(OpusTripRedeemed),MAX(OpusTripBalance),
+SUM(WalnutTripAccrued),SUM(WalnutTripRedeemed),MAX(WalnutTripBalance),
+SUM(HaleTripAccrued),SUM(HaleTripRedeemed),MAX(HaleTripBalance),
+SUM(CalasTripAccrued),SUM(CalasTripRedeemed),MAX(CalasTripBalance),
+SUM(LatTripAccrued),SUM(LatTripRedeemed),MAX(LatTripBalance),
+SUM(HBTripAccrued),SUM(HBTripRedeemed),MAX(HBTripBalance),
+SUM(SereniteebucksAccrued),SUM(SereniteebucksRedeemed),MAX(SereniteebucksBalance),
+SUM(BandCompbucksAccrued),SUM(BandCompbucksRedeemed),MAX(BandCompbucksBalance),
+SUM(GreenDollarsAccrued),SUM(GreenDollarsRedeemed),MAX(GreenDollarsBalance),
+SUM(GreenLATAppAccrued),SUM(GreenLATAppRedeemed),MAX(GreenLATAppBalance),
+SUM(GreenALCAppAccrued),SUM(GreenALCAppRedeemed),MAX(GreenALCAppBalance),
+SUM(GreenOPUSAppAccrued),SUM(GreenOPUSAppRedeemed),MAX(GreenOPUSAppBalance),
+SUM(GreenCALAppAccrued),SUM(GreenCALAppRedeemed),MAX(GreenCALAppBalance),
+SUM(GreenSPOTAppAccrued),SUM(GreenSPOTAppRedeemed),MAX(GreenSPOTAppBalance),
+SUM(GreenHALEAppAccrued),SUM(GreenHALEAppRedeemed),MAX(GreenHALEAppBalance),
+SUM(GreenWINCAppAccrued),SUM(GreenWINCAppRedeemed),MAX(GreenWINCAppBalance),
+SUM(GreenMAGsAppAccrued),SUM(GreenMAGsAppRedeemed),MAX(GreenMAGsAppBalance),
+SUM(GreenWALAppAccrued),SUM(GreenWALAppRedeemed),MAX(GreenWALAppBalance),
+SUM(CompbucksAccrued),SUM(CompbucksRedeemed),MAX(CompbucksBalance),
+SUM(SereniteeGiftCardAccrued),SUM(SereniteeGiftCardRedeemed),MAX(SereniteeGiftCardBalance),
+SUM(SVDiscountTrackingAccrued),SUM(SVDiscountTrackingRedeemed),MAX(SVDiscountTrackingBalance),
+'0','0','0','0','0','0','0','0','0','0','0',''
+
+FROM CardActivity_squashed
+
+GROUP by POSKey, LocationID, CardNumber, CardTemplate"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+echo 'NEW SQUASHED DATA TABLE    2    POPULATED'
+
+### INDEX SQUASHED TABLE POSkey
+mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE CardActivity_squashed_2 ADD INDEX(POSkey)"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+echo 'CARDACTIVITY SQUASHED 2 POSKEY INDEX ADDED'
+
+echo 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+
+echo 'DEV.PX.CA.PROCESS.SH COMPLETED'
 
 
 
