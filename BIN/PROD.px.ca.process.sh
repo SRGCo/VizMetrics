@@ -307,11 +307,23 @@ SUM(SVDiscountTrackingAccrued),SUM(SVDiscountTrackingRedeemed),MAX(SVDiscountTra
 
 FROM CardActivity_Live
 
-WHERE LocationID IS NOT NULL AND CardTemplate = 'Serenitee Loyalty'  AND CheckNo <> '9999999'
-AND (TransactionType = 'Accrual / Redemption' OR TransactionType = 'Activate')
+WHERE CardTemplate = 'Serenitee Loyalty'
 GROUP by POSKey, LocationID, CardNumber, CardTemplate, TransactionDate"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'SQUASHED DATA TABLE POPULATED'
+
+
+mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM CardActivity_squashed WHERE LocationID IS NULL";
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+echo 'DELETED NULL LocationIDS from Squashed table'
+
+mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM CardActivity_squashed WHERE CheckNo = '9999999'";
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+echo 'DELETED NULL LocationIDS from Squashed table'
+
+mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM CardActivity_squashed WHERE TransactionType NOT IN (Accrual / Redemption,Activate)";
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+echo 'DELETED NULL LocationIDS from Squashed table'
 
 
 ########################## 
