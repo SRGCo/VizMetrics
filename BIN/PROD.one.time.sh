@@ -26,11 +26,8 @@ failfunction()
 }
 
 
+
 	echo 'SQUASHING BETWEEN DATES'
-
-
-
-
 	mysql  --login-path=local --silent -DSRG_Prod -N -e "INSERT INTO CardActivity_squashed
 	SELECT
 	DISTINCT(POSKey), LocationID, CardNumber, CardTemplate, TransactionDate, MIN(TransactionTime), MIN(checkno),
@@ -103,9 +100,9 @@ failfunction()
 	'0',
 	''
 	FROM CardActivity_Live
-	WHERE TransactionDate >= '2015-01-01'
+	WHERE TransactionDate >= '2018-06-01' AND StoreNumber <> '9'
 	AND TransactionType IN ('Accrual / Redemption','Activate')
-	GROUP by POSKey, LocationID, CardNumber, CardTemplate, TransactionDate"
+	GROUP by POSKey, StoreName, CardNumber, CardTemplate, TransactionDate"
 
 	echo 'SQUASH TABLE INCREMENTALLY UPDATED'
 
