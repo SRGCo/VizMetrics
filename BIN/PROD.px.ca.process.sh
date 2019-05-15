@@ -187,7 +187,7 @@ echo 'CARDACTIVITY -dev- CheckNo indexed'
 ##################### ITERATE UPDATE TO CA CheckNumbers MISSING LEADIN "100"
 ############################## THIS IS WHY CHECKDETAIL HAS TO RUN EARLIER THAN CA 
 
-mysql  --login-path=local --silent -DSRG_Prod -N -e "SELECT RIGHT(CheckNumber, 4), DOB, LocationID FROM CheckDetail_Live WHERE CheckDetail_Live.CheckNumber like '100%' AND DOB >= DATE_SUB(CURDATE(), INTERVAL 14 DAY) ORDER BY DOB ASC" | while read -r CheckNumber DOB LocationID;
+mysql  --login-path=local --silent -DSRG_Prod -N -e "SELECT RIGHT(CheckNumber, 4), DOB, LocationID FROM CheckDetail_Live WHERE CheckDetail_Live.CheckNumber like '100%' AND DOB >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) ORDER BY DOB ASC" | while read -r CheckNumber DOB LocationID;
 do
 mysql  --login-path=local --silent -DSRG_Prod -N -e "UPDATE CardActivity_Temp SET CheckNo=CONCAT('100',CheckNo) WHERE CheckNo = '$CheckNumber' AND TransactionDate = '$DOB' AND LocationID = '$LocationID' AND char_length(CheckNo) < '6'"
 done
@@ -210,10 +210,6 @@ echo 'DROPPED EXCEL DATE FIELD FROM CARDACTIVITY TEMP'
 mysql  --login-path=local --silent -DSRG_Prod -N -e "INSERT INTO CardActivity_Live SELECT * FROM CardActivity_Temp"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'CARD ACTIVITY LIVE TABLE UPDATED WITH CARD ACTIVITY TEMP DATA'
-
-echo 'BEGIN SQUASH'
-
-
 
 ################ THE SQUASHES RUN ON ALL DATA COULD THEY JUST RUN ON MOST RECENT?
 
@@ -400,7 +396,7 @@ do
 	'0','0','0','0','0','0','0','0','0','0','0',''
 
 	FROM CardActivity_squashed
-	AND TransactionDate >= '$Maxdate'
+	WHERE TransactionDate >= '$Maxdate'
 	GROUP by POSKey, LocationID, CardNumber, CardTemplate"
 	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 	echo 'NEW SQUASHED DATA TABLE    2    POPULATED'
@@ -410,6 +406,7 @@ trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 echo 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
 
+echo 'DEV.PX.CA.PROCESS.SH COMPLETED'
 
 
 
