@@ -2,10 +2,10 @@
 # LOG IT TO SYSLOG
 # exec 1> >(logger -s -t $(basename $0)) 2>&1
 
-# THIS SCRIPT HAS TO RUN AFTER CHECKDETAIL IS PROCESSED SO THAT THE CHECK NUMBER FIX RUNS CORRECTLY
 
 # UNCOMMENT NEXT FOR VERBOSE
-#set -x
+
+set -x
 
 
 
@@ -26,92 +26,40 @@ failfunction()
 }
 
 
+################ EMPLOYEES SECTION #########################################
 
-	echo 'SQUASHING BETWEEN DATES'
-	mysql  --login-path=local --silent -DSRG_Prod -N -e "INSERT INTO CardActivity_squashed
-	SELECT
-	DISTINCT(POSKey), LocationID, CardNumber, CardTemplate, TransactionDate, MIN(TransactionTime), MIN(checkno),
-	SUM(Dummy1),SUM(Dummy2),MAX(Dummy3),
-	SUM(Dummy4),SUM(Dummy5),MAX(Dummy6),
-	SUM(SurveyAccrued),SUM(SurveyRedeemed),MAX(SurveyBalance),
-	SUM(NewsletterAccrued),SUM(NewsletterRedeemed),MAX(NewsletterBalance),
-	SUM(LifetimeSpendAccrued),SUM(LifetimeSpendRedeemed),MAX(LifetimeSpendBalance),
-	SUM(3000BonusPointsAccrued),SUM(3000BonusPointsRedeemed),MAX(3000BonusPointsBalance),
-	SUM(RegAppAccrued),SUM(RegAppRedeemed),MAX(RegAppBalance),
-	SUM(BdayEntreeAccrued),SUM(BdayEntreeRedeemed),MAX(BdayEntreeBalance),
-	SUM(Dummy7),SUM(Dummy8),MAX(Dummy9),
-	SUM(LTOAccrued),SUM(LTORedeemed),MAX(LTOBalance),
-	SUM(LTObucksAccrued),SUM(LTObucksRedeemed),MAX(LTObucksBalance),
-	SUM(CheckSubtotalAccrued),SUM(CheckSubtotalRedeemed),MAX(CheckSubtotalBalance),
-	SUM(DollarsSpentAccrued),SUM(DollarsSpentRedeemed),MAX(DollarsSpentBalance),
-	SUM(KidsMenuTrackingAccrued),SUM(KidsMenuTrackingRedeemed),MAX(KidsMenuTrackingBalance),
-	SUM(BeerTrackingAccrued),SUM(BeerTrackingRedeemed),MAX(BeerTrackingBalance),
-	SUM(SushiTrackingAccrued),SUM(SushiTrackingRedeemed),MAX(SushiTrackingBalance),
-	SUM(WineTrackingAccrued),SUM(WineTrackingRedeemed),MAX(WineTrackingBalance),
-	SUM(StoreRegisteredAccrued),SUM(StoreRegisteredRedeemed),MAX(StoreRegisteredBalance),
-	SUM(SereniteePointsAccrued),SUM(SereniteePointsRedeemed),MAX(SereniteePointsBalance),
-	SUM(LifetimePointsAccrued),SUM(LifetimePointsRedeemed),MAX(LifetimePointsBalance),
-	SUM(100PointsIncrementAccrued),SUM(100PointsIncrementRedeemed),MAX(100PointsIncrementBalance),
-	SUM(FreeAppAccrued),SUM(FreeAppRedeemed),MAX(FreeAppBalance),
-	SUM(Dummy10),SUM(Dummy11),MAX(Dummy12),
-	SUM(FreeEntreeAccrued),SUM(FreeEntreeRedeemed),MAX(FreeEntreeBalance),
-	SUM(FreeDessertAccrued),SUM(FreeDessertRedeemed),MAX(FreeDessertBalance),
-	SUM(FreePizzaAccrued),SUM(FreePizzaRedeemed),MAX(FreePizzaBalance),
-	SUM(FreeSushiAccrued),SUM(FreeSushiRedeemed),MAX(FreeSushiBalance),
-	SUM(5500PointsAccrued),SUM(5500PointsRedeemed),MAX(5500PointsBalance),
-	SUM(3500PointsAccrued),SUM(3500PointsRedeemed),MAX(3500PointsBalance),
-	SUM(2500PointsAccrued),SUM(2500PointsRedeemed),MAX(2500PointsBalance),
-	SUM(1Kpts5bksAccrued),SUM(1Kpts5bksRedeemed),MAX(1Kpts5bksBalance), 
-	MAX(VisitsAccrued),SUM(VisitsRedeemed),MAX(VisitsBalance), 
-	SUM(TWKTripAccrued),SUM(TWKTripRedeemed),MAX(TWKTripBalance),
-	SUM(SpotTripAccrued),SUM(SpotTripRedeemed),MAX(SpotTripBalance),
-	SUM(MagsTripAccrued),SUM(MagsTripRedeemed),MAX(MagsTripBalance),
-	SUM(OpusTripAccrued),SUM(OpusTripRedeemed),MAX(OpusTripBalance),
-	SUM(WalnutTripAccrued),SUM(WalnutTripRedeemed),MAX(WalnutTripBalance),
-	SUM(HaleTripAccrued),SUM(HaleTripRedeemed),MAX(HaleTripBalance),
-	SUM(CalasTripAccrued),SUM(CalasTripRedeemed),MAX(CalasTripBalance),
-	SUM(LatTripAccrued),SUM(LatTripRedeemed),MAX(LatTripBalance),
-	SUM(HBTripAccrued),SUM(HBTripRedeemed),MAX(HBTripBalance),
-	SUM(SereniteebucksAccrued),SUM(SereniteebucksRedeemed),MAX(SereniteebucksBalance),
-	SUM(BandCompbucksAccrued),SUM(BandCompbucksRedeemed),MAX(BandCompbucksBalance),
-	SUM(GreenDollarsAccrued),SUM(GreenDollarsRedeemed),MAX(GreenDollarsBalance),
-	SUM(GreenLATAppAccrued),SUM(GreenLATAppRedeemed),MAX(GreenLATAppBalance),
-	SUM(GreenALCAppAccrued),SUM(GreenALCAppRedeemed),MAX(GreenALCAppBalance),
-	SUM(GreenOPUSAppAccrued),SUM(GreenOPUSAppRedeemed),MAX(GreenOPUSAppBalance),
-	SUM(GreenCALAppAccrued),SUM(GreenCALAppRedeemed),MAX(GreenCALAppBalance),
-	SUM(GreenSPOTAppAccrued),SUM(GreenSPOTAppRedeemed),MAX(GreenSPOTAppBalance),
-	SUM(GreenHALEAppAccrued),SUM(GreenHALEAppRedeemed),MAX(GreenHALEAppBalance),
-	SUM(GreenWINCAppAccrued),SUM(GreenWINCAppRedeemed),MAX(GreenWINCAppBalance),
-	SUM(GreenMAGsAppAccrued),SUM(GreenMAGsAppRedeemed),MAX(GreenMAGsAppBalance),
-	SUM(GreenWALAppAccrued),SUM(GreenWALAppRedeemed),MAX(GreenWALAppBalance),
-	SUM(CompbucksAccrued),SUM(CompbucksRedeemed),MAX(CompbucksBalance),
-	SUM(SereniteeGiftCardAccrued),SUM(SereniteeGiftCardRedeemed),MAX(SereniteeGiftCardBalance),
-	SUM(SVDiscountTrackingAccrued),SUM(SVDiscountTrackingRedeemed),MAX(SVDiscountTrackingBalance),
-	'0',
-	'0',
-	'0',
-	'0',
-	'0',
-	'0',
-	'0',
-	'0',
-	'0',
-	'0',
-	'0',
-	''
-	FROM CardActivity_Live
-	WHERE TransactionDate >= '2018-06-01' AND StoreNumber <> '9'
-	AND TransactionType IN ('Accrual / Redemption','Activate')
-	GROUP by POSKey, StoreName, CardNumber, CardTemplate, TransactionDate"
+for file in /home/ubuntu/db_files/incoming/ctuit/*Employees*.csv
+  do
+	#### MAKE A COPY OF THE FILE IN BACKUP DIR
+	cp "$file" //home/ubuntu/db_files/incoming/backup/ctuit/
+	tail -n+2 "$file"  >> /home/ubuntu/db_files/incoming/ctuit/Infile.Employee.csv
+	rm "$file"
+  done
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
-	echo 'SQUASH TABLE INCREMENTALLY UPDATED'
+
+########################## CHECK THE WHOLE EMPLOYEE FLOW ####################
+## EMPLOYEES ##### Load the data from the latest file into the (LIVE) employees table
 
 
 
-echo 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
 
-echo 'DEV.PX.CA.PROCESS.SH COMPLETED'
+## EMPLOYEES ##### REMOVE DUPLICATE ROWS FROM EMPLOYEES LIVE TABLE
+mysql  --login-path=local --silent -DSRG_Prod -N -e "DROP TABLE IF EXISTS Employees_Live_temp"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+mysql  --login-path=local --silent -DSRG_Prod -N -e "CREATE table Employees_Live_temp LIKE Employees_Live_structure"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 
+mysql  --login-path=local --silent -DSRG_Prod -N -e "Load data local infile '/home/ubuntu/db_files/incoming/ctuit/Infile.Employee.csv' into table Employees_Live_temp fields terminated by ',' lines terminated by '\n'"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+## EMPLOYEES ##### DELETE OLD EMPLOYEES FILE TO MAKE READY FOR NEXT TIME
+rm /home/ubuntu/db_files/incoming/ctuit/Infile.Employee.csv
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+
+mysql  --login-path=local --silent -DSRG_Prod -N -e "DROP table Employees_Live"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+mysql  --login-path=local --silent -DSRG_Prod -N -e "RENAME table Employees_Live_temp TO Employees_Live"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 
