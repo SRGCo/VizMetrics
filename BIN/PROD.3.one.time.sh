@@ -2,11 +2,10 @@
 # LOG IT TO SYSLOG
 # exec 1> >(logger -s -t $(basename $0)) 2>&1
 
+# THIS SCRIPT HAS TO RUN AFTER CHECKDETAIL IS PROCESSED SO THAT THE CHECK NUMBER FIX RUNS CORRECTLY
 
 # UNCOMMENT NEXT FOR VERBOSE
-
-set -x
-
+#set -x
 
 
 ################# ERROR CATCHING ##########################
@@ -25,45 +24,15 @@ failfunction()
 	fi
 }
 
-
-################ EMPLOYEES SECTION #########################################
-
-for file in /home/ubuntu/db_files/incoming/ctuit/*Employees*.csv
-  do
-	#### MAKE A COPY OF THE FILE IN BACKUP DIR
-	cp "$file" //home/ubuntu/db_files/incoming/backup/ctuit/
-	tail -n+2 "$file"  >> /home/ubuntu/db_files/incoming/ctuit/Infile.Employee.csv
-	rm "$file"
-  done
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-
-
-########################## CHECK THE WHOLE EMPLOYEE FLOW ####################
-## EMPLOYEES ##### Load the data from the latest file into the (LIVE) employees table
-
-
-
-
-## EMPLOYEES ##### REMOVE DUPLICATE ROWS FROM EMPLOYEES LIVE TABLE
-mysql  --login-path=local --silent -DSRG_Prod -N -e "DROP TABLE IF EXISTS Employees_Live_temp"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-mysql  --login-path=local --silent -DSRG_Prod -N -e "CREATE table Employees_Live_temp LIKE Employees_Live_structure"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-
-<<<<<<< HEAD
-
-d=2018-06-01
+d=2019-04-29
 while [ "$d" != 2019-05-14 ]; do 
   echo $d
 
 
-
-
-
-
-	mysql  --login-path=local --silent -DSRG_Prod -N -e "INSERT INTO CardActivity_squashed
+	###################################### SQUASH2 #########################################
+	mysql  --login-path=local --silent -DSRG_Prod -N -e "INSERT INTO CardActivity_squashed_2
 	SELECT
-	DISTINCT(POSKey), LocationID, CardNumber, CardTemplate, TransactionDate, MIN(TransactionTime), MIN(checkno),
+	DISTINCT(POSKey), LocationID, CardNumber, CardTemplate, MIN(TransactionDate), MIN(TransactionTime), MIN(checkno),
 	SUM(Dummy1),SUM(Dummy2),MAX(Dummy3),
 	SUM(Dummy4),SUM(Dummy5),MAX(Dummy6),
 	SUM(SurveyAccrued),SUM(SurveyRedeemed),MAX(SurveyBalance),
@@ -120,43 +89,22 @@ while [ "$d" != 2019-05-14 ]; do
 	SUM(CompbucksAccrued),SUM(CompbucksRedeemed),MAX(CompbucksBalance),
 	SUM(SereniteeGiftCardAccrued),SUM(SereniteeGiftCardRedeemed),MAX(SereniteeGiftCardBalance),
 	SUM(SVDiscountTrackingAccrued),SUM(SVDiscountTrackingRedeemed),MAX(SVDiscountTrackingBalance),
-	'0',
-	'0',
-	'0',
-	'0',
-	'0',
-	'0',
-	'0',
-	'0',
-	'0',
-	'0',
-	'0',
-	''
-	FROM CardActivity_Live
-	WHERE TransactionDate = '$d' AND StoreNumber <> '9'
-	AND TransactionType IN ('Accrual / Redemption','Activate')
-	GROUP by POSKey, StoreName, CardNumber, CardTemplate, TransactionDate"
+	'0','0','0','0','0','0','0','0','0','0','0',''
 
-	echo 'SQUASH TABLE INCREMENTALLY UPDATED'
+	FROM CardActivity_squashed
+	WHERE TransactionDate = '$d'
+	GROUP by POSKey, LocationID, CardNumber, CardTemplate"
+	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+	echo 'SQUASHED DATA TABLE    2    UPDATED'
 
-  d=$(date -I -d "$d + 1 day")
+d=$(date -I -d "$d + 1 day")
 done
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 echo 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
 
 echo 'DEV.PX.CA.PROCESS.SH COMPLETED'
-=======
->>>>>>> c5462be4a2d968dbaa94b89aac41080b870a99f1
 
-mysql  --login-path=local --silent -DSRG_Prod -N -e "Load data local infile '/home/ubuntu/db_files/incoming/ctuit/Infile.Employee.csv' into table Employees_Live_temp fields terminated by ',' lines terminated by '\n'"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-## EMPLOYEES ##### DELETE OLD EMPLOYEES FILE TO MAKE READY FOR NEXT TIME
-rm /home/ubuntu/db_files/incoming/ctuit/Infile.Employee.csv
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
-mysql  --login-path=local --silent -DSRG_Prod -N -e "DROP table Employees_Live"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-mysql  --login-path=local --silent -DSRG_Prod -N -e "RENAME table Employees_Live_temp TO Employees_Live"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 
