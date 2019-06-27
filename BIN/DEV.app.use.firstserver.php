@@ -22,7 +22,6 @@ mysqli_select_db($dbc, DB_NAME)
 ### INIT Variables
 $counter = 0;
 
-
 ##### GET ALL THE Activation CARDNUMBERS
 ##### THE STANDARD CARD ACTIVITY 
 $query1 = "SELECT CardNumber FROM `CardActivity_Live` WHERE TransactionType = 'Activate' AND (CheckNo like 'i%' or CheckNo LIKE 'And%') GROUP BY CardNumber";
@@ -64,7 +63,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 		}
 		
 
-		echo $CardNumber_db.' Not Dupe = '.$Not_dupe.' '.$location_db.' '.$lastname_db.' '.$mindate_db.' '.$GrossSalesCoDefined_db.PHP_EOL;
+			echo $CardNumber_db.' Not Dupe = '.$Not_dupe.' '.$location_db.' '.$lastname_db.' '.$mindate_db.' '.$GrossSalesCoDefined_db.PHP_EOL;
 		
 
 		If (($mindate_db <> '') && ($Not_dupe <> 'F')) {
