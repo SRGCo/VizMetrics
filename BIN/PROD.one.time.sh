@@ -1,182 +1,367 @@
-#! //bin/bash
-# LOG IT TO SYSLOG
-# exec 1> >(logger -s -t $(basename $0)) 2>&1
-
-
-# UNCOMMENT NEXT FOR VERBOSE
-
-#set -x
+#!/usr/bin/php
+<?php 
 
 
 
-################# ERROR CATCHING ##########################
-failfunction()
-{
-	local scriptname=$(basename -- "$0") 
-	local returned_value=$1
-	local lineno=$2
-	local bash_error=$3
+###### could we check to see when the last real transaction is and then just replicate entries for everyone 
+### between that date and the focusmonth ? ? 
 
-	if [ "$returned_value" != 0 ]
-	then 
- 		echo "$scriptname failed on $bash_error at line: $lineno"
-        	mail -s "VizMetrics Server Alert"  it@serenitee.com <<< 'Script '"$scriptname"' failed on '"$bash_error"' at Line: '"$lineno"
-        	exit
-	fi
+# Start database interaction with
+# localhost
+# Sets the database access information as constants
+
+define ('DB_USER', 'root');
+define ('DB_PASSWORD','s3r3n1t33');
+define ('DB_HOST','localhost');
+define ('DB_NAME','SRG_Prod');
+
+# Make the connection and then select the database
+# display errors if fail
+$dbc = mysqli_connect(DB_HOST, DB_USER, DB_PASSWORD)
+	or die('Could not connect to mysql:'.MYSQLI_ERROR($dbc) );
+mysqli_select_db($dbc, DB_NAME)
+	OR die('Could not connect to the database:'.MYSQLI_ERROR($dbc));
+
+### INIT Variables
+$counter = 0;
+
+// TRUNCATE table Px_Monthly"
+$query_table= "TRUNCATE table Px_Monthly";
+$result_table = mysqli_query($dbc, $query_table);	
+ECHO MYSQLI_ERROR($dbc);
+ECHO 'Px_Monthly TRUNCATED FOR FULL RUN!!!!!!'.PHP_EOL;
+
+
+###### TEMP WHILE STATEMENT
+WHILE ($counter <= '1100'){
+
+//QUERY MASTER FOR CARDNUMBER (MAIN QUERY1)
+$query1 = "SELECT DISTINCT(CardNumber) as CardNumber FROM Guests_Master WHERE CardNumber IS NOT NULL 	
+					AND EnrollDate IS NOT NULL ORDER BY CardNumber ASC";
+$result1 = mysqli_query($dbc, $query1);
+ECHO MYSQLI_ERROR($dbc);
+while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
+	$CardNumber_db = $row1['CardNumber'];
+
+	#INIT THE VARS
+	$MinDateMonth_db = $MinDateYear_db = $FocusDate = $FocusDateEnd = '';
+	$CurrentDate_db = $FirstName_db = $LastName_db = $EnrollDate_db = $Zip_db = '';	
+
+	$DollarsSpentLife_db = $PointsRedeemedLife_db = $PointsAccruedLife_db = $VisitsAccruedLife_db = '0';
+	$DollarsSpentMonth_db = $PointsRedeemedMonth_db = $PointsAccruedMonth_db = $VisitsAccruedMonth_db = '0';
+
+	$LastVisitDate_db = $PrevYearVisitBal_db = $LapseDays_db = $RecentFreqDays_db = $ProgAge_db = '';	
+	$TwoVisitsBack_db = $FocusDate_php = $TwoVisitsBack_php = $MonthsEnrolled_db = $LifetimeFreq = '';
+	$YearFreqSeg = $RecentFreqMonths_db = $TwoVisitsBack_php = $YrAgoFreq = $LastVisitBalance_db = '';
+	$Discounts_db = $Account_status_db = $Card_status_db = '';
+
+	
+	$Carryover_LastVisitDate = '';
+	
+	
+	#firstrun is for debugging
+	$Firstrun = 'Yes';
+	// PRINT COUNTER ENTRY EVERY 1000 CARDNUMBERS
+	$counter++;
+	$printcount = fmod($counter, 1000);
+	IF ($printcount == '0'){
+		ECHO PHP_EOL.$counter++.'  card:';
+		ECHO $CardNumber_db;
+	}
+
+	#### GET THE MIN AND MAX TRANSACTIONDATE AND THE MAX VISIT BALANCE
+##### WE AREN'T USING MAXDATE / END AS A MEANS OF ITERATING ANYMORE, SHOULD WE REMOVE IT?
+	$query2 = "SELECT MAX(VM_VisitsBalance) as VisitsAccruedLife, 
+				CURDATE() as TodayDate 
+				FROM Master WHERE CardNumber = '$CardNumber_db'";
+	$result2 = mysqli_query($dbc, $query2);	
+	ECHO MYSQLI_ERROR($dbc);
+	while($row1 = mysqli_fetch_array($result2, MYSQLI_ASSOC)){
+		$VisitsAccruedLife_db = $row1['VisitsAccruedLife'];
+		$CurrentDate_db = $row1['TodayDate'];
+	}
+	IF ($VisitsAccruedLife_db == ''){$VisitsAccruedLife_db = '0';}
+	
+	# GET FIRSTNAME, LASTNAME, ENROLLDATE, ZIP
+	$query3 = "SELECT FirstName, LastName, EnrollDate, Zip, Tier,
+				YEAR(EnrollDate) as MinDateYear,
+				MONTH(EnrollDate) as MinDateMonth
+				FROM Guests_Master WHERE CardNumber = '$CardNumber_db'";
+	$result3 = mysqli_query($dbc, $query3);	
+	ECHO MYSQLI_ERROR($dbc);
+	while($row1 = mysqli_fetch_array($result3, MYSQLI_ASSOC)){
+		$MinDateMonth_db = $row1['MinDateMonth'];
+		$MinDateYear_db = $row1['MinDateYear'];
+		$FirstName_db = addslashes($row1['FirstName']);
+		$LastName_db = addslashes($row1['LastName']);
+		$EnrollDate_db = $row1['EnrollDate'];		
+		$Zip_db = $row1['Zip'];		
+		$Tier_db = $row1['Tier'];
+	}
+	
+	// FORMAT FOCUSDATE
+	$FocusDate = $MinDateYear_db."-".$MinDateMonth_db."-01"; 
+	$FocusDateEnd = date("Y-m-d",strtotime($FocusDate."+1 month -1 day"));
+	$FocusDate_php = strtotime($FocusDate);
+	$EnrollDate_db_php = strtotime($EnrollDate_db);
+	# IF ENROLLMENT OCCURED DURING FOCUSMONTH SKIP TO NEXT MONTH
+	IF ($FocusDate_php <= $EnrollDate_db_php){
+		$FocusDate = date("Y-m-d",strtotime($FocusDate."+1 month"));
+		$FocusDateEnd = date("Y-m-d",strtotime($FocusDateEnd."+1 month"));
+	}
+
+	// WHILE FOCUSDATE IS LESS THAN TODAYS DATE REPEAT QUERIES
+	WHILE ($FocusDate <= $CurrentDate_db){
+	
+		#FIELDS = LIFETIMESPENDBALANCE, LIFETIMEPOINTSREDEEMED, LIFETIMEPOINTSBALANCE, LIFETIMEVISITBALANCE
+		$query3a ="SELECT ROUND(SUM(DollarsSpentAccrued), 2) as DollarsSpentLife, 
+			SUM(SereniteePointsRedeemed) as PointsRedeemedLife, 
+			SUM(SereniteePointsAccrued) as PointsAccruedLife
+			FROM Master WHERE CardNumber = '$CardNumber_db'
+			AND TransactionDate < '$FocusDate'";
+		$result3a = mysqli_query($dbc, $query3a);	
+		ECHO MYSQLI_ERROR($dbc);
+		while($row1 = mysqli_fetch_array($result3a, MYSQLI_ASSOC)){
+			$DollarsSpentLife_db = $row1['DollarsSpentLife'];
+			$PointsRedeemedLife_db = $row1['PointsRedeemedLife'];
+			$PointsAccruedLife_db = $row1['PointsAccruedLife']; 
+		}
+
+		IF (EMPTY($DollarsSpentLife_db)){
+			$DollarsSpentLife_db = '0.00';
+		}
+
+		#####GET NUMBERS FOR FOCUSMONTH
+		#FIELDS = DISCOUNTS(CALCD), DOLLARSSPENTMONTH, POINTSREDEEMEDMONTH, POINTSACCRUEDMONTH, VISITSACCRUEDMONTH
+		$query4 = "SELECT
+			ROUND((GrossSalesCoDefined - NetSalesCoDefined), 2) as DiscountsMonth,
+			ROUND(SUM(DollarsSpentAccrued), 2) as DollarsSpentMonth,
+			SUM(SereniteePointsRedeemed) as PointsRedeemedMonth,
+			SUM(SereniteePointsAccrued) as PointsAccruedMonth,
+			SUM(Vm_VisitsAccrued) as VisitsAccruedMonth                   
+			FROM Master WHERE  CardNumber = '$CardNumber_db'
+			AND DollarsSpentAccrued IS NOT NULL
+			AND Vm_VisitsAccrued > '0'
+			AND TransactionDate >= '$FocusDate'
+			AND TransactionDate <= '$FocusDateEnd'";
+		$result4 = mysqli_query($dbc, $query4);	
+		ECHO MYSQLI_ERROR($dbc);
+		while($row1 = mysqli_fetch_array($result4, MYSQLI_ASSOC)){
+			$DiscountsMonth_db = $row1['DiscountsMonth'];
+			$DollarsSpentMonth_db = $row1['DollarsSpentMonth'];
+			$PointsRedeemedMonth_db = $row1['PointsRedeemedMonth'];
+			$PointsAccruedMonth_db = $row1['PointsAccruedMonth'];
+			$VisitsAccruedMonth_db = $row1['VisitsAccruedMonth'];
+		}
+
+		IF (EMPTY($DollarsSpentMonth_db)){
+			$DollarsSpentMonth_db = '0.00';
+		}
+		IF (EMPTY($DiscountsMonth_db)){
+			$DiscountsMonth_db = '0.00';
+		}
+
+
+
+		$YearFreqSeg = $RecentFreqMonths_db = $TwoVisitsBack_php = $YrAgoFreq = $LastVisitBalance_db = '';
+				#echo ' DolSpentMo'.$DollarsSpentMonth_db.' PtsRedeemMo'.$PointsRedeemedMonth_db;
+				#echo ' PtsAccrMo'.$PointsAccruedMonth_db.' TranMo'.$TransMonth_db.PHP_EOL;
+
+		#FIELDS = 12MOVISITBALANCE (PHP=PREVYEARVISITBALANCE)
+		$query5= "SELECT COUNT(TransactionDate) as PrevYearVisitBal
+				FROM Master 
+				WHERE CardNumber = '$CardNumber_db'
+				AND TransactionDate <> EnrollDate  
+				AND TransactionDate >= DATE_SUB('$FocusDate',INTERVAL 1 YEAR) 
+				AND TransactionDate < '$FocusDate'				
+				AND Vm_VisitsAccrued = '1'";
+		$result5 = mysqli_query($dbc, $query5);	
+		ECHO MYSQLI_ERROR($dbc);
+		while($row1 = mysqli_fetch_array($result5, MYSQLI_ASSOC)){
+			$PrevYearVisitBal_db = $row1['PrevYearVisitBal'];
+		}
+		IF ($PrevYearVisitBal_db == ''){$PrevYearVisitBal_db = '0';}
+		
+		#FIELD = LASTVISITDATE
+		$query5a= "SELECT MAX(TransactionDate) as LastVisitDate 
+				FROM Master 
+				WHERE CardNumber = '$CardNumber_db'
+				AND TransactionDate <= '$FocusDate'				
+				AND VisitsAccrued = '1'";
+		$result5a = mysqli_query($dbc, $query5a);	
+		ECHO MYSQLI_ERROR($dbc);
+		while($row1 = mysqli_fetch_array($result5a, MYSQLI_ASSOC)){
+			$LastVisitDate_db = $row1['LastVisitDate'];
+		}
+		### IF THERE IS NO LAST VISIT DATE SKIP THIS RECORD
+		IF (EMPTY($LastVisitDate_db)){
+			IF ($Firstrun == 'Yes'){
+				$LastVisitDate_db = $EnrollDate_db;
+				$Firstrun = 'No';
+			} ELSE {
+				$LastVisitDate_db = $Carryover_LastVisitDate;
+				$Firstrun = 'No';
+			}
+		} ELSE { $Firstrun = 'No';}
+
+		##################### NEED TO VERIFY BOTH LAPSEDAYS AND FREQRECENTDAYS (RECENTLAPSE)
+		#FIELD = LAPSEDAYS
+		$query6= "SELECT DATEDIFF('$FocusDate', '$LastVisitDate_db') as LapseDays";
+		$result6 = mysqli_query($dbc, $query6);	
+		ECHO MYSQLI_ERROR($dbc);
+		while($row1 = mysqli_fetch_array($result6, MYSQLI_ASSOC)){
+			$LapseDays_db = $row1['LapseDays'];	
+		}
+		IF (EMPTY($LapseDays_db)){
+			$LapseDays_db = '0';
+		}
+
+		####### IF LAPSE WASN'T CORRECT THIS IS MOST LIKELY WRONG
+			##### GET RECENT FREQ (2 visits back) AS OF FOCUS DATE
+			#FIELD = FREQRECENTDAYS
+		$query7a = "SELECT TransactionDate FROM Master
+				WHERE TransactionDate < '$FocusDate' 
+				AND CardNumber = '$CardNumber_db' 
+				AND Vm_VisitsAccrued > '0'
+				ORDER BY TransactionDate DESC LIMIT 1 , 1";
+		$result7a = mysqli_query($dbc, $query7a);	
+		ECHO MYSQLI_ERROR($dbc);
+		while($row1 = mysqli_fetch_array($result7a, MYSQLI_ASSOC)){
+			$TwoVisitsBack_db = $row1['TransactionDate'];		
+		}
+		##### HANDLE IF NO TwoVisitsBack TRANSACTION
+		IF (EMPTY($TwoVisitsBack_db)){
+			$RecentFreqDays_db = '';
+			# ECHO 'NO 2 VISITS BACK'.PHP_EOL;
+		}ELSE{
+			##### GET COUNT OF DAYS BETWEEN FOCUS DATE AND TWO VISITS BACK
+			$query7b = "SELECT DATEDIFF('$FocusDate', '$TwoVisitsBack_db') AS FreqRecentDays";
+			$result7b = mysqli_query($dbc, $query7b);	
+			ECHO MYSQLI_ERROR($dbc);
+			while($row1 = mysqli_fetch_array($result7b, MYSQLI_ASSOC)){
+				$RecentFreqDays_db = $row1['FreqRecentDays'];	
+				
+			}
+		}
+
+		##### GET NUMBER OF MONTHS BETWEEN ENROLLDATE AND FOCUSDATE  (+1 for marks numbers)
+		#PROGRAMAGE
+		$query7= "SELECT (TIMESTAMPDIFF(MONTH, '$EnrollDate_db', '$FocusDate') + 1) AS ProgAge";
+		$result7 = mysqli_query($dbc, $query7);	
+		ECHO MYSQLI_ERROR($dbc);
+		while($row1 = mysqli_fetch_array($result7, MYSQLI_ASSOC)){
+			$ProgAge_db = $row1['ProgAge'];		
+		}
+
+		##### GET NUMBER OF MONTHS BETWEEN ENROLLDATE AND FOCUSDATE 
+		#FIELD = LIFETIMEFREQ
+		$query7x= "SELECT TIMESTAMPDIFF(MONTH, '$EnrollDate_db', '$FocusDate') AS MonthsEnrolled";
+		$result7x = mysqli_query($dbc, $query7x);	
+		ECHO MYSQLI_ERROR($dbc);
+		while($row1 = mysqli_fetch_array($result7x, MYSQLI_ASSOC)){
+			$MonthsEnrolled_db = $row1['MonthsEnrolled'];		
+		}
+		# ECHO 'DaysEnrolled_db='.$DaysEnrolled_db.PHP_EOL;	
+		IF (($MonthsEnrolled_db == '0') OR ($MonthsEnrolled_db == '')){
+			$LifetimeFreq = '';
+		} ELSE {
+			$LifetimeFreq = ($VisitsAccruedLife_db / $MonthsEnrolled_db);			
+		}
+
+
+		#FIELD RECENTFREQMONTHS
+		$query7e= "SELECT TIMESTAMPDIFF(MONTH, '$TwoVisitsBack_db', '$FocusDate') AS RecentFreqMonths";
+		$result7e = mysqli_query($dbc, $query7e);	
+		ECHO MYSQLI_ERROR($dbc);
+		while($row1 = mysqli_fetch_array($result7e, MYSQLI_ASSOC)){
+			$RecentFreqMonths_db = $row1['RecentFreqMonths'];
+			# ECHO 'RecentFreqMonths_db'.$RecentFreqMonths_db.PHP_EOL;
+		}
+
+		#FIELD LAPSEMONTHS
+		$query7e= "SELECT TIMESTAMPDIFF(MONTH, '$LastVisitDate_db', '$FocusDate') AS LapseMonths";
+		$result7e = mysqli_query($dbc, $query7e);	
+		ECHO MYSQLI_ERROR($dbc);
+		while($row1 = mysqli_fetch_array($result7e, MYSQLI_ASSOC)){
+			$LapseMonths_db = $row1['LapseMonths'];
+			# ECHO 'LapseMonths_db'.$LapseMonths_db.PHP_EOL;
+		}
+
+		#ACCOUNT AND STATUS
+		$query7f= "SELECT Account_status, Card_status FROM Master WHERE CardNumber = '$CardNumber_db' LIMIT 1";
+		$result7f = mysqli_query($dbc, $query7f);	
+		ECHO MYSQLI_ERROR($dbc);
+		while($row1 = mysqli_fetch_array($result7f, MYSQLI_ASSOC)){
+			$Account_status_db = $row1['Account_status'];
+			$Card_status_db = $row1['Card_status'];
+		}
+
+
+		/////// INSERT VALUES INTO THE TABLE HERE
+		$query8= "INSERT INTO Px_Monthly SET CardNumber = '$CardNumber_db',
+				FocusDate = '$FocusDate',
+				FirstName = '$FirstName_db',
+				LastName = '$LastName_db',
+				EnrollDate = '$EnrollDate_db',
+				Zip = '$Zip_db',
+				Tier = '$Tier_db',
+				Discounts = '$DiscountsMonth_db',
+				DollarsSpentMonth = '$DollarsSpentMonth_db',
+				PointsRedeemedMonth = '$PointsRedeemedMonth_db',
+				PointsAccruedMonth = '$PointsAccruedMonth_db',
+				VisitsAccruedMonth = '$VisitsAccruedMonth_db',
+				LifetimeSpendBalance = '$DollarsSpentLife_db',
+				LifetimePointsBalance = '$PointsAccruedLife_db',
+				LifetimePointsRedeemed = '$PointsRedeemedLife_db',
+				LastVisitDate = '$LastVisitDate_db',
+				LapseDays = '$LapseDays_db',
+				FreqRecentDays = '$RecentFreqDays_db',
+				12MoVisitBalance = '$PrevYearVisitBal_db',
+				ProgramAge = '$ProgAge_db',
+				LifetimeFreq = ROUND('$LifetimeFreq',8),
+				RecentFreqMonths = '$RecentFreqMonths_db',
+				LapseMonths = '$LapseMonths_db',
+				Account_status = '$Account_status_db',
+				Card_status = '$Card_status_db',
+				LifetimeVisitBalance = '$VisitsAccruedLife_db'";
+				// ECHO $query8.PHP_EOL;
+		$result8 = mysqli_query($dbc, $query8);	
+		if(!$result8){ECHO $query8.' ';}
+		ECHO MYSQLI_ERROR($dbc);
+
+		$FocusDate = date("Y-m-d",strtotime($FocusDate." +1 month "));
+		$FocusDateEnd = date("Y-m-d",strtotime($FocusDate." +2 month - 1 day "));
+		$Carryover_LastVisitDate = $LastVisitDate_db;
+
+	// END OF WHILE FOCUSDATE LESS THAN TODAY (MAIN QUERY2)
+	}
+
+	### WE'LL PRINT EXTENDED INFO FOR COUNTER ACCOUNTS, JUST TO SEE IF ANYTHING LOOKS WONKY
+	IF ($printcount == '0'){
+			ECHO ' FirstName: '.$FirstName_db.' LastName: '.$LastName_db.' FirstRun:'.$Firstrun;
+		ECHO PHP_EOL.'             Zip:'.$Zip_db.' Tier:'.$Tier_db.' Enrolled: '.$EnrollDate_db;
+		ECHO PHP_EOL.'             FocusDate:'.$FocusDate.' Last Visit Date: '.$LastVisitDate_db;
+		ECHO PHP_EOL.'             LifetimeSpend:'.$DollarsSpentLife_db.' LapseMonths: '.$LapseMonths_db;
+		ECHO PHP_EOL.'             Lifetime Visits: '.$VisitsAccruedLife_db;
+	}
+
+
+// END OF CARD NUMBER WHILE LOOP (MAIN QUERY1)
 }
 
 
 
-######### UBER JOIN LIVE CHECK DETAIL WITH LIVE SQUASHED CARD ACTIVITY
-# Delete Temp table if it exists
-mysql  --login-path=local --silent -DSRG_Prod -N -e "DROP TABLE IF EXISTS Master_temp"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER TEMP TABLE DROPPED'
+// CLEAN UP THE ENTRIES THAT COULD NOT HAVE BEEN CALC'D CORRECTLY
+$Query18 = "DELETE FROM Px_Monthly WHERE LastName = 'Test' or LastName = 'test' or FirstName = 'Serenitee'";
+$result18 = mysqli_query($dbc, $Query18);
+ECHO MYSQLI_ERROR($dbc);
+################ WE COULE BREAK THE SCRIPT HERE AND POSSIBLY GET IT TO RUN FASTER
+ECHO PHP_EOL.'Count of accounts processed: '.$counter
 
-# Create a empty copy of CardActivity table from CardActivityStructure table
-mysql  --login-path=local --silent -DSRG_Prod -N -e "CREATE TABLE Master_temp LIKE Master_structure"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER TEMP CREATED'
+}
+###### TEMP WHILE STATEMENT
 
-###### WE ONLY GET THE LAST WEEKS WORTH OF DATA
-mysql  --login-path=local -DSRG_Prod -N -e "INSERT INTO Master_temp SELECT CD.*, CA.* FROM CheckDetail_Live AS CD 
-						LEFT JOIN CardActivity_squashed_2 AS CA ON CD.POSkey = CA.POSkey 
-						WHERE CD.DOB >= DATE_SUB(CURDATE(), INTERVAL 6 month) 
-						UNION SELECT CD.*, CA.* FROM .CheckDetail_Live as CD 
-						RIGHT JOIN CardActivity_squashed_2 AS CA ON CD.POSkey = CA.POSkey 
-						WHERE CA.TransactionDate >= DATE_SUB(CURDATE(), INTERVAL 6 month)"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-# echo 'UBER JOIN COMPLETED'
-echo 'MASTER TEMP UPDATED WITH UBER CARD ACTIVITY AND CHECK DETAIL FROM PAST 6 MONTHS'
-
-
-# Create enroll_date and Account_status fields
-mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE Master_temp ADD EnrollDate VARCHAR(11)"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-
-# Create ACCOUNT STATUS
-mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE Master_temp ADD Account_status VARCHAR(15)"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-
-# Create ACCOUNT STATUS INDEX
-mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE Master_temp ADD INDEX(Account_status)"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER TEMP ENROLLDATE AND ACCOUNT STATUS FIELDS CREATED'
-
-# Create ACCOUNT STATUS
-mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE Master_temp ADD Card_status VARCHAR(15)"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-
-
-# AVOID DUPES DELETE SAME INTERVAL BACK
-mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM Master WHERE DOB >= DATE_SUB(CURDATE(), INTERVAL 6 month) "
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER TRUNCATED - USING DOB'
-
-# AVOID DUPES DELETE SAME INTERVAL BACK
-mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM Master WHERE TransactionDate >= DATE_SUB(CURDATE(), INTERVAL 6 month) "
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER TRUNCATED - USING TRANSACTIONDATE'
-
-
-
-# COPY THE NEW TRANSACTIONS INTO MASTER
-### WE COULD HAVE THIS TO MAKE SURE THERE ARE RECORDS IN THE TEMP TABLE(?)
-mysql  --login-path=local --silent -DSRG_Prod -N -e "INSERT INTO Master SELECT * FROM Master_temp"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER POPULATED FROM MASTER TEMP'
-
-
-
-############## THE NEXT SECTIONS WILL GET MOVED AROUND IF WE ADD CARD STATUS FIELDS
-####### MASTER TABLE GUEST INFO UPDATE
-mysql  --login-path=local -DSRG_Prod -N -e "UPDATE Master JOIN Guests_Master ON Master.CardNumber = Guests_Master.CardNumber 
-							SET Master.EnrollDate = Guests_Master.EnrollDate, Master.Account_status = Guests_Master.AccountStatus"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER ACCOUNT STATUSES UPDATED FROM GUESTS MASTER TABLE '
-
-
-
-################# PROCESS EXCHANGES WITH PHP SUBROUTINE
-( "/home/ubuntu/bin/PROD.px.exchanges.process.php" )
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER- EXCHANGED CARDS PROCESS/FIXED, ACCOUNT STATUS UPDATED TO -Exchange-'
-
-
-######### EXCLUDES SECTION USE OR NOT ? ? ?
-# mysql  --login-path=local -DSRG_Prod -N -e "UPDATE Master JOIN Excludes ON Master.CardNumber = Excludes.CardNumber SET Master.Account_status = 'Exclude' "
-# trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER - NO ACCOUNTS EXCLUDED!!! (Exclusion routine commented out)'
-
-
-
-
-
-
-
-
-######## UPDATE THE EMPTY CHECKDETAIL FIELDS WITH PX DATA
-mysql  --login-path=local -DSRG_Prod -N -e "UPDATE Master SET CheckNumber = CheckNo_px WHERE CheckNumber IS NULL "
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER EMPTY CHECKNO POPULATED FROM PX DATA'
-
-
-mysql  --login-path=local -DSRG_Prod -N -e "UPDATE Master SET LocationID = LocationID_px WHERE LocationID IS NULL "
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER EMPTY LOCATION ID POPULATED FROM PX DATA'
-
-mysql  --login-path=local -DSRG_Prod -N -e "UPDATE Master SET POSkey = POSKey_px WHERE POSkey IS NULL "
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER EMPTY POS KEYS POPULATED FROM PX DATA'
-
-mysql  --login-path=local -DSRG_Prod -N -e "UPDATE Master SET DOB = TransactionDate WHERE DOB IS NULL "
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER EMPTY DOB POPULATED FROM PX DATA'
-
-
-
-mysql  --login-path=local -DSRG_Prod -N -e "UPDATE Master SET GrossSalesCoDefined = DollarsSpentAccrued WHERE GrossSalesCoDefined IS NULL 
-						AND Master.Account_status <> 'TERMIN' AND Master.Account_status <> 'SUSPEN' 
-						AND Master.Account_status <> 'Exchanged' AND Master.Account_status <> 'Exchange' 
-						AND Master.Account_status <> 'Exclude' AND DollarsSpentAccrued IS NOT NULL"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER GROSSSALESCODEFINED FIELD POPULATED'
-echo '(PROMOS OR COMPS COULD NOT BE ADDED, LOWBALL FIGURES)'
-
-
-###### -N is the No Headers in Output option
-###### -e is the 'read statement and quit'
-######## WE ARE ###
-
-mysql  --login-path=local -DSRG_Prod -N -e "SELECT Master.DOB FROM Master WHERE Master.DOB IS NOT NULL AND DOB >= DATE_SUB(NOW(), INTERVAL 6 month) 
-				GROUP BY Master.DOB ORDER BY Master.DOB DESC" | while read -r DOB;
-do
-
-		######## GET FY FOR THIS DOB (DOB)
-		FY=$(mysql  --login-path=local -DSRG_Prod -N -e "SELECT FY from Lunas WHERE DOB = '$DOB'")
-
-		######## GET FY FOR THIS DOB (DOB)
-		YLuna=$(mysql  --login-path=local -DSRG_Prod -N -e "SELECT YLuna from Lunas WHERE DOB = '$DOB'")
-
-		######## GET FY FOR THIS DOB (DOB)
-		Luna=$(mysql  --login-path=local -DSRG_Prod -N -e "SELECT Luna from Lunas WHERE DOB = '$DOB'")
-
-		######## IF VARIABLE HAS NO VALUE SET TO NULL
-		if [ -z $Luna ] 
-		then 
-		Luna='0'
-		fi
-
-		##### UPDATE FISCAL YEAR FROM DOB
-		mysql  --login-path=local -DSRG_Prod -N -e "UPDATE Master SET FY = '$FY',YLuna = '$YLuna', Luna='$Luna' WHERE Master.DOB = '$DOB'"
-		#echo $DOB updated FY= $FY YLuna = $YLuna  Luna = $Luna
-
-done
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER FY YLUNA FIELDS UPATED WITH DATA FROM LUNA TABLE'
-
-
-
+?>
 
 
 

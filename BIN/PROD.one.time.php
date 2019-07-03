@@ -31,9 +31,11 @@ $result_table = mysqli_query($dbc, $query_table);
 ECHO MYSQLI_ERROR($dbc);
 ECHO 'Px_Monthly TRUNCATED FOR FULL RUN!!!!!!'.PHP_EOL;
 
+
+
 //QUERY MASTER FOR CARDNUMBER (MAIN QUERY1)
 $query1 = "SELECT DISTINCT(CardNumber) as CardNumber FROM Guests_Master WHERE CardNumber IS NOT NULL 	
-					AND EnrollDate IS NOT NULL ORDER BY CardNumber ASC";
+					AND EnrollDate IS NOT NULL AND EnrollDate >= '2014-01-01' ORDER BY CardNumber ASC";
 $result1 = mysqli_query($dbc, $query1);
 ECHO MYSQLI_ERROR($dbc);
 while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
@@ -59,7 +61,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	$Firstrun = 'Yes';
 	// PRINT COUNTER ENTRY EVERY 1000 CARDNUMBERS
 	$counter++;
-	$printcount = fmod($counter, 1000);
+	$printcount = fmod($counter, 50);
 	IF ($printcount == '0'){
 		ECHO PHP_EOL.$counter++.'  card:';
 		ECHO $CardNumber_db;
@@ -183,7 +185,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 				FROM Master 
 				WHERE CardNumber = '$CardNumber_db'
 				AND TransactionDate <= '$FocusDate'				
-				AND VisitsAccrued = '1'";
+				AND Vm_VisitsAccrued = '1'";
 		$result5a = mysqli_query($dbc, $query5a);	
 		ECHO MYSQLI_ERROR($dbc);
 		while($row1 = mysqli_fetch_array($result5a, MYSQLI_ASSOC)){
@@ -292,6 +294,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 			$Card_status_db = $row1['Card_status'];
 		}
 
+mysqli_begin_transaction($dbc, MYSQLI_TRANS_START_READ_WRITE);
 
 		/////// INSERT VALUES INTO THE TABLE HERE
 		$query8= "INSERT INTO Px_Monthly SET CardNumber = '$CardNumber_db',
@@ -322,7 +325,10 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 				LifetimeVisitBalance = '$VisitsAccruedLife_db'";
 				// ECHO $query8.PHP_EOL;
 		$result8 = mysqli_query($dbc, $query8);	
-		if(!$result8){ECHO $query8.' ';}
+		if(!$result8){ECHO $query8.' ';} ELSE {
+						mysqli_commit($dbc);
+						}
+
 		ECHO MYSQLI_ERROR($dbc);
 
 		$FocusDate = date("Y-m-d",strtotime($FocusDate." +1 month "));
@@ -341,8 +347,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 		ECHO PHP_EOL.'             Lifetime Visits: '.$VisitsAccruedLife_db;
 	}
 
-
-// END OF CARD NUMBER WHILE LOOP (MAIN QUERY1)
+###### TEMP WHILE STATEMENT
 }
 
 
@@ -352,9 +357,10 @@ $Query18 = "DELETE FROM Px_Monthly WHERE LastName = 'Test' or LastName = 'test' 
 $result18 = mysqli_query($dbc, $Query18);
 ECHO MYSQLI_ERROR($dbc);
 ################ WE COULE BREAK THE SCRIPT HERE AND POSSIBLY GET IT TO RUN FASTER
-ECHO PHP_EOL.'Count of accounts processed: '.$counter
+ECHO PHP_EOL.'Count of accounts processed: '.$counter;
 
 
 ?>
+
 
 
