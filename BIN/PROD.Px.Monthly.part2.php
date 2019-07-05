@@ -170,6 +170,8 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 		# do this for $YrMoVisitBal_1YrBack_db - $YrMoFreq_1YrBack_txt
 		$YrMoFreq_1YrBack_txt = yrseg($PrevYearVisitBal_db, $VisitsAccruedLife_db);
 
+/* set autocommit to off */
+mysqli_autocommit($dbc, FALSE);
 
 		/////// INSERT VALUES INTO THE TABLE HERE
 		$query16= "UPDATE Px_Monthly SET
@@ -190,6 +192,14 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 		// ECHO $query8.PHP_EOL;
 		$result16 = mysqli_query($dbc, $query16);	
 		ECHO MYSQLI_ERROR($dbc);
+
+/* commit transaction */
+if (!mysqli_commit($dbc)) {
+   ECHO 'Commit INSERT Transaction Failed - PROD.Px.Monthly.part2.php'.PHP_EOL;
+    exit();
+}
+
+
 	# ECHO 'Cardnumber: ',$CardNumber_db,' FocusDate: ',$FocusDate_db,PHP_EOL;
 	//END OF FOCUSMONTH LOOP
 	}
