@@ -202,6 +202,9 @@ if (!mysqli_commit($dbc)) {
     exit();
 }
 
+/* close connection */
+mysqli_close($dbc);
+
 
 	# ECHO 'Cardnumber: ',$CardNumber_db,' FocusDate: ',$FocusDate_db,PHP_EOL;
 	//END OF FOCUSMONTH LOOP
