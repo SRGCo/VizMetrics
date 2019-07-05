@@ -1,5 +1,8 @@
 #!/usr/bin/php
 <?php 
+##### BEFORE PROCESSING LETS MAKE A BACK UP JUST IN CASE
+exec('mysqldump -uroot -ps3r3n1t33 SRG_Prod Px_Monthly > /home/ubuntu/db_files/PROD.Px_Monthly.$(date +%Y-%m-%d-%H.%M.%S).sql');
+echo 'PX MONTHLY TABLE BACKED UP';
 
 
 function yrseg ($pastvisitbal, $lifetimevisits)
@@ -58,7 +61,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 
 	// PRINT COUNT EVERY 5000 CARDNUMBERS
 	$counter++;
-	$printcount = fmod($counter, 5000);
+	$printcount = fmod($counter, 1000);
 	IF ($printcount == '0'){
 	ECHO PHP_EOL.$counter++.'  card:';
 	ECHO $CardNumber_db;
