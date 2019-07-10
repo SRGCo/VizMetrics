@@ -22,7 +22,7 @@ $counter = 0;
 $Fixed_counter = 0;
 
 //QUERY MASTER FOR CARDNUMBER
-$query1 = "SELECT DISTINCT(CardNumber), EnrollDate FROM Master WHERE CardNumber IS NOT NULL ORDER BY CardNumber ASC";
+$query1 = "SELECT DISTINCT(CardNumber), EnrollDate FROM Master WHERE CardNumber IS NOT NULL AND TransactionDate >= DATE_SUB(NOW(),INTERVAL 1 YEAR)  ORDER BY CardNumber ASC";
 $result1 = mysqli_query($dbc, $query1);
 ECHO MYSQLI_ERROR($dbc);
 while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){

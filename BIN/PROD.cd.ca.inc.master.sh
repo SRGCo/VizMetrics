@@ -9,6 +9,13 @@
 
 ##### USE time command to calc runtime "time DEV.cd.ca.into.master.sh"
 
+
+############# THIS SCRIPT USES THE FOLLOWING
+# PROD.wrong.enroll.fix.php
+
+
+
+
 ################# ERROR CATCHING ##########################
 failfunction()
 {
