@@ -12,6 +12,8 @@
 
 ############# THIS SCRIPT USES THE FOLLOWING
 # PROD.wrong.enroll.fix.php
+# PROD.VM_visits.master.process.sh
+############# above uses: PROD.visitbalance.fix.php
 
 
 
@@ -303,7 +305,15 @@ done
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'MASTER FY YLUNA FIELDS UPATED WITH DATA FROM LUNA TABLE'
 
+################# PROCESS visits to VM_visits
+( "/home/ubuntu/bin/PROD.VM_visits.master.process.sh" )
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+echo 'MASTER- VM visists processed-'
 
+################# Fix visitbalances in Master
+( "/home/ubuntu/bin/PROD.visitbalance.fix.php" )
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+echo 'MASTER- VM visitbalances fixed-'
 
 
 

@@ -22,14 +22,13 @@ $counter = 0;
 $Fixed_counter = 0;
 
 //QUERY MASTER FOR CARDNUMBER
-$query1 = "SELECT DISTINCT(CardNumber), EnrollDate FROM Master WHERE CardNumber IS NOT NULL AND TransactionDate >= DATE_SUB(NOW(),INTERVAL 1 YEAR)  ORDER BY CardNumber ASC";
+$query1 = "SELECT DISTINCT(CardNumber), EnrollDate FROM Master WHERE CardNumber IS NOT NULL AND TransactionDate >= DATE_SUB(NOW(),INTERVAL 60 DAY)  ORDER BY CardNumber ASC";
 $result1 = mysqli_query($dbc, $query1);
 ECHO MYSQLI_ERROR($dbc);
 while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	$CardNumber_db = $row1['CardNumber'];
 	$EnrollDate_db = $row1['EnrollDate'];
 	$counter ++;
-	IF (($counter % 1000) == '0'){ECHO $counter.' ********* '.$CardNumber_db.' Fixed:'.$Fixed_counter.PHP_EOL;}
 	$query2 = "SELECT TransactionDate as FocusDate from Master WHERE CardNumber = '$CardNumber_db' AND TransactionDate > '$EnrollDate_db' ORDER BY TransactionDate ASC";
 	$result2 = mysqli_query($dbc, $query2);
 	ECHO MYSQLI_ERROR($dbc);
@@ -69,4 +68,5 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 		}
 	}
 }
+ECHO 'Cards processed:'.$counter.' ********* Visit balances fixed:'.$Fixed_counter.PHP_EOL;
 

@@ -36,7 +36,7 @@ failfunction()
 ################################ VISIT BALANCE FIX SECTION ########################################
 ### what if more than one transaction per day ? ? ? ? ? ? ? 
 
-mysql  --login-path=local -DSRG_Prod -N -e "SELECT DISTINCT(CardNumber) FROM Master WHERE CardNumber IS NOT NULL AND TransactionDate >= DATE_SUB(NOW(), INTERVAL 1 YEAR) 
+mysql  --login-path=local -DSRG_Prod -N -e "SELECT DISTINCT(CardNumber) FROM Master WHERE CardNumber IS NOT NULL AND TransactionDate >= DATE_SUB(NOW(), INTERVAL 60 DAY) 
 													ORDER BY CardNumber ASC" | while read -r CardNumber;
 do
 	
@@ -144,7 +144,7 @@ do
 
 	######## COUNT VISITS OVER PREVIOUS 12 MONTHS AND LIFETIME
 	PrevYear=$(mysql  --login-path=local -DSRG_Prod -N -e "SELECT COUNT(*) from Master WHERE CardNumber = '$CardNumber' AND TransactionDate <> EnrollDate 
-								AND Vm_VisitsAccrued = '1' AND TransactionDate >= DATE_SUB(NOW(),INTERVAL 1 YEAR)")
+								AND Vm_VisitsAccrued = '1' AND TransactionDate >= DATE_SUB(NOW(),INTERVAL 60 DAY)")
 	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 	######## MINIMUM VISITBALNCE
 	MinBal=$(mysql  --login-path=local -DSRG_Prod -N -e "SELECT MIN(Vm_Visitsbalance) from Master WHERE CardNumber = '$CardNumber'")
@@ -215,8 +215,4 @@ do
 done || trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'MASTER TABLE FREQUENCY FIELDS UPDATED AND VISIT BALANCE FIX APPLIED'
 
-####### 0 VM_VISITBALANCE ENTRIES LATER THAN ENROLLDATE PROCESS/FIXED
-( "/home/ubuntu/bin/PROD.visitbalance.fix.php" )
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo '0 VM_VISITBALANCE ENTRIES LATER THAN ENROLLDATE PROCESS/FIXED'
 
