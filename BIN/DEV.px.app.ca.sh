@@ -113,6 +113,10 @@ echo '90% deleted'
 mysql  --login-path=local --silent -DSRG_Dev -N -e "DELETE FROM CardActivity_w_checkin_type WHERE CardNumber = '0'"
 echo '100% deleted, ADDING LOCATIONID FIELD'
 
+mysql  --login-path=local --silent -DSRG_Dev -N -e "DELETE FROM CardActivity_w_checkin_type WHERE LocationID = '0'"
+echo 'Removed checks from locationid 0 (corporate)'
+
+
 # CREATE LOCATIONID FIELD
 mysql  --login-path=local --silent -DSRG_Dev -N -e "ALTER TABLE CardActivity_w_checkin_type ADD LocationID INT( 3 ) first"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
