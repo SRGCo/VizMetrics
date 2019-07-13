@@ -111,6 +111,8 @@ mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM CardActivity_Te
 echo '60% deleted'
 mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM CardActivity_Temp WHERE TransactionType = 'Balance Inquiry'"
 echo '65% deleted'
+mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM CardActivity_Temp WHERE TransactionType = 'Denied Balance Inquiry'"
+echo '70% deleted'
 mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM CardActivity_Temp WHERE TransactionType = 'Campaign Expiration'"
 echo '75% deleted'
 mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM CardActivity_Temp WHERE TransactionType IS NULL"
