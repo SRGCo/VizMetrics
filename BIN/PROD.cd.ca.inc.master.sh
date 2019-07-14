@@ -234,9 +234,9 @@ echo 'MASTER- EXCHANGED CARDS PROCESS/FIXED, ACCOUNT STATUS UPDATED TO -Exchange
 
 
 ######### EXCLUDES SECTION USE OR NOT ? ? ?
-# mysql  --login-path=local -DSRG_Prod -N -e "UPDATE Master JOIN Excludes ON Master.CardNumber = Excludes.CardNumber SET Master.Account_status = 'Exclude' "
-# trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER - NO ACCOUNTS EXCLUDED!!! (Exclusion routine commented out)'
+mysql  --login-path=local -DSRG_Prod -N -e "UPDATE Master JOIN Excludes ON Master.CardNumber = Excludes.CardNumber SET Master.Account_status = 'Exclude' "
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+echo 'MASTER - Only SRG Office + Zorba Marked Exclude (using Excludes table), other employees etc STILL BEING PROCESSED'
 
 
 
