@@ -44,7 +44,8 @@ $VisitsAccruedLife_db = '0';
 
 //QUERY PX_MONTHLY FOR CARDNUMBER
 # NOT USING -- 	AND MOD(CardNumber, 200) = '0'
-$query1 = "SELECT CardNumber as CardNumber, MAX(LifetimeVisitBalance) as VisitsAccruedLife FROM Px_Monthly	
+$query1 = "SELECT CardNumber as CardNumber, MAX(LifetimeVisitBalance) as VisitsAccruedLife FROM Px_Monthly
+		WHERE CardNumber >= '6000227902794409'	
 		GROUP BY CardNumber ORDER BY CardNumber ASC";
 $result1 = mysqli_query($dbc, $query1);
 ECHO MYSQLI_ERROR($dbc);
@@ -61,10 +62,10 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 
 	// PRINT COUNT EVERY 5000 CARDNUMBERS
 	$counter++;
-	$printcount = fmod($counter, 1000);
+	$printcount = fmod($counter, 250);
 	IF ($printcount == '0'){
 	ECHO PHP_EOL.$counter++.'  card:';
-	ECHO $CardNumber_db;
+	ECHO $CardNumber_db.' Lifetime Visits:'.$VisitsAccruedLife_db;
 	}
 
 	
