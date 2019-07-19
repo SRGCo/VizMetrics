@@ -1,8 +1,8 @@
 #!/usr/bin/php
 <?php 
 ##### BEFORE PROCESSING LETS MAKE A BACK UP JUST IN CASE
-exec('mysqldump -uroot -ps3r3n1t33 SRG_Prod Px_Monthly > /home/ubuntu/db_files/PROD.Px_Monthly.$(date +%Y-%m-%d-%H.%M.%S).sql');
-echo 'PX MONTHLY TABLE BACKED UP';
+#exec('mysqldump -uroot -ps3r3n1t33 SRG_Prod Px_Monthly > /home/ubuntu/db_files/PROD.Px_Monthly.$(date +%Y-%m-%d-%H.%M.%S).sql');
+#echo 'PX MONTHLY TABLE BACKED UP';
 
 
 function yrseg ($pastvisitbal, $lifetimevisits)
@@ -29,7 +29,7 @@ function yrseg ($pastvisitbal, $lifetimevisits)
 define ('DB_USER', 'root');
 define ('DB_PASSWORD','s3r3n1t33');
 define ('DB_HOST','localhost');
-define ('DB_NAME','SRG_Prod');
+define ('DB_NAME','SRG_Dev');
 
 # Make the connection and then select the database
 # display errors if fail
@@ -51,7 +51,8 @@ ECHO MYSQLI_ERROR($dbc);
 while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	$CardNumber_db = $row1['CardNumber'];
 	$VisitsAccruedLife_db = $row1['VisitsAccruedLife'];
-	
+####################################### only run if they visited ###########################################
+IF ($VisitsAccruedLife_db > '0'){	
 	#INIT THE VARS
 	$YrMoVisitBal_1MoBack_db = $YrMoVisitBal_3MoBack_db = $LapseMo_12MoBack_db = $YrMoVisitBal_12MoBack_db = '';
 	$YrMoVisitBal_24MoBack_db = $YrMoVisitBal_36MoBack_db = $YrMoFreqSeg_24MoBack_txt = $YrMoFreqSeg_36MoBack_txt = '';
@@ -198,7 +199,7 @@ mysqli_autocommit($dbc, FALSE);
 
 /* commit transaction */
 if (!mysqli_commit($dbc)) {
-   ECHO 'Commit INSERT Transaction Failed - PROD.Px.Monthly.part2.php'.PHP_EOL;
+   ECHO 'Commit INSERT Transaction Failed - DEV.Px.Monthly.part2.php'.PHP_EOL;
     exit();
 }
 
@@ -208,12 +209,15 @@ if (!mysqli_commit($dbc)) {
 # ECHO '+++++++++++++++ Cardnumber: ',$CardNumber_db,' FocusDate: ',$FocusDate_db,PHP_EOL;
 // END OF CARD NUMBER WHILE LOOP
 }
-ECHO PHP_EOL.'ALL CARDS PAST FREQUENCY UPDATED FOR ALL FOCUSDATES'.PHP_EOL;
 
 
 ##### AFTER WE FINISH ALL THAT PROCESSING LETS MAKE A BACK UP JUST IN CASE
-exec('mysqldump -uroot -ps3r3n1t33 SRG_Prod Px_Monthly > /home/ubuntu/db_files/PROD.Px_Monthly.$(date +%Y-%m-%d-%H.%M.%S).sql');
-echo 'PX MONTHLY TABLE BACKED UP';
+#exec('mysqldump -uroot -ps3r3n1t33 SRG_Prod Px_Monthly > /home/ubuntu/db_files/PROD.Px_Monthly.$(date +%Y-%m-%d-%H.%M.%S).sql');
+#echo 'PX MONTHLY TABLE BACKED UP';
+
+######################################### end only run if they visited #########################################
+}
+ECHO PHP_EOL.'ALL CARDS PAST FREQUENCY UPDATED FOR ALL FOCUSDATES'.PHP_EOL;
 
 
 ?>
