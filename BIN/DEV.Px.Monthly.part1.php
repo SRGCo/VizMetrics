@@ -13,7 +13,7 @@
 define ('DB_USER', 'root');
 define ('DB_PASSWORD','s3r3n1t33');
 define ('DB_HOST','localhost');
-define ('DB_NAME','SRG_Prod');
+define ('DB_NAME','SRG_Dev');
 
 # Make the connection and then select the database
 # display errors if fail
@@ -33,7 +33,7 @@ ECHO 'Px_Monthly TRUNCATED FOR FULL RUN!!!!!!'.PHP_EOL;
 
 //QUERY MASTER FOR CARDNUMBER (MAIN QUERY1)
 $query1 = "SELECT DISTINCT(CardNumber) as CardNumber FROM Guests_Master WHERE CardNumber IS NOT NULL 	
-					AND EnrollDate IS NOT NULL ORDER BY CardNumber ASC";
+					AND CardNumber = '290000013638' AND EnrollDate IS NOT NULL ORDER BY CardNumber ASC";
 $result1 = mysqli_query($dbc, $query1);
 ECHO MYSQLI_ERROR($dbc);
 while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
@@ -43,8 +43,6 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	$MinDateMonth_db = $MinDateYear_db = $FocusDate = $FocusDateEnd = '';
 	$CurrentDate_db = $FirstName_db = $LastName_db = $EnrollDate_db = $Zip_db = '';	
 
-	$DollarsSpentLife_db = $PointsRedeemedLife_db = $PointsAccruedLife_db = $VisitsAccruedLife_db = '0';
-	$DollarsSpentMonth_db = $PointsRedeemedMonth_db = $PointsAccruedMonth_db = $VisitsAccruedMonth_db = '0';
 
 	$LastVisitDate_db = $PrevYearVisitBal_db = $LapseDays_db = $RecentFreqDays_db = $ProgAge_db = '';	
 	$TwoVisitsBack_db = $FocusDate_php = $TwoVisitsBack_php = $MonthsEnrolled_db = $LifetimeFreq = '';
@@ -101,13 +99,19 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	$FocusDate_php = strtotime($FocusDate);
 	$EnrollDate_db_php = strtotime($EnrollDate_db);
 	# IF ENROLLMENT OCCURED DURING FOCUSMONTH SKIP TO NEXT MONTH
-	IF ($FocusDate_php <= $EnrollDate_db_php){
-		$FocusDate = date("Y-m-d",strtotime($FocusDate."+1 month"));
-		$FocusDateEnd = date("Y-m-d",strtotime($FocusDateEnd."+1 month"));
-	}
+#	IF ($FocusDate_php <= $EnrollDate_db_php){
+#		$FocusDate = date("Y-m-d",strtotime($FocusDate."+1 month"));
+#		$FocusDateEnd = date("Y-m-d",strtotime($FocusDateEnd."+1 month"));
+#	}
+
+ECHO PHP_EOL.'FocusStart:'.$FocusDate.' End:'.$FocusDateEnd;
 
 	// WHILE FOCUSDATE IS LESS THAN TODAYS DATE REPEAT QUERIES
 	WHILE ($FocusDate <= $CurrentDate_db){
+ECHO PHP_EOL.'IN LOOP - FocusStart:'.$FocusDate.' End:'.$FocusDateEnd;
+
+	$DollarsSpentLife_db = $PointsRedeemedLife_db = $PointsAccruedLife_db = $VisitsAccruedLife_db = '0';
+	$DollarsSpentMonth_db = $PointsRedeemedMonth_db = $PointsAccruedMonth_db = $VisitsAccruedMonth_db = '0';
 	
 		#FIELDS = LIFETIMESPENDBALANCE, LIFETIMEPOINTSREDEEMED, LIFETIMEPOINTSBALANCE, LIFETIMEVISITBALANCE
 		$query3a ="SELECT ROUND(SUM(DollarsSpentAccrued), 2) as DollarsSpentLife, 
@@ -138,8 +142,10 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 			FROM Master WHERE  CardNumber = '$CardNumber_db'
 			AND DollarsSpentAccrued IS NOT NULL
 			AND DollarsSpentAccrued > '0'
+			AND Vm_VisitsAccrued > '0'
 			AND TransactionDate >= '$FocusDate'
 			AND TransactionDate <= '$FocusDateEnd'";
+# ECHO PHP_EOL.$query4;
 		$result4 = mysqli_query($dbc, $query4);	
 		ECHO MYSQLI_ERROR($dbc);
 		while($row1 = mysqli_fetch_array($result4, MYSQLI_ASSOC)){
