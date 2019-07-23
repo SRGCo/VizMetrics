@@ -33,11 +33,14 @@ ECHO 'Px_Monthly TRUNCATED FOR FULL RUN!!!!!!'.PHP_EOL;
 
 //QUERY MASTER FOR CARDNUMBER (MAIN QUERY1)
 $query1 = "SELECT DISTINCT(CardNumber) as CardNumber FROM Guests_Master WHERE CardNumber IS NOT NULL 	
-					AND CardNumber = '290000013638' AND EnrollDate IS NOT NULL ORDER BY CardNumber ASC";
+					AND CardNumber = '290000442076' AND EnrollDate IS NOT NULL ORDER BY CardNumber ASC";
 $result1 = mysqli_query($dbc, $query1);
 ECHO MYSQLI_ERROR($dbc);
 while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	$CardNumber_db = $row1['CardNumber'];
+
+echo $CardNumber_db.PHP_EOL;
+
 
 	#INIT THE VARS
 	$MinDateMonth_db = $MinDateYear_db = $FocusDate = $FocusDateEnd = '';
@@ -45,7 +48,6 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 
 	$DollarsSpentLife_db = $PointsRedeemedLife_db = $PointsAccruedLife_db = $VisitsAccruedLife_db = '0';
 	$DollarsSpentMonth_db = $PointsRedeemedMonth_db = $PointsAccruedMonth_db = $VisitsAccruedMonth_db = '0';
-
 
 	$LastVisitDate_db = $PrevYearVisitBal_db = $LapseDays_db = $RecentFreqDays_db = $ProgAge_db = '';	
 	$TwoVisitsBack_db = $FocusDate_php = $TwoVisitsBack_php = $MonthsEnrolled_db = $LifetimeFreq = '';
@@ -78,11 +80,11 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 		$CurrentDate_db = $row1['TodayDate'];
 	}
 	IF ($VisitsAccruedLife_db == ''){$VisitsAccruedLife_db = '0';}
-	
+ECHO 'lif vis'.$VisitsAccruedLife_db;	
 	# GET FIRSTNAME, LASTNAME, ENROLLDATE, ZIP
 	$query3 = "SELECT FirstName, LastName, EnrollDate, Zip, Tier,
 				YEAR(EnrollDate) as MinDateYear,
-				MONTH(EnrollDate) as MinDateMonth
+				DATE_FORMAT(EnrollDate, '%m') as MinDateMonth
 				FROM Guests_Master WHERE CardNumber = '$CardNumber_db'";
 	$result3 = mysqli_query($dbc, $query3);	
 	ECHO MYSQLI_ERROR($dbc);
@@ -95,23 +97,23 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 		$Zip_db = $row1['Zip'];		
 		$Tier_db = $row1['Tier'];
 	}
+
+ECHO $MinDateMonth_db.PHP_EOL;
 	
 	// FORMAT FOCUSDATE
 	$FocusDate = $MinDateYear_db."-".$MinDateMonth_db."-01"; 
 	$FocusDateEnd = date("Y-m-d",strtotime($FocusDate."+1 month -1 day"));
 	$FocusDate_php = strtotime($FocusDate);
 	$EnrollDate_db_php = strtotime($EnrollDate_db);
-	# IF ENROLLMENT OCCURED DURING FOCUSMONTH SKIP TO NEXT MONTH
-#	IF ($FocusDate_php <= $EnrollDate_db_php){
-#		$FocusDate = date("Y-m-d",strtotime($FocusDate."+1 month"));
-#		$FocusDateEnd = date("Y-m-d",strtotime($FocusDateEnd."+1 month"));
-#	}
 
-ECHO PHP_EOL.'FocusStart:'.$FocusDate.' End:'.$FocusDateEnd;
+ECHO 'Curdate'.$CurrentDate_db.' FD:'.$FocusDate.' FDE'.$FocusDateEnd.PHP_EOL;	
+
+
 
 	// WHILE FOCUSDATE IS LESS THAN TODAYS DATE REPEAT QUERIES
 	WHILE ($FocusDate <= $CurrentDate_db){
-ECHO PHP_EOL.'IN LOOP - FocusStart:'.$FocusDate.' End:'.$FocusDateEnd;
+
+ECHO 'iterating: '.$FocusDate.PHP_EOL;
 	
 		#FIELDS = LIFETIMESPENDBALANCE, LIFETIMEPOINTSREDEEMED, LIFETIMEPOINTSBALANCE, LIFETIMEVISITBALANCE
 		$query3a ="SELECT ROUND(SUM(DollarsSpentAccrued), 2) as DollarsSpentLife, 
@@ -142,10 +144,8 @@ ECHO PHP_EOL.'IN LOOP - FocusStart:'.$FocusDate.' End:'.$FocusDateEnd;
 			FROM Master WHERE  CardNumber = '$CardNumber_db'
 			AND DollarsSpentAccrued IS NOT NULL
 			AND DollarsSpentAccrued > '0'
-			AND Vm_VisitsAccrued > '0'
 			AND TransactionDate >= '$FocusDate'
 			AND TransactionDate <= '$FocusDateEnd'";
-# ECHO PHP_EOL.$query4;
 		$result4 = mysqli_query($dbc, $query4);	
 		ECHO MYSQLI_ERROR($dbc);
 		while($row1 = mysqli_fetch_array($result4, MYSQLI_ASSOC)){
@@ -335,12 +335,13 @@ ECHO PHP_EOL.'IN LOOP - FocusStart:'.$FocusDate.' End:'.$FocusDateEnd;
 		$FocusDateEnd = date("Y-m-d",strtotime($FocusDate." +1 month - 1 day "));
 		$Carryover_LastVisitDate = $LastVisitDate_db;
 
+
 	// END OF WHILE FOCUSDATE LESS THAN TODAY (MAIN QUERY2)
 	}
 
 	### WE'LL PRINT EXTENDED INFO FOR COUNTER ACCOUNTS, JUST TO SEE IF ANYTHING LOOKS WONKY
 	IF ($printcount == '0'){
-			ECHO ' FirstName: '.$FirstName_db.' LastName: '.$LastName_db.' FirstRun:'.$Firstrun;
+		ECHO ' FirstName: '.$FirstName_db.' LastName: '.$LastName_db.' FirstRun:'.$Firstrun;
 		ECHO PHP_EOL.'             Zip:'.$Zip_db.' Tier:'.$Tier_db.' Enrolled: '.$EnrollDate_db;
 		ECHO PHP_EOL.'             FocusDate:'.$FocusDate.' Last Visit Date: '.$LastVisitDate_db;
 		ECHO PHP_EOL.'             LifetimeSpend:'.$DollarsSpentLife_db.' LapseMonths: '.$LapseMonths_db;
@@ -362,5 +363,6 @@ ECHO PHP_EOL.'Count of accounts processed: '.$counter
 
 
 ?>
+
 
 

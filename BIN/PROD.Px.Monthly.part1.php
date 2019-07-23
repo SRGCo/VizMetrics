@@ -39,6 +39,8 @@ ECHO MYSQLI_ERROR($dbc);
 while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	$CardNumber_db = $row1['CardNumber'];
 
+#echo $CardNumber_db.PHP_EOL;
+
 	#INIT THE VARS
 	$MinDateMonth_db = $MinDateYear_db = $FocusDate = $FocusDateEnd = '';
 	$CurrentDate_db = $FirstName_db = $LastName_db = $EnrollDate_db = $Zip_db = '';	
@@ -81,7 +83,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	# GET FIRSTNAME, LASTNAME, ENROLLDATE, ZIP
 	$query3 = "SELECT FirstName, LastName, EnrollDate, Zip, Tier,
 				YEAR(EnrollDate) as MinDateYear,
-				MONTH(EnrollDate) as MinDateMonth
+				DATE_FORMAT(EnrollDate, '%m') as MinDateMonth
 				FROM Guests_Master WHERE CardNumber = '$CardNumber_db'";
 	$result3 = mysqli_query($dbc, $query3);	
 	ECHO MYSQLI_ERROR($dbc);
@@ -100,6 +102,9 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	$FocusDateEnd = date("Y-m-d",strtotime($FocusDate."+1 month -1 day"));
 	$FocusDate_php = strtotime($FocusDate);
 	$EnrollDate_db_php = strtotime($EnrollDate_db);
+
+#ECHO 'Curdate'.$CurrentDate_db.' FD:'.$FocusDate.' FDE'.$FocusDateEnd.PHP_EOL;	
+
 
 	// WHILE FOCUSDATE IS LESS THAN TODAYS DATE REPEAT QUERIES
 	WHILE ($FocusDate <= $CurrentDate_db){
@@ -151,8 +156,6 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 		IF (EMPTY($DiscountsMonth_db)){
 			$DiscountsMonth_db = '0.00';
 		}
-
-
 
 		$YearFreqSeg = $RecentFreqMonths_db = $TwoVisitsBack_php = $YrAgoFreq = $LastVisitBalance_db = '';
 				#echo ' DolSpentMo'.$DollarsSpentMonth_db.' PtsRedeemMo'.$PointsRedeemedMonth_db;
@@ -329,7 +332,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 
 	### WE'LL PRINT EXTENDED INFO FOR COUNTER ACCOUNTS, JUST TO SEE IF ANYTHING LOOKS WONKY
 	IF ($printcount == '0'){
-			ECHO ' FirstName: '.$FirstName_db.' LastName: '.$LastName_db.' FirstRun:'.$Firstrun;
+		ECHO ' FirstName: '.$FirstName_db.' LastName: '.$LastName_db.' FirstRun:'.$Firstrun;
 		ECHO PHP_EOL.'             Zip:'.$Zip_db.' Tier:'.$Tier_db.' Enrolled: '.$EnrollDate_db;
 		ECHO PHP_EOL.'             FocusDate:'.$FocusDate.' Last Visit Date: '.$LastVisitDate_db;
 		ECHO PHP_EOL.'             LifetimeSpend:'.$DollarsSpentLife_db.' LapseMonths: '.$LapseMonths_db;
