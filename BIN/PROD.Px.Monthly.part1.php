@@ -100,14 +100,11 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	$FocusDateEnd = date("Y-m-d",strtotime($FocusDate."+1 month -1 day"));
 	$FocusDate_php = strtotime($FocusDate);
 	$EnrollDate_db_php = strtotime($EnrollDate_db);
-	# IF ENROLLMENT OCCURED DURING FOCUSMONTH SKIP TO NEXT MONTH
-	IF ($FocusDate_php <= $EnrollDate_db_php){
-		$FocusDate = date("Y-m-d",strtotime($FocusDate."+1 month"));
-		$FocusDateEnd = date("Y-m-d",strtotime($FocusDateEnd."+1 month"));
-	}
 
 	// WHILE FOCUSDATE IS LESS THAN TODAYS DATE REPEAT QUERIES
 	WHILE ($FocusDate <= $CurrentDate_db){
+		$DollarsSpentLife_db = $PointsRedeemedLife_db = $PointsAccruedLife_db = $VisitsAccruedLife_db = '0';
+		$DollarsSpentMonth_db = $PointsRedeemedMonth_db = $PointsAccruedMonth_db = $VisitsAccruedMonth_db = '0';
 	
 		#FIELDS = LIFETIMESPENDBALANCE, LIFETIMEPOINTSREDEEMED, LIFETIMEPOINTSBALANCE, LIFETIMEVISITBALANCE
 		$query3a ="SELECT ROUND(SUM(DollarsSpentAccrued), 2) as DollarsSpentLife, 
