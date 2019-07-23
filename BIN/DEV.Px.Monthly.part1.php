@@ -43,6 +43,9 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	$MinDateMonth_db = $MinDateYear_db = $FocusDate = $FocusDateEnd = '';
 	$CurrentDate_db = $FirstName_db = $LastName_db = $EnrollDate_db = $Zip_db = '';	
 
+	$DollarsSpentLife_db = $PointsRedeemedLife_db = $PointsAccruedLife_db = $VisitsAccruedLife_db = '0';
+	$DollarsSpentMonth_db = $PointsRedeemedMonth_db = $PointsAccruedMonth_db = $VisitsAccruedMonth_db = '0';
+
 
 	$LastVisitDate_db = $PrevYearVisitBal_db = $LapseDays_db = $RecentFreqDays_db = $ProgAge_db = '';	
 	$TwoVisitsBack_db = $FocusDate_php = $TwoVisitsBack_php = $MonthsEnrolled_db = $LifetimeFreq = '';
@@ -109,9 +112,6 @@ ECHO PHP_EOL.'FocusStart:'.$FocusDate.' End:'.$FocusDateEnd;
 	// WHILE FOCUSDATE IS LESS THAN TODAYS DATE REPEAT QUERIES
 	WHILE ($FocusDate <= $CurrentDate_db){
 ECHO PHP_EOL.'IN LOOP - FocusStart:'.$FocusDate.' End:'.$FocusDateEnd;
-
-	$DollarsSpentLife_db = $PointsRedeemedLife_db = $PointsAccruedLife_db = $VisitsAccruedLife_db = '0';
-	$DollarsSpentMonth_db = $PointsRedeemedMonth_db = $PointsAccruedMonth_db = $VisitsAccruedMonth_db = '0';
 	
 		#FIELDS = LIFETIMESPENDBALANCE, LIFETIMEPOINTSREDEEMED, LIFETIMEPOINTSBALANCE, LIFETIMEVISITBALANCE
 		$query3a ="SELECT ROUND(SUM(DollarsSpentAccrued), 2) as DollarsSpentLife, 
