@@ -217,6 +217,7 @@ echo 'CARD ACTIVITY LIVE TABLE UPDATED WITH CARD ACTIVITY TEMP DATA'
 
 mysql  --login-path=local --silent -DSRG_Prod -N -e "SELECT MAX(TransactionDate) FROM CardActivity_squashed" | while read -r Maxdate;
 do
+echo "MaxDate in CA Squashed: {$Maxdate}"
 
 	#### DELETE IN CASE THERE ARE ANY STRAGGLERS
 	mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM CardActivity_squashed WHERE TransactionDate = '$Maxdate'";
