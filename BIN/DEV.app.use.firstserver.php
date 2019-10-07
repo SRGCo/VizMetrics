@@ -22,17 +22,17 @@ mysqli_select_db($dbc, DB_NAME)
 ### INIT Variables
 $counter = 0;
 
-##### GET ALL THE Activation CARDNUMBERS
-##### THE STANDARD CARD ACTIVITY 
-$query1 = "SELECT CardNumber FROM `CardActivity_Live` WHERE TransactionType = 'Activate' AND (CheckNo like 'i%' or CheckNo LIKE 'And%') GROUP BY CardNumber";
+##### GET CARDNUMBERS, 'REGISTER' IS FIRST TRANSACTION AFTER ACTIVATION FOR MOBILE APP
+$query1 = "SELECT CardNumber, TransactionDate FROM SRG_Prod.CardActivity_Mobile_Temp WHERE TransactionType = 'Register' GROUP BY CardNumber";
 $result1 = mysqli_query($dbc, $query1);
 ECHO MYSQLI_ERROR($dbc);
 while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	$CardNumber_db = $row1['CardNumber'];
-	echo $CardNumber_db.PHP_EOL;
+	$TransactionDate_db = $row1['TransactionDate'];
+	echo $CardNumber_db.' - '.$TransactionDate_db.PHP_EOL;
 
 	##### QUERY FOR THE MIN TRANSACTION WHERE MORE THAN 0 WAS SPENT
-	$query2 = "SELECT MIN(transactiondate) as mindate, firstname, lastname, CheckNumber, GrossSalesCoDefined, LocationID FROM SRG_Prod.Master WHERE CardNumber = '$CardNumber_db' and SereniteePointsAccrued > '0'";
+	$query2 = "SELECT MIN(transactiondate) as mindate, firstname, lastname, CheckNumber, GrossSalesCoDefined, LocationID FROM SRG_Prod.Master WHERE CardNumber = '$CardNumber_db' AND GrossSalesCoDefined > '0' ";
 	$result2 = mysqli_query($dbc, $query2);
 	ECHO MYSQLI_ERROR($dbc);
 	while($row1 = mysqli_fetch_array($result2, MYSQLI_ASSOC)){
