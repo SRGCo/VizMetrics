@@ -1,8 +1,8 @@
 #!/usr/bin/php
 <?php 
 ##### BEFORE PROCESSING LETS MAKE A BACK UP JUST IN CASE
-exec('mysqldump -uroot -ps3r3n1t33 SRG_Prod Px_Monthly > /home/ubuntu/db_files/PROD.Px_Monthly.$(date +%Y-%m-%d-%H.%M.%S).sql');
-echo 'PX MONTHLY TABLE BACKED UP';
+# exec('mysqldump -uroot -ps3r3n1t33 SRG_Prod Px_Monthly > /home/ubuntu/db_files/PROD.Px_Monthly.$(date +%Y-%m-%d-%H.%M.%S).sql');
+# echo 'PX MONTHLY TABLE BACKED UP';
 
 
 function yrseg ($pastvisitbal, $lifetimevisits)
@@ -40,31 +40,44 @@ mysqli_select_db($dbc, DB_NAME)
 
 ### INIT Variables
 $counter = 0;
+$Visit_Count_Total = '0';
 $VisitsAccruedLife_db = '0';
+$start_time = microtime(true);
 
 //QUERY PX_MONTHLY FOR CARDNUMBER
 # NOT USING -- 	AND MOD(CardNumber, 200) = '0'
-$query1 = "SELECT CardNumber as CardNumber, MAX(LifetimeVisitBalance) as VisitsAccruedLife FROM Px_Monthly	
-		GROUP BY CardNumber ORDER BY CardNumber ASC";
+$query1 = "SELECT CardNumber FROM Px_Monthly GROUP BY CardNumber ORDER BY CardNumber ASC";
 $result1 = mysqli_query($dbc, $query1);
 ECHO MYSQLI_ERROR($dbc);
 while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	$CardNumber_db = $row1['CardNumber'];
-	$VisitsAccruedLife_db = $row1['VisitsAccruedLife'];
+	#ECHO $CardNumber_db.PHP_EOL;
+
+	//QUERY PX_MONTHLY FOR CARDNUMBER
+	# NOT USING -- 	AND MOD(CardNumber, 200) = '0'
+	$query1a = "SELECT MAX(LifetimeVisitBalance) as VisitsAccruedLife, EnrollDate FROM Px_Monthly WHERE CardNumber = '$CardNumber_db'";
+	$result1a = mysqli_query($dbc, $query1a);
+	ECHO MYSQLI_ERROR($dbc);
+	while($row1 = mysqli_fetch_array($result1a, MYSQLI_ASSOC)){
+		$VisitsAccruedLife_db = $row1['VisitsAccruedLife'];
+		$EnrollDate_db = $row1['EnrollDate'];
+	}
 	
-	#INIT THE VARS
+	#INIT THE 
 	$YrMoVisitBal_1MoBack_db = $YrMoVisitBal_3MoBack_db = $LapseMo_12MoBack_db = $YrMoVisitBal_12MoBack_db = '';
 	$YrMoVisitBal_24MoBack_db = $YrMoVisitBal_36MoBack_db = $YrMoFreqSeg_24MoBack_txt = $YrMoFreqSeg_36MoBack_txt = '';
 	$YrMoFreqSeg_12MoBack_txt = $YrMoFreqSeg_3MoBack_txt = $YrMoFreqSeg_1MoBack_txt = $YrMoFreq_1YrBack_txt = '';
 	$LastVisitDate_db = $PrevYearVisitBal_db = $LapseDays_db = $RecentFreqDays_db = $ProgAge_db = '';	
 	$Carryover_LastVisitDate = '';
+	$Visit_Count_Total = ($Visit_Count_Total + $VisitsAccruedLife_db);
 
 	// PRINT COUNT EVERY 5000 CARDNUMBERS
 	$counter++;
 	$printcount = fmod($counter, 250);
 	IF ($printcount == '0'){
-	ECHO PHP_EOL.$counter++.'  card:';
-	ECHO $CardNumber_db.' Lifetime Visits:'.$VisitsAccruedLife_db;
+	ECHO PHP_EOL.$counter++;
+	$run_time = microtime(true) - $start_time;
+	ECHO 'Time:'.$run_time.' Card:'.$CardNumber_db.' Enrolled:'.$EnrollDate_db.' LT Visits:'.$VisitsAccruedLife_db.' Total:'.$Visit_Count_Total;
 	}
 
 	
@@ -205,8 +218,8 @@ ECHO PHP_EOL.'ALL CARDS PAST FREQUENCY UPDATED FOR ALL FOCUSDATES'.PHP_EOL;
 
 
 ##### AFTER WE FINISH ALL THAT PROCESSING LETS MAKE A BACK UP JUST IN CASE
-exec('mysqldump -uroot -ps3r3n1t33 SRG_Prod Px_Monthly > /home/ubuntu/db_files/PROD.Px_Monthly.$(date +%Y-%m-%d-%H.%M.%S).sql');
-echo 'PX MONTHLY TABLE BACKED UP';
+#exec('mysqldump -uroot -ps3r3n1t33 SRG_Prod Px_Monthly > /home/ubuntu/db_files/PROD.Px_Monthly.$(date +%Y-%m-%d-%H.%M.%S).sql');
+#echo 'PX MONTHLY TABLE BACKED UP';
 
 
 ?>

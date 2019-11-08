@@ -24,39 +24,26 @@ failfunction()
         	exit
 	fi
 }
-
-################# PROCESS EXCHANGES
-## REMOVE (1) HEADER ROW AND MERGE (IF NECCESSARY) INCOMING EXCHANGES CSVs
-## INTO SINGLE CARD ACTIVITY FILE IN DB_FILES
-for file in /home/ubuntu/db_files/incoming/px/MediaExchanges*.csv
-  do
-	#### MAKE A COPY OF THE FILE IN BACKUP DIR
-	cp "$file" //home/ubuntu/db_files/incoming/px/backup/
-	tail -n+2 "$file"  >> /home/ubuntu/db_files/incoming/px/Infile.MediaExchanges.csv
-	rm "$file"
-  done || trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'INCOMING EXCHANGES DATA FILES BACKEDUP, CLEANED AND MERGED'
-
-## TRUNCATE GUESTS TABLE BEFORE LOADING W NEW
-# Delete Temp table if it exists
-mysql  --login-path=local --silent -DSRG_Prod -N -e "DROP TABLE IF EXISTS Px_exchanges_temp"
-echo 'PX EXCHANGES TEMP TABLE DROPPED, STARTING NEW PX EXCHANGES TEMP TABLE CREATION'
-
-# Create a empty copy of CardActivity table from CardActivityStructure table
-mysql  --login-path=local --silent -DSRG_Prod -N -e "CREATE TABLE Px_exchanges_temp LIKE Px_exchanges_structure"
-echo 'PX EXCHANGES TEMP TABLE CREATED, LOADING DATA FILE TO PX EXCHANGES TEMP TABLE'
-
-# Load the data from the latest file into the (temp) CardActivity table
-mysql  --login-path=local --silent -DSRG_Prod -N -e "Load data local infile '/home/ubuntu/db_files/incoming/px/Infile.MediaExchanges.csv' into table Px_exchanges_temp fields terminated by ','  lines terminated by '\n'"
-echo 'PX EXCHANGES TEMP loaded'
-	
-#Load the temp data into the live table
-mysql  --login-path=local -DSRG_Prod -N -e "INSERT INTO Px_exchanges SELECT * FROM Px_exchanges_temp"
-echo 'PX EXCHANGES TABLE LOADED WITH DATA FROM TEMP TABLE'
+######## DUMP NON INT CHECK NUMBERS
+mysql  --login-path=local --silent -DSRG_Dev -N -e "DELETE FROM CardActivity_Temp WHERE (CheckNo = 'web' or CheckNo = 'iOS' or CheckNo = 'Android' or CheckNo = 'Guest Website')"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+echo 'DELETED NO INTEGERS FROM CARDACTIVITY TEMP'
 
 
-# DELETE CURRENT INFILE TO READY FOR NEXT RUN
-rm -f   /home/ubuntu/db_files/incoming/px/Infile.MediaExchanges.csv
+
+########### UPDATE THE CardActivitylive table
+mysql  --login-path=local --silent -DSRG_Dev -N -e "INSERT INTO CardActivity_Live SELECT * FROM CardActivity_Temp"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+echo 'CARD ACTIVITY LIVE TABLE UPDATED WITH CARD ACTIVITY TEMP DATA'
+
+echo 'DEV.PX.CA.PROCESS.SH COMPLETED'
+
+
+###### PROCESS THE CA_Live TABLE INTO FIRST USE TABLE
+( "/home/ubuntu/bin/DEV.app.use.firstserver.php" )
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+echo 'DEV App_use1 Table populated with new data'
+
 
 
 

@@ -160,6 +160,11 @@ mysql  --login-path=local --silent -DSRG_Dev -N -e "ALTER TABLE CardActivity_Tem
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'DROPPED EXCEL DATE FIELD FROM CARDACTIVITY TEMP'
 
+######## DUMP NON INT CHECK NUMBERS
+mysql  --login-path=local --silent -DSRG_Dev -N -e "DELETE FROM CardActivity_Temp WHERE (CheckNo = 'web' or CheckNo = 'iOS' or CheckNo = 'Android' or 'Guest Website')"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+echo 'DELETED NO INTEGERS FROM CARDACTIVITY TEMP'
+
 
 ########### UPDATE THE CardActivitylive table
 mysql  --login-path=local --silent -DSRG_Dev -N -e "INSERT INTO CardActivity_Live SELECT * FROM CardActivity_Temp"
