@@ -5,8 +5,7 @@
 # THIS SCRIPT HAS TO RUN AFTER CHECKDETAIL IS PROCESSED SO THAT THE CHECK NUMBER FIX RUNS CORRECTLY
 
 # UNCOMMENT NEXT FOR VERBOSE
-# set -x
-
+#set -x
 
 
 ################# ERROR CATCHING ##########################
@@ -25,6 +24,28 @@ failfunction()
 	fi
 }
 
+
+
+##### HALT AND CATCH FIRE IF ANY COMMAND FAILS FROM HERE ON
+set -e
+
+
+
+########### UPDATE THE CardActivitylive table
+mysql  --login-path=local --silent -DSRG_Dev -N -e "INSERT INTO CardActivity_Live SELECT * FROM CardActivity_Temp"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+echo 'CARD ACTIVITY LIVE TABLE UPDATED WITH CARD ACTIVITY TEMP DATA'
+
+################ THE SQUASHES RUN ON ALL DATA COULD THEY JUST RUN ON MOST RECENT?
+
+mysql  --login-path=local --silent -DSRG_Dev -N -e "SELECT MAX(TransactionDate) FROM CardActivity_squashed" | while read -r Maxdate;
+do
+echo "MaxDate in CA Squashed: {$Maxdate}"
+
+	#### DELETE IN CASE THERE ARE ANY STRAGGLERS
+	mysql  --login-path=local --silent -DSRG_Dev -N -e "DELETE FROM CardActivity_squashed WHERE TransactionDate = '$Maxdate'";
+	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+	echo 'MAX DATE DELETED FROM SQUASHED TABLE TO AVOID STRAGGLERS'
 
 
 	############################ THE SQUASH ####################################
@@ -103,10 +124,39 @@ failfunction()
 	'0',
 	''
 	FROM CardActivity_Live
-	WHERE TransactionType IN ('Accrual / Redemption','Activate')
+	WHERE TransactionDate >= '$Maxdate'
+	AND TransactionType IN ('Accrual / Redemption','Activate')
 	GROUP by POSKey, LocationID, CardNumber, CardTemplate, TransactionDate"
 
-	echo 'SQUASH TABLE  UPDATED'
+	echo 'SQUASH TABLE INCREMENTALLY UPDATED'
+
+
+	######## FIX CHECKS THAT WERE OPEN ACROSS MIDNIGHT
+	mysql  --login-path=local -DSRG_Dev -N -e "SELECT DISTINCT(CardNumber) FROM CardActivity_squashed WHERE CardNumber IS NOT NULL AND TransactionTime > '21:00:00' AND TransactionDate >= '$Maxdate'
+							ORDER BY CardNumber ASC" | while read -r CardNumber;
+	do
+		######### GET DATA IF CHECK FROM BETWEEN MIDNIGHT AND 4 AM 
+		mysql  --login-path=local -DSRG_Dev -N -e "SELECT POSkey, TransactionDate, CheckNo FROM CardActivity_squashed where cardnumber like $CardNumber
+		AND TransactionTime > '00:00' and TransactionTime < '04:00' AND TransactionDate >= '$Maxdate'"| while read -r POSkey TransactionDate CheckNo;
+		do
+			########## GET THE POSkey FOR SAME CHECK FROM PREVIOUS DAY IF IT EXISTS
+			POSkey_prev=$(mysql  --login-path=local -DSRG_Dev -N -e "SELECT POSkey FROM CardActivity_squashed where cardnumber like '$CardNumber' 
+			AND TransactionDate = DATE_SUB('$TransactionDate', INTERVAL 1 DAY) AND CheckNo = '$CheckNo'")
+			#### SET POSkey FOR LATER RECORD TO EARLIER DATES POSkey (IF PREVIOUS POSKEY EXISTS)
+			if [ -n "$POSkey_prev" ]
+			then		
+				mysql  --login-path=local -DSRG_Dev -N -e "UPDATE CardActivity_squashed SET POSkey = '$POSkey_prev' WHERE POSkey = '$POSkey'"
+			#	echo "CARD: "$CardNumber" Transdate1: "$TransactionDate" Check: "$CheckNo" Key1: "$POSkey" Key2: "$POSkey_prev 
+			fi
+		done
+
+	done || trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+
+
+	#### DELETE FROM SQUASHED2 IN CASE THERE ARE ANY STRAGGLERS
+	mysql  --login-path=local --silent -DSRG_Dev -N -e "DELETE FROM CardActivity_squashed_2 WHERE TransactionDate = '$Maxdate'";
+	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+	echo 'MAX DATE DELETED FROM SQUASHED TABLE TO AVOID STRAGGLERS'
 
 	###################################### SQUASH2 #########################################
 	mysql  --login-path=local --silent -DSRG_Dev -N -e "INSERT INTO CardActivity_squashed_2
@@ -172,10 +222,18 @@ failfunction()
 	'0','0','0','0','0','0','0','0','0','0','0',''
 
 	FROM CardActivity_squashed
+	WHERE TransactionDate >= '$Maxdate'
 	GROUP by POSKey, LocationID, CardNumber, CardTemplate"
 	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 	echo 'NEW SQUASHED DATA TABLE    2    POPULATED'
 
+done
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+
+echo 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+
 echo 'DEV.PX.CA.PROCESS.SH COMPLETED'
+
+
 
 
