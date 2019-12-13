@@ -44,6 +44,7 @@ echo 'CardActivity_Temp TABLE DROPPED, STARTING NEW TEMP TABLE CREATION'
 # Create a empty copy of CardActivity table from CardActivityStructure table
 mysql  --login-path=local --silent -DSRG_Prod -N -e "CREATE TABLE CardActivity_Temp LIKE CardActivity_Structure"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+echo 'CardActivity_Temp RE-CREATED, LOADING DATA FILE TO TEMP TABLE'
 
 # Load the data from the latest file into the (temp) CardActivity table
 ############### DUMMY FIELDS TO KEEP ALIGNMENT WITH PAYTRONIX ALTERATIONS TO TABLE STRUCTURE
