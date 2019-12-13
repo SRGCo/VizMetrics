@@ -51,22 +51,22 @@ for file in /home/ubuntu/db_files/incoming/px/CardActivity*.csv
 	cp "$file" //home/ubuntu/db_files/incoming/px/backup/
 	tail -n+2 "$file"  >> /home/ubuntu/db_files/incoming/px/Infile.CardActivity.csv
   done || trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'INCOMING -dev- DATA FILES CLEANED AND MERGED, ARCHIVING ORIGINAL FILES'
+echo 'INCOMING PX {dev} DATA FILES CLEANED AND MERGED, ARCHIVING ORIGINAL FILES'
 
 
 # Delete Temp table if it exists
-mysql  --login-path=local --silent -DSRG_Prod -N -e "DROP TABLE IF EXISTS CardActivity_Temp"
+mysql  --login-path=local --silent -DSRG_Prod_Dev -N -e "DROP TABLE IF EXISTS CardActivity_Temp"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'TEMP TABLE DROPPED, STARTING NEW TEMP TABLE CREATION'
+echo 'CardActivity_Temp TABLE DROPPED, STARTING NEW TEMP TABLE CREATION'
 
 # Create a empty copy of CardActivity table from CardActivityStructure table
-mysql  --login-path=local --silent -DSRG_Prod -N -e "CREATE TABLE CardActivity_Temp LIKE CardActivity_Structure"
+mysql  --login-path=local --silent -DSRG_Prod_Dev -N -e "CREATE TABLE CardActivity_Temp LIKE CardActivity_Structure"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'TEMP TABLE CREATED, LOADING DATA FILE TO TEMP TABLE'
+echo 'CardActivity_Temp RE-CREATED, LOADING DATA FILE TO TEMP TABLE'
 
 # Load the data from the latest file into the (temp) CardActivity table
-############### FIELDS DO NOT LINE UP DIRECTLY THERE ARE DUMMY FIELDS ADD AS WELL AS FIELDS IN DIFFERENT POSTIONS FROM PX IMPORT FILE
-mysql  --login-path=local --silent -DSRG_Prod -N -e "Load data local infile '/home/ubuntu/db_files/incoming/px/Infile.CardActivity.csv' into table CardActivity_Temp fields terminated by ',' lines terminated by '\n' (CardNumber,AccountCode,CustomerNo,CardTemplate,TransactionDate,TransactionType,StoreMerchant,StoreNumber,StoreName,WalletType,CheckNo,TerminalID,CashierID,IdentificationMethod,AccountStatus,Promotion,AuthCode,Sender,Dummy1,Dummy2,Dummy3,Dummy4,Dummy5,Dummy6,Dummy_Checkins_Accrued,Dummy_Checkins_Redeemed,Dummy_Checkins_Balance,Checkins_Accrued,Checkins_Redeemed,Checkins_Balance,Qualified_Checkins_Accrued,Qualified_Checkins_Redeemed,Qualified_Checkins_Balance,Qualified_Checkins_Redeemed,SurveyAccrued,SurveyRedeemed,SurveyBalance,NewsletterAccrued,NewsletterRedeemed,NewsletterBalance,LifetimeSpendAccrued,LifetimeSpendRedeemed,LifetimeSpendBalance,3000BonusPointsAccrued,3000BonusPointsRedeemed,3000BonusPointsBalance,RegAppAccrued,RegAppRedeemed,RegAppBalance,BdayEntreeAccrued,BdayEntreeRedeemed,BdayEntreeBalance,Dummy7,Dummy8,Dummy9,LTOAccrued,LTORedeemed,LTOBalance,LTObucksAccrued,LTObucksRedeemed,LTObucksBalance,CheckSubtotalAccrued,CheckSubtotalRedeemed,CheckSubtotalBalance,DollarsSpentAccrued,DollarsSpentRedeemed,DollarsSpentBalance,KidsMenuTrackingAccrued,KidsMenuTrackingRedeemed,KidsMenuTrackingBalance,BeerTrackingAccrued,BeerTrackingRedeemed,BeerTrackingBalance,SushiTrackingAccrued,SushiTrackingRedeemed,SushiTrackingBalance,WineTrackingAccrued,WineTrackingRedeemed,WineTrackingBalance,StoreRegisteredAccrued,StoreRegisteredRedeemed,StoreRegisteredBalance,SereniteePointsAccrued,SereniteePointsRedeemed,SereniteePointsBalance,LifetimePointsAccrued,LifetimePointsRedeemed,LifetimePointsBalance,100PointsIncrementAccrued,100PointsIncrementRedeemed,100PointsIncrementBalance,FreeAppAccrued,FreeAppRedeemed,FreeAppBalance,Dummy10,Dummy11,Dummy12,FreeEntreeAccrued,FreeEntreeRedeemed,FreeEntreeBalance,FreeDessertAccrued,FreeDessertRedeemed,FreeDessertBalance,FreePizzaAccrued,FreePizzaRedeemed,FreePizzaBalance,FreeSushiAccrued,FreeSushiRedeemed,FreeSushiBalance,5500PointsAccrued,5500PointsRedeemed,5500PointsBalance,3500PointsAccrued,3500PointsRedeemed,3500PointsBalance,2500PointsAccrued,2500PointsRedeemed,2500PointsBalance,1Kpts5bksAccrued,1Kpts5bksRedeemed,1Kpts5bksBalance,VisitsAccrued,VisitsRedeemed,VisitsBalance,TWKTripAccrued,TWKTripRedeemed,TWKTripBalance,SpotTripAccrued,SpotTripRedeemed,SpotTripBalance,MagsTripAccrued,MagsTripRedeemed,MagsTripBalance,OpusTripAccrued,OpusTripRedeemed,OpusTripBalance,WalnutTripAccrued,WalnutTripRedeemed,WalnutTripBalance,HaleTripAccrued,HaleTripRedeemed,HaleTripBalance,CalasTripAccrued,CalasTripRedeemed,CalasTripBalance,LatTripAccrued,LatTripRedeemed,LatTripBalance,HBTripAccrued,HBTripRedeemed,HBTripBalance,SereniteeAccrued,SereniteeRedeemed,SereniteeBalance,BandCompAccrued,BandCompRedeemed,BandCompBalance,GreenDollarsAccrued,GreenDollarsRedeemed,GreenDollarsBalance,GreenLATAppAccrued,GreenLATAppRedeemed,GreenLATAppBalance,GreenALCAppAccrued,GreenALCAppRedeemed,GreenALCAppBalance,GreenOPUSAppAccrued,GreenOPUSAppRedeemed,GreenOPUSAppBalance,GreenCALAppAccrued,GreenCALAppRedeemed,GreenCALAppBalance,GreenSPOTAppAccrued,GreenSPOTAppRedeemed,GreenSPOTAppBalance,GreenHALEAppAccrued,GreenHALEAppRedeemed,GreenHALEAppBalance,GreenWINCAppAccrued,GreenWINCAppRedeemed,GreenWINCAppBalance,GreenMAGsAppAccrued,GreenMAGsAppRedeemed,GreenMAGsAppBalance,GreenWALAppAccrued,GreenWALAppRedeemed,GreenWALAppBalance,CompAccrued,CompRedeemed,CompBalance,SereniteeGiftCardAccrued,SereniteeGiftCardRedeemed,SereniteeGiftCardBalance,SVDiscountTrackingAccrued,SVDiscountTrackingRedeemed,SVDiscountTrackingBalance)"
+############### DUMMY FIELDS TO KEEP ALIGNMENT WITH PAYTRONIX ALTERATIONS TO TABLE STRUCTURE
+mysql  --login-path=local --silent -DSRG_Prod_Dev -N -e "Load data local infile '/home/ubuntu/db_files/incoming/px/Infile.CardActivity.csv' into table CardActivity_Temp fields terminated by ',' lines terminated by '\n' (CardNumber,AccountCode,CustomerNo,CardTemplate,TransactionDate,TransactionType,StoreMerchant,StoreNumber,StoreName,WalletType,CheckNo,TerminalID,CashierID,IdentificationMethod,AccountStatus,Promotion,AuthCode,Sender,Dummy1,Dummy2,Dummy3,Dummy4,Dummy5,Dummy6,Dummy_Checkins_Accrued,Dummy_Checkins_Redeemed,Dummy_Checkins_Balance,Checkins_Accrued,Checkins_Redeemed,Checkins_Balance,Qualified_Checkins_Accrued,Qualified_Checkins_Redeemed,Qualified_Checkins_Balance,SurveyAccrued,SurveyRedeemed,SurveyBalance,NewsletterAccrued,NewsletterRedeemed,NewsletterBalance,LifetimeSpendAccrued,LifetimeSpendRedeemed,LifetimeSpendBalance,3000BonusPointsAccrued,3000BonusPointsRedeemed,3000BonusPointsBalance,RegAppAccrued,RegAppRedeemed,RegAppBalance,BdayEntreeAccrued,BdayEntreeRedeemed,BdayEntreeBalance,Dummy7,Dummy8,Dummy9,LTOAccrued,LTORedeemed,LTOBalance,LTObucksAccrued,LTObucksRedeemed,LTObucksBalance,CheckSubtotalAccrued,CheckSubtotalRedeemed,CheckSubtotalBalance,DollarsSpentAccrued,DollarsSpentRedeemed,DollarsSpentBalance,KidsMenuTrackingAccrued,KidsMenuTrackingRedeemed,KidsMenuTrackingBalance,BeerTrackingAccrued,BeerTrackingRedeemed,BeerTrackingBalance,SushiTrackingAccrued,SushiTrackingRedeemed,SushiTrackingBalance,WineTrackingAccrued,WineTrackingRedeemed,WineTrackingBalance,StoreRegisteredAccrued,StoreRegisteredRedeemed,StoreRegisteredBalance,SereniteePointsAccrued,SereniteePointsRedeemed,SereniteePointsBalance,LifetimePointsAccrued,LifetimePointsRedeemed,LifetimePointsBalance,100PointsIncrementAccrued,100PointsIncrementRedeemed,100PointsIncrementBalance,FreeAppAccrued,FreeAppRedeemed,FreeAppBalance,Dummy10,Dummy11,Dummy12,FreeEntreeAccrued,FreeEntreeRedeemed,FreeEntreeBalance,FreeDessertAccrued,FreeDessertRedeemed,FreeDessertBalance,FreePizzaAccrued,FreePizzaRedeemed,FreePizzaBalance,FreeSushiAccrued,FreeSushiRedeemed,FreeSushiBalance,5500PointsAccrued,5500PointsRedeemed,5500PointsBalance,3500PointsAccrued,3500PointsRedeemed,3500PointsBalance,2500PointsAccrued,2500PointsRedeemed,2500PointsBalance,1Kpts5bksAccrued,1Kpts5bksRedeemed,1Kpts5bksBalance,VisitsAccrued,VisitsRedeemed,VisitsBalance,TWKTripAccrued,TWKTripRedeemed,TWKTripBalance,SpotTripAccrued,SpotTripRedeemed,SpotTripBalance,MagsTripAccrued,MagsTripRedeemed,MagsTripBalance,OpusTripAccrued,OpusTripRedeemed,OpusTripBalance,WalnutTripAccrued,WalnutTripRedeemed,WalnutTripBalance,HaleTripAccrued,HaleTripRedeemed,HaleTripBalance,CalasTripAccrued,CalasTripRedeemed,CalasTripBalance,LatTripAccrued,LatTripRedeemed,LatTripBalance,HBTripAccrued,HBTripRedeemed,HBTripBalance,SereniteeAccrued,SereniteeRedeemed,SereniteeBalance,BandCompAccrued,BandCompRedeemed,BandCompBalance,GreenDollarsAccrued,GreenDollarsRedeemed,GreenDollarsBalance,GreenLATAppAccrued,GreenLATAppRedeemed,GreenLATAppBalance,GreenALCAppAccrued,GreenALCAppRedeemed,GreenALCAppBalance,GreenOPUSAppAccrued,GreenOPUSAppRedeemed,GreenOPUSAppBalance,GreenCALAppAccrued,GreenCALAppRedeemed,GreenCALAppBalance,GreenSPOTAppAccrued,GreenSPOTAppRedeemed,GreenSPOTAppBalance,GreenHALEAppAccrued,GreenHALEAppRedeemed,GreenHALEAppBalance,GreenWINCAppAccrued,GreenWINCAppRedeemed,GreenWINCAppBalance,GreenMAGsAppAccrued,GreenMAGsAppRedeemed,GreenMAGsAppBalance,GreenWALAppAccrued,GreenWALAppRedeemed,GreenWALAppBalance,CompAccrued,CompRedeemed,CompBalance,SereniteeGiftCardAccrued,SereniteeGiftCardRedeemed,SereniteeGiftCardBalance,SVDiscountTrackingAccrued,SVDiscountTrackingRedeemed,SVDiscountTrackingBalance)"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'CARDACTIVITY DATA LOADED INTO CardActivity_Temp'
 
@@ -80,10 +80,10 @@ rm -f /home/ubuntu/db_files/incoming/px/Infile.CardActivity.csv
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 ### INDEX CARD TEMPLATE AND TRANSACTIONTYPE, CardNumber
-mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE CardActivity_Temp ADD INDEX(TransactionType)"
+mysql  --login-path=local --silent -DSRG_Prod_Dev -N -e "ALTER TABLE CardActivity_Temp ADD INDEX(TransactionType)"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
-mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE CardActivity_Temp ADD INDEX(CardNumber)"
+mysql  --login-path=local --silent -DSRG_Prod_Dev -N -e "ALTER TABLE CardActivity_Temp ADD INDEX(CardNumber)"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 echo 'CARDACTIVITY -dev- TransactionType and CardNumber indexed'
@@ -91,95 +91,95 @@ echo 'CARDACTIVITY -dev- TransactionType and CardNumber indexed'
 
 echo 'DELETING EXTRANEOUS RECORDS BY TRANSACTION TYPES'
 ### REMOVE ANY/ALL RECORDS THAT ARE NOT WORTH PROCESSING ! ! ! !
-mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM CardActivity_Temp WHERE CardTemplate != 'Serenitee Loyalty'"
+mysql  --login-path=local --silent -DSRG_Prod_Dev -N -e "DELETE FROM CardActivity_Temp WHERE CardTemplate != 'Serenitee Loyalty'"
 echo '10% deleted'
-mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM CardActivity_Temp WHERE TransactionType = 'Identify Customer'"
+mysql  --login-path=local --silent -DSRG_Prod_Dev -N -e "DELETE FROM CardActivity_Temp WHERE TransactionType = 'Identify Customer'"
 echo '25% deleted'
-mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM CardActivity_Temp WHERE TransactionType = 'Web Reward Purchase'"
+mysql  --login-path=local --silent -DSRG_Prod_Dev -N -e "DELETE FROM CardActivity_Temp WHERE TransactionType = 'Web Reward Purchase'"
 echo '30% deleted'
-mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM CardActivity_Temp WHERE TransactionType = 'Admin Adjustment'"
+mysql  --login-path=local --silent -DSRG_Prod_Dev -N -e "DELETE FROM CardActivity_Temp WHERE TransactionType = 'Admin Adjustment'"
 echo '35% deleted'
-mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM CardActivity_Temp WHERE TransactionType = 'Denied Campaign Adjustment'"
+mysql  --login-path=local --silent -DSRG_Prod_Dev -N -e "DELETE FROM CardActivity_Temp WHERE TransactionType = 'Denied Campaign Adjustment'"
 echo '40% deleted'
-mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM CardActivity_Temp WHERE TransactionType = 'Denied Accrual / Redemption'"
+mysql  --login-path=local --silent -DSRG_Prod_Dev -N -e "DELETE FROM CardActivity_Temp WHERE TransactionType = 'Denied Accrual / Redemption'"
 echo '45% deleted'
-mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM CardActivity_Temp WHERE TransactionType = 'Denied Activate'"
+mysql  --login-path=local --silent -DSRG_Prod_Dev -N -e "DELETE FROM CardActivity_Temp WHERE TransactionType = 'Denied Activate'"
 echo '50% deleted'
-mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM CardActivity_Temp WHERE TransactionType = 'Check-In'"
+mysql  --login-path=local --silent -DSRG_Prod_Dev -N -e "DELETE FROM CardActivity_Temp WHERE TransactionType = 'Check-In'"
 echo '55% deleted'
-mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM CardActivity_Temp WHERE TransactionType = 'Campaign Adjustment'"
+mysql  --login-path=local --silent -DSRG_Prod_Dev -N -e "DELETE FROM CardActivity_Temp WHERE TransactionType = 'Campaign Adjustment'"
 echo '60% deleted'
-mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM CardActivity_Temp WHERE TransactionType = 'Balance Inquiry'"
+mysql  --login-path=local --silent -DSRG_Prod_Dev -N -e "DELETE FROM CardActivity_Temp WHERE TransactionType = 'Balance Inquiry'"
 echo '65% deleted'
-mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM CardActivity_Temp WHERE TransactionType = 'Denied Balance Inquiry'"
+mysql  --login-path=local --silent -DSRG_Prod_Dev -N -e "DELETE FROM CardActivity_Temp WHERE TransactionType = 'Denied Balance Inquiry'"
 echo '70% deleted'
-mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM CardActivity_Temp WHERE TransactionType = 'Campaign Expiration'"
+mysql  --login-path=local --silent -DSRG_Prod_Dev -N -e "DELETE FROM CardActivity_Temp WHERE TransactionType = 'Campaign Expiration'"
 echo '75% deleted'
-mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM CardActivity_Temp WHERE TransactionType IS NULL"
+mysql  --login-path=local --silent -DSRG_Prod_Dev -N -e "DELETE FROM CardActivity_Temp WHERE TransactionType IS NULL"
 echo '90% deleted'
-mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM CardActivity_Temp WHERE CardNumber = '0'"
+mysql  --login-path=local --silent -DSRG_Prod_Dev -N -e "DELETE FROM CardActivity_Temp WHERE CardNumber = '0'"
 echo '100% deleted, ADDING LOCATIONID FIELD'
 
 # CREATE LOCATIONID FIELD
-mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE CardActivity_Temp ADD LocationID INT( 3 ) first"
+mysql  --login-path=local --silent -DSRG_Prod_Dev -N -e "ALTER TABLE CardActivity_Temp ADD LocationID INT( 3 ) first"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'ADDED LOCATIONID FIELD TO TEMP TABLE, UPDATING LOCATIONS'
 
 ##### UPDATE LOCATIONID
-mysql  --login-path=local --silent -DSRG_Prod -N -e "UPDATE CardActivity_Temp set LocationID = (SELECT ID from Locations WHERE Locations.PXID = CardActivity_Temp.StoreNumber)"
+mysql  --login-path=local --silent -DSRG_Prod_Dev -N -e "UPDATE CardActivity_Temp set LocationID = (SELECT ID from Locations WHERE Locations.PXID = CardActivity_Temp.StoreNumber)"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'UPDATED LOCATIONID FROM locations TABLE, FORMATTING TransactionDate FIELD'
 
 ##### UPDATE RAW DOB TO VARCHAR
 # UPDATE THE DOB TO VARCHAR
-mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE CardActivity_Temp modify TransactionDate VARCHAR(40)"
+mysql  --login-path=local --silent -DSRG_Prod_Dev -N -e "ALTER TABLE CardActivity_Temp modify TransactionDate VARCHAR(40)"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
-mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE CardActivity_Temp ADD COLUMN TransactionTime VARCHAR(10) AFTER TransactionDate"
+mysql  --login-path=local --silent -DSRG_Prod_Dev -N -e "ALTER TABLE CardActivity_Temp ADD COLUMN TransactionTime VARCHAR(10) AFTER TransactionDate"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
-mysql  --login-path=local --silent -DSRG_Prod -N -e "UPDATE CardActivity_Temp SET TransactionTime = RIGHT(TransactionDate, 5)"
+mysql  --login-path=local --silent -DSRG_Prod_Dev -N -e "UPDATE CardActivity_Temp SET TransactionTime = RIGHT(TransactionDate, 5)"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
-mysql  --login-path=local --silent -DSRG_Prod -N -e "UPDATE CardActivity_Temp SET TransactionDate = LEFT(TransactionDate,10)"
+mysql  --login-path=local --silent -DSRG_Prod_Dev -N -e "UPDATE CardActivity_Temp SET TransactionDate = LEFT(TransactionDate,10)"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 echo 'DOB NOW VARCHAR, UPDATING TO SQL'
 
 # PUT TransactionDate INTO SQL FORMAT
-mysql  --login-path=local --silent -DSRG_Prod -N -e "UPDATE CardActivity_Temp SET TransactionDate= STR_TO_DATE(TransactionDate, '%Y-%m-%d') WHERE STR_TO_DATE(TransactionDate, '%Y-%m-%d') IS NOT NULL"
+mysql  --login-path=local --silent -DSRG_Prod_Dev -N -e "UPDATE CardActivity_Temp SET TransactionDate= STR_TO_DATE(TransactionDate, '%Y-%m-%d') WHERE STR_TO_DATE(TransactionDate, '%Y-%m-%d') IS NOT NULL"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'DOB NOW SQL FORMAT, UPDATING TO DATE FORMAT'
 
 # Change TransactionDate field to type date
-mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE CardActivity_Temp CHANGE TransactionDate TransactionDate DATE"
+mysql  --login-path=local --silent -DSRG_Prod_Dev -N -e "ALTER TABLE CardActivity_Temp CHANGE TransactionDate TransactionDate DATE"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'DOB NOW DATE FORMAT, ADDING POSkey field'
 
 # Create POSkey field
-mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE CardActivity_Temp ADD POSkey VARCHAR(30) first"
+mysql  --login-path=local --silent -DSRG_Prod_Dev -N -e "ALTER TABLE CardActivity_Temp ADD POSkey VARCHAR(30) first"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'POSkey FIELD ADDED, ADDING Exceldate FIELD'
 
 # Create excel date field
-mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE CardActivity_Temp ADD Exceldate INT(100) AFTER LocationID"
+mysql  --login-path=local --silent -DSRG_Prod_Dev -N -e "ALTER TABLE CardActivity_Temp ADD Exceldate INT(100) AFTER LocationID"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'Exceldate FIELD ADDED, POPULATING ExcelDate FIELD'
 
 # Update excel date field
-mysql  --login-path=local --silent -DSRG_Prod -N -e "UPDATE CardActivity_Temp set Exceldate = (((unix_timestamp(TransactionDate) / 86400) + 25569) + (-5/24))"
+mysql  --login-path=local --silent -DSRG_Prod_Dev -N -e "UPDATE CardActivity_Temp set Exceldate = (((unix_timestamp(TransactionDate) / 86400) + 25569) + (-5/24))"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'ExcelDate FIELD POPULATED, CREATING POSkey VALUES'
 
 
 # Update POSkey field (location + TransactionDate[excel format][no decimal] + checknumber)
-mysql  --login-path=local --silent -DSRG_Prod -N -e "UPDATE CardActivity_Temp set POSkey = CONCAT_WS('', LocationID, Exceldate, CheckNo)"
+mysql  --login-path=local --silent -DSRG_Prod_Dev -N -e "UPDATE CardActivity_Temp set POSkey = CONCAT_WS('', LocationID, Exceldate, CheckNo)"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'POSkeys CREATED'
 
 
 ### INDEX CARD TEMPLATE AND TRANSACTIONTYPE, CardNumber
-mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE CardActivity_Temp ADD INDEX(CheckNo)"
+mysql  --login-path=local --silent -DSRG_Prod_Dev -N -e "ALTER TABLE CardActivity_Temp ADD INDEX(CheckNo)"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'CARDACTIVITY -dev- CheckNo indexed'
 
@@ -189,38 +189,38 @@ echo 'CARDACTIVITY -dev- CheckNo indexed'
 ##################### ITERATE UPDATE TO CA CheckNumbers MISSING LEADIN "100"
 ############################## THIS IS WHY CHECKDETAIL HAS TO RUN EARLIER THAN CA 
 
-mysql  --login-path=local --silent -DSRG_Prod -N -e "SELECT RIGHT(CheckNumber, 4), DOB, LocationID FROM CheckDetail_Live WHERE CheckDetail_Live.CheckNumber like '100%' AND DOB >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) ORDER BY DOB ASC" | while read -r CheckNumber DOB LocationID;
+mysql  --login-path=local --silent -DSRG_Prod_Dev -N -e "SELECT RIGHT(CheckNumber, 4), DOB, LocationID FROM CheckDetail_Live WHERE CheckDetail_Live.CheckNumber like '100%' AND DOB >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) ORDER BY DOB ASC" | while read -r CheckNumber DOB LocationID;
 do
-mysql  --login-path=local --silent -DSRG_Prod -N -e "UPDATE CardActivity_Temp SET CheckNo=CONCAT('100',CheckNo) WHERE CheckNo = '$CheckNumber' AND TransactionDate = '$DOB' AND LocationID = '$LocationID' AND char_length(CheckNo) < '6'"
+mysql  --login-path=local --silent -DSRG_Prod_Dev -N -e "UPDATE CardActivity_Temp SET CheckNo=CONCAT('100',CheckNo) WHERE CheckNo = '$CheckNumber' AND TransactionDate = '$DOB' AND LocationID = '$LocationID' AND char_length(CheckNo) < '6'"
 done
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'PX CHECKNUMBERS MISSING 100 FIXED, UPDATING POSKEYS IN TEMP TABLE'
 
 echo 'CORRELATING/FIXING PX CHECKNUMBERS MISSING 100'
 ##### Update POSkey field (location + TransactionDate[excel format][no decimal] + checknumber)
-mysql  --login-path=local --silent -DSRG_Prod -N -e "UPDATE CardActivity_Temp set POSkey = CONCAT_WS('', LocationID, Exceldate, CheckNo)"
+mysql  --login-path=local --silent -DSRG_Prod_Dev -N -e "UPDATE CardActivity_Temp set POSkey = CONCAT_WS('', LocationID, Exceldate, CheckNo)"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'UPDATED POSKEYS IN TEMP TABLE'
 
 ######## DROP UNNEEDED TEMP FIELDS
-mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE CardActivity_Temp DROP Exceldate"
+mysql  --login-path=local --silent -DSRG_Prod_Dev -N -e "ALTER TABLE CardActivity_Temp DROP Exceldate"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'DROPPED EXCEL DATE FIELD FROM CARDACTIVITY TEMP'
 
 
 ########### UPDATE THE CardActivitylive table
-mysql  --login-path=local --silent -DSRG_Prod -N -e "INSERT INTO CardActivity_Live SELECT * FROM CardActivity_Temp"
+mysql  --login-path=local --silent -DSRG_Prod_Dev -N -e "INSERT INTO CardActivity_Live SELECT * FROM CardActivity_Temp"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'CARD ACTIVITY LIVE TABLE UPDATED WITH CARD ACTIVITY TEMP DATA'
 
 ################ THE SQUASHES RUN ON ALL DATA COULD THEY JUST RUN ON MOST RECENT?
 
-mysql  --login-path=local --silent -DSRG_Prod -N -e "SELECT MAX(TransactionDate) FROM CardActivity_squashed" | while read -r Maxdate;
+mysql  --login-path=local --silent -DSRG_Prod_Dev -N -e "SELECT MAX(TransactionDate) FROM CardActivity_squashed" | while read -r Maxdate;
 do
 echo "MaxDate in CA Squashed: {$Maxdate}"
 
 	#### DELETE IN CASE THERE ARE ANY STRAGGLERS
-	mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM CardActivity_squashed WHERE TransactionDate = '$Maxdate'";
+	mysql  --login-path=local --silent -DSRG_Prod_Dev -N -e "DELETE FROM CardActivity_squashed WHERE TransactionDate = '$Maxdate'";
 	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 	echo 'MAX DATE DELETED FROM SQUASHED TABLE TO AVOID STRAGGLERS'
 
@@ -229,11 +229,14 @@ echo "MaxDate in CA Squashed: {$Maxdate}"
 	############## SQUASH AND INSERT DATA FROM LIVE CardActivity ###############
 	####### ONLY FOR LAST DATE
 	####### should we do the FY and luna inserts here
-	mysql  --login-path=local --silent -DSRG_Prod -N -e "INSERT INTO CardActivity_squashed
+	mysql  --login-path=local --silent -DSRG_Prod_Dev -N -e "INSERT INTO CardActivity_squashed
 	SELECT
 	DISTINCT(POSKey), LocationID, CardNumber, CardTemplate, TransactionDate, MIN(TransactionTime), MIN(checkno),
 	SUM(Dummy1),SUM(Dummy2),MAX(Dummy3),
 	SUM(Dummy4),SUM(Dummy5),MAX(Dummy6),
+	SUM(Dummy_Checkins_Accrued),SUM(Dummy_Checkins_Redeemed),MAX(Dummy_Checkins_Balance),
+	SUM(Checkins_Accrued),SUM(Checkins_Redeemed),MAX(Checkins_Balance),
+	SUM(Qualified_Checkins_Accrued),SUM(Qualified_Checkins_Redeemed),MAX(Qualified_Checkins_Balance),
 	SUM(SurveyAccrued),SUM(SurveyRedeemed),MAX(SurveyBalance),
 	SUM(NewsletterAccrued),SUM(NewsletterRedeemed),MAX(NewsletterBalance),
 	SUM(LifetimeSpendAccrued),SUM(LifetimeSpendRedeemed),MAX(LifetimeSpendBalance),
@@ -309,20 +312,20 @@ echo "MaxDate in CA Squashed: {$Maxdate}"
 
 
 	######## FIX CHECKS THAT WERE OPEN ACROSS MIDNIGHT
-	mysql  --login-path=local -DSRG_Prod -N -e "SELECT DISTINCT(CardNumber) FROM CardActivity_squashed WHERE CardNumber IS NOT NULL AND TransactionTime > '21:00:00' AND TransactionDate >= '$Maxdate'
+	mysql  --login-path=local -DSRG_Prod_Dev -N -e "SELECT DISTINCT(CardNumber) FROM CardActivity_squashed WHERE CardNumber IS NOT NULL AND TransactionTime > '21:00:00' AND TransactionDate >= '$Maxdate'
 							ORDER BY CardNumber ASC" | while read -r CardNumber;
 	do
 		######### GET DATA IF CHECK FROM BETWEEN MIDNIGHT AND 4 AM 
-		mysql  --login-path=local -DSRG_Prod -N -e "SELECT POSkey, TransactionDate, CheckNo FROM CardActivity_squashed where cardnumber like $CardNumber
+		mysql  --login-path=local -DSRG_Prod_Dev -N -e "SELECT POSkey, TransactionDate, CheckNo FROM CardActivity_squashed where cardnumber like $CardNumber
 		AND TransactionTime > '00:00' and TransactionTime < '04:00' AND TransactionDate >= '$Maxdate'"| while read -r POSkey TransactionDate CheckNo;
 		do
 			########## GET THE POSkey FOR SAME CHECK FROM PREVIOUS DAY IF IT EXISTS
-			POSkey_prev=$(mysql  --login-path=local -DSRG_Prod -N -e "SELECT POSkey FROM CardActivity_squashed where cardnumber like '$CardNumber' 
+			POSkey_prev=$(mysql  --login-path=local -DSRG_Prod_Dev -N -e "SELECT POSkey FROM CardActivity_squashed where cardnumber like '$CardNumber' 
 			AND TransactionDate = DATE_SUB('$TransactionDate', INTERVAL 1 DAY) AND CheckNo = '$CheckNo'")
 			#### SET POSkey FOR LATER RECORD TO EARLIER DATES POSkey (IF PREVIOUS POSKEY EXISTS)
 			if [ -n "$POSkey_prev" ]
 			then		
-				mysql  --login-path=local -DSRG_Prod -N -e "UPDATE CardActivity_squashed SET POSkey = '$POSkey_prev' WHERE POSkey = '$POSkey'"
+				mysql  --login-path=local -DSRG_Prod_Dev -N -e "UPDATE CardActivity_squashed SET POSkey = '$POSkey_prev' WHERE POSkey = '$POSkey'"
 			#	echo "CARD: "$CardNumber" Transdate1: "$TransactionDate" Check: "$CheckNo" Key1: "$POSkey" Key2: "$POSkey_prev 
 			fi
 		done
@@ -331,17 +334,19 @@ echo "MaxDate in CA Squashed: {$Maxdate}"
 
 
 	#### DELETE FROM SQUASHED2 IN CASE THERE ARE ANY STRAGGLERS
-	mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM CardActivity_squashed_2 WHERE TransactionDate = '$Maxdate'";
+	mysql  --login-path=local --silent -DSRG_Prod_Dev -N -e "DELETE FROM CardActivity_squashed_2 WHERE TransactionDate = '$Maxdate'";
 	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 	echo 'MAX DATE DELETED FROM SQUASHED TABLE TO AVOID STRAGGLERS'
 
 	###################################### SQUASH2 #########################################
-	mysql  --login-path=local --silent -DSRG_Prod -N -e "INSERT INTO CardActivity_squashed_2
+	mysql  --login-path=local --silent -DSRG_Prod_Dev -N -e "INSERT INTO CardActivity_squashed_2
 	SELECT
 	DISTINCT(POSKey), LocationID, CardNumber, CardTemplate, MIN(TransactionDate), MIN(TransactionTime), MIN(checkno),
-
 	SUM(Dummy1),SUM(Dummy2),MAX(Dummy3),
 	SUM(Dummy4),SUM(Dummy5),MAX(Dummy6),
+	SUM(Dummy_Checkins_Accrued),SUM(Dummy_Checkins_Redeemed),MAX(Dummy_Checkins_Balance),
+	SUM(Checkins_Accrued),SUM(Checkins_Redeemed),MAX(Checkins_Balance),
+	SUM(Qualified_Checkins_Accrued),SUM(Qualified_Checkins_Redeemed),MAX(Qualified_Checkins_Balance),
 	SUM(SurveyAccrued),SUM(SurveyRedeemed),MAX(SurveyBalance),
 	SUM(NewsletterAccrued),SUM(NewsletterRedeemed),MAX(NewsletterBalance),
 	SUM(LifetimeSpendAccrued),SUM(LifetimeSpendRedeemed),MAX(LifetimeSpendBalance),
