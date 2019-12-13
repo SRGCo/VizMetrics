@@ -70,14 +70,18 @@ mysql  --login-path=local --silent -DSRG_Prod -N -e "Load data local infile '/ho
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'CARDACTIVITY DATA LOADED INTO CardActivity_Temp'
 
-
-
 # DELETE THE WORKING CARDACTIVITY CSVS
 rm -f /home/ubuntu/db_files/incoming/px/CardActivity*.csv
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 rm -f /home/ubuntu/db_files/incoming/px/Infile.CardActivity.csv
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+
+########### COPY DATA PRE-MANIPULATION INTO THE CARDACTIVITY_RAW TABLE
+mysql  --login-path=local --silent -DSRG_Prod -N -e "INSERT INTO CardActivity_Raw SELECT * FROM CardActivity_Temp"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+echo 'CardActivity_Raw TABLE UPDATED WITH CARD ACTIVITY FROM TEMP DATA TABLE (PRE_MANIPULATION)'
+
 
 ### INDEX CARD TEMPLATE AND TRANSACTIONTYPE, CardNumber
 mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE CardActivity_Temp ADD INDEX(TransactionType)"
