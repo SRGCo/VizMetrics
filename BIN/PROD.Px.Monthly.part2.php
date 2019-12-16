@@ -71,13 +71,13 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	$Carryover_LastVisitDate = '';
 	$Visit_Count_Total = ($Visit_Count_Total + $VisitsAccruedLife_db);
 
-	// PRINT COUNT EVERY 5000 CARDNUMBERS
+	// PRINT COUNT EVERY 250 CARDNUMBERS
 	$counter++;
 	$printcount = fmod($counter, 250);
 	IF ($printcount == '0'){
 	ECHO PHP_EOL.$counter++;
 	$run_time = microtime(true) - $start_time;
-	ECHO 'Time:'.$run_time.' Card:'.$CardNumber_db.' Enrolled:'.$EnrollDate_db.' LT Visits:'.$VisitsAccruedLife_db.' Total:'.$Visit_Count_Total;
+	ECHO ' Time:'.$run_time.' Card:'.$CardNumber_db.' Enrolled:'.$EnrollDate_db.' LT Visits:'.$VisitsAccruedLife_db.' Total PX Visit: '.$Visit_Count_Total;
 	}
 
 	
