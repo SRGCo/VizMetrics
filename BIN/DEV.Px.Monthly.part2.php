@@ -1,8 +1,8 @@
 #!/usr/bin/php
 <?php 
 ##### BEFORE PROCESSING LETS MAKE A BACK UP JUST IN CASE
-#exec('mysqldump -uroot -ps3r3n1t33 SRG_Prod Px_Monthly > /home/ubuntu/db_files/PROD.Px_Monthly.$(date +%Y-%m-%d-%H.%M.%S).sql');
-#echo 'PX MONTHLY TABLE BACKED UP';
+# exec('mysqldump -uroot -ps3r3n1t33 SRG_Prod Px_Monthly > /home/ubuntu/db_files/PROD.Px_Monthly.$(date +%Y-%m-%d-%H.%M.%S).sql');
+echo 'PX MONTHLY TABLE *****NOT****** BACKED UP';
 
 
 function yrseg ($pastvisitbal, $lifetimevisits)
@@ -29,7 +29,7 @@ function yrseg ($pastvisitbal, $lifetimevisits)
 define ('DB_USER', 'root');
 define ('DB_PASSWORD','s3r3n1t33');
 define ('DB_HOST','localhost');
-define ('DB_NAME','SRG_Dev');
+define ('DB_NAME','SRG_Prod');
 
 # Make the connection and then select the database
 # display errors if fail
@@ -45,14 +45,13 @@ $VisitsAccruedLife_db = '0';
 //QUERY PX_MONTHLY FOR CARDNUMBER
 # NOT USING -- 	AND MOD(CardNumber, 200) = '0'
 $query1 = "SELECT CardNumber as CardNumber, MAX(LifetimeVisitBalance) as VisitsAccruedLife FROM Px_Monthly	
-		GROUP BY CardNumber ORDER BY CardNumber ASC";
+		WHERE CardNumber >= '6000227906743709' GROUP BY CardNumber ORDER BY CardNumber ASC";
 $result1 = mysqli_query($dbc, $query1);
 ECHO MYSQLI_ERROR($dbc);
 while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	$CardNumber_db = $row1['CardNumber'];
 	$VisitsAccruedLife_db = $row1['VisitsAccruedLife'];
-####################################### only run if they visited ###########################################
-IF ($VisitsAccruedLife_db > '0'){	
+	
 	#INIT THE VARS
 	$YrMoVisitBal_1MoBack_db = $YrMoVisitBal_3MoBack_db = $LapseMo_12MoBack_db = $YrMoVisitBal_12MoBack_db = '';
 	$YrMoVisitBal_24MoBack_db = $YrMoVisitBal_36MoBack_db = $YrMoFreqSeg_24MoBack_txt = $YrMoFreqSeg_36MoBack_txt = '';
@@ -62,7 +61,7 @@ IF ($VisitsAccruedLife_db > '0'){
 
 	// PRINT COUNT EVERY 5000 CARDNUMBERS
 	$counter++;
-	$printcount = fmod($counter, 250);
+	$printcount = fmod($counter, 1);
 	IF ($printcount == '0'){
 	ECHO PHP_EOL.$counter++.'  card:';
 	ECHO $CardNumber_db.' Lifetime Visits:'.$VisitsAccruedLife_db;
@@ -174,8 +173,6 @@ IF ($VisitsAccruedLife_db > '0'){
 		# do this for $YrMoVisitBal_1YrBack_db - $YrMoFreq_1YrBack_txt
 		$YrMoFreq_1YrBack_txt = yrseg($PrevYearVisitBal_db, $VisitsAccruedLife_db);
 
-/* set autocommit to off */
-mysqli_autocommit($dbc, FALSE);
 
 		/////// INSERT VALUES INTO THE TABLE HERE
 		$query16= "UPDATE Px_Monthly SET
@@ -197,11 +194,6 @@ mysqli_autocommit($dbc, FALSE);
 		$result16 = mysqli_query($dbc, $query16);	
 		ECHO MYSQLI_ERROR($dbc);
 
-/* commit transaction */
-if (!mysqli_commit($dbc)) {
-   ECHO 'Commit INSERT Transaction Failed - DEV.Px.Monthly.part2.php'.PHP_EOL;
-    exit();
-}
 
 	# ECHO 'Cardnumber: ',$CardNumber_db,' FocusDate: ',$FocusDate_db,PHP_EOL;
 	//END OF FOCUSMONTH LOOP
@@ -209,15 +201,13 @@ if (!mysqli_commit($dbc)) {
 # ECHO '+++++++++++++++ Cardnumber: ',$CardNumber_db,' FocusDate: ',$FocusDate_db,PHP_EOL;
 // END OF CARD NUMBER WHILE LOOP
 }
-
-
-##### AFTER WE FINISH ALL THAT PROCESSING LETS MAKE A BACK UP JUST IN CASE
-#exec('mysqldump -uroot -ps3r3n1t33 SRG_Prod Px_Monthly > /home/ubuntu/db_files/PROD.Px_Monthly.$(date +%Y-%m-%d-%H.%M.%S).sql');
-#echo 'PX MONTHLY TABLE BACKED UP';
-
-######################################### end only run if they visited #########################################
-}
 ECHO PHP_EOL.'ALL CARDS PAST FREQUENCY UPDATED FOR ALL FOCUSDATES'.PHP_EOL;
 
 
+##### AFTER WE FINISH ALL THAT PROCESSING LETS MAKE A BACK UP JUST IN CASE
+exec('mysqldump -uroot -ps3r3n1t33 SRG_Prod Px_Monthly > /home/ubuntu/db_files/PROD.Px_Monthly.$(date +%Y-%m-%d-%H.%M.%S).sql');
+echo 'PX MONTHLY TABLE BACKED UP';
+
+
 ?>
+
