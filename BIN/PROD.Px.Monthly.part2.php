@@ -43,14 +43,17 @@ $counter = 0;
 $Visit_Count_Total = '0';
 $VisitsAccruedLife_db = '0';
 $start_time = microtime(true);
+$LastVisitDate_db = '';
 
 //QUERY PX_MONTHLY FOR CARDNUMBER
 # NOT USING -- 	AND MOD(CardNumber, 200) = '0'
-$query1 = "SELECT CardNumber FROM Px_Monthly GROUP BY CardNumber ORDER BY CardNumber ASC";
+$query1 = "SELECT CardNumber, LastVisitDate FROM Px_Monthly WHERE LastVisitDate > DATE_SUB(NOW(), INTERVAL 37 MONTH) 
+		GROUP BY CardNumber ORDER BY CardNumber ASC";
 $result1 = mysqli_query($dbc, $query1);
 ECHO MYSQLI_ERROR($dbc);
 while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	$CardNumber_db = $row1['CardNumber'];
+	$LastVisitDate_db = $row1['LastVisitDate'];
 	#ECHO $CardNumber_db.PHP_EOL;
 
 	//QUERY PX_MONTHLY FOR CARDNUMBER
@@ -67,17 +70,17 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	$YrMoVisitBal_1MoBack_db = $YrMoVisitBal_3MoBack_db = $LapseMo_12MoBack_db = $YrMoVisitBal_12MoBack_db = '';
 	$YrMoVisitBal_24MoBack_db = $YrMoVisitBal_36MoBack_db = $YrMoFreqSeg_24MoBack_txt = $YrMoFreqSeg_36MoBack_txt = '';
 	$YrMoFreqSeg_12MoBack_txt = $YrMoFreqSeg_3MoBack_txt = $YrMoFreqSeg_1MoBack_txt = $YrMoFreq_1YrBack_txt = '';
-	$LastVisitDate_db = $PrevYearVisitBal_db = $LapseDays_db = $RecentFreqDays_db = $ProgAge_db = '';	
+	 $PrevYearVisitBal_db = $LapseDays_db = $RecentFreqDays_db = $ProgAge_db = '';	
 	$Carryover_LastVisitDate = '';
 	$Visit_Count_Total = ($Visit_Count_Total + $VisitsAccruedLife_db);
 
-	// PRINT COUNT EVERY 250 CARDNUMBERS
+	// PRINT COUNT EVERY 25 CARDNUMBERS
 	$counter++;
-	$printcount = fmod($counter, 250);
+	$printcount = fmod($counter, 25);
 	IF ($printcount == '0'){
 	ECHO PHP_EOL.$counter++;
 	$run_time = microtime(true) - $start_time;
-	ECHO ' Time:'.$run_time.' Card:'.$CardNumber_db.' Enrolled:'.$EnrollDate_db.' LT Visits:'.$VisitsAccruedLife_db.' Total PX Visit: '.$Visit_Count_Total;
+	ECHO ' Last:'.$LastVisitDate_db.' Card:'.$CardNumber_db.' Enrolled:'.$EnrollDate_db.' LT Visits:'.$VisitsAccruedLife_db.' Total PX Visit: '.$Visit_Count_Total;
 	}
 
 	

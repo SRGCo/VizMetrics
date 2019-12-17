@@ -44,7 +44,8 @@ $VisitsAccruedLife_db = '0';
 
 //QUERY PX_MONTHLY FOR CARDNUMBER
 # NOT USING -- 	AND MOD(CardNumber, 200) = '0'
-$query1 = "SELECT CardNumber as CardNumber, MAX(LifetimeVisitBalance) as VisitsAccruedLife FROM Px_Monthly	
+$query1 = "SELECT CardNumber as CardNumber, MAX(LifetimeVisitBalance) as VisitsAccruedLife FROM Px_Monthly WHERE CardNumber > '6000227901621744' AND 
+		LastVisitDate > DATE_SUB(NOW(), INTERVAL 37 MONTH)	
 		GROUP BY CardNumber ORDER BY CardNumber ASC";
 $result1 = mysqli_query($dbc, $query1);
 ECHO MYSQLI_ERROR($dbc);
