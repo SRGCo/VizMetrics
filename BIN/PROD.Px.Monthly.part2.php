@@ -48,6 +48,7 @@ $LastVisitDate_db = '';
 //QUERY PX_MONTHLY FOR CARDNUMBER
 # NOT USING -- 	AND MOD(CardNumber, 200) = '0'
 $query1 = "SELECT CardNumber, LastVisitDate FROM Px_Monthly WHERE LastVisitDate > DATE_SUB(NOW(), INTERVAL 37 MONTH) 
+		AND CardNumber > '6000227901251260'
 		GROUP BY CardNumber ORDER BY CardNumber ASC";
 $result1 = mysqli_query($dbc, $query1);
 ECHO MYSQLI_ERROR($dbc);
@@ -172,22 +173,22 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 
 
 		# do this for $YrMoVisitBal_1MoBack_db - $YrMoFreqSeg_1MoBack_tx
-		$YrMoFreqSeg_1MoBack_txt = yrseg($YrMoVisitBal_1MoBack_db, $VisitsAccruedLife_db);
+			$YrMoFreqSeg_1MoBack_txt = yrseg($YrMoVisitBal_1MoBack_db, $VisitsAccruedLife_db);
 
 		# do this for $YrMoVisitBal_3MoBack_db - $YrMoFreqSeg_3MoBack_txt
-		$YrMoFreqSeg_3MoBack_txt = yrseg($YrMoVisitBal_3MoBack_db, $VisitsAccruedLife_db);
+			$YrMoFreqSeg_3MoBack_txt = yrseg($YrMoVisitBal_3MoBack_db, $VisitsAccruedLife_db);
 
 		# do this for $YrMoVisitBal_12MoBack_db - $YrMoFreqSeg_12MoBack_txt
-		$YrMoFreqSeg_12MoBack_txt = yrseg($YrMoVisitBal_12MoBack_db, $VisitsAccruedLife_db);
+			$YrMoFreqSeg_12MoBack_txt = yrseg($YrMoVisitBal_12MoBack_db, $VisitsAccruedLife_db);
 
 		# do this for $YrMoVisitBal_24MoBack_db - $YrMoFreqSeg_24MoBack_txt
-		$YrMoFreqSeg_24MoBack_txt = yrseg($YrMoVisitBal_24MoBack_db, $VisitsAccruedLife_db);
+			$YrMoFreqSeg_24MoBack_txt = yrseg($YrMoVisitBal_24MoBack_db, $VisitsAccruedLife_db);
 
 		# do this for $YrMoVisitBal_36MoBack_db - $YrMoFreqSeg_36MoBack_txt
-		$YrMoFreqSeg_36MoBack_txt = yrseg($YrMoVisitBal_36MoBack_db, $VisitsAccruedLife_db);
+			$YrMoFreqSeg_36MoBack_txt = yrseg($YrMoVisitBal_36MoBack_db, $VisitsAccruedLife_db);
 
 		# do this for $YrMoVisitBal_1YrBack_db - $YrMoFreq_1YrBack_txt
-		$YrMoFreq_1YrBack_txt = yrseg($PrevYearVisitBal_db, $VisitsAccruedLife_db);
+			$YrMoFreq_1YrBack_txt = yrseg($PrevYearVisitBal_db, $VisitsAccruedLife_db);
 
 
 		/////// INSERT VALUES INTO THE TABLE HERE
