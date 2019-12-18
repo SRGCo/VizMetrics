@@ -48,7 +48,7 @@ $LastVisitDate_db = '';
 //QUERY PX_MONTHLY FOR CARDNUMBER
 # NOT USING -- 	AND MOD(CardNumber, 200) = '0'
 $query1 = "SELECT CardNumber, LastVisitDate FROM Px_Monthly WHERE LastVisitDate > DATE_SUB(NOW(), INTERVAL 37 MONTH) 
-		AND CardNumber > '6000227901251260'
+		AND CardNumber > '6000227902838246'
 		GROUP BY CardNumber ORDER BY CardNumber ASC";
 $result1 = mysqli_query($dbc, $query1);
 ECHO MYSQLI_ERROR($dbc);
