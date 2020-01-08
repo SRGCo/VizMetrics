@@ -27,8 +27,7 @@ failfunction()
 
 ##### HALT AND CATCH FIRE IF ANY COMMAND FAILS FROM HERE ON
 set -e
-mysql  --login-path=local -DSRG_Prod -N -e "SELECT Master.DOB FROM Master WHERE Master.DOB IS NOT NULL AND DOB >= DATE_SUB(NOW(),INTERVAL 365 DAY) 
-				GROUP BY Master.DOB ORDER BY Master.DOB DESC" | while read -r DOB;
+mysql  --login-path=local -DSRG_Prod -N -e "SELECT Master.DOB FROM Master WHERE Master.DOB IS NOT NULL GROUP BY Master.DOB ORDER BY Master.DOB DESC" | while read -r DOB;
 do
 
 		######## GET FY FOR THIS DOB (DOB)
