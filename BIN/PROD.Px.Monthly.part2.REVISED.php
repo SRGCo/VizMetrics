@@ -39,20 +39,22 @@ mysqli_select_db($dbc, DB_NAME)
 	OR die('Could not connect to the database:'.MYSQLI_ERROR($dbc));
 
 ### INIT Variables
-$counter = 0;
-$Visit_Count_Total = '0';
-$VisitsAccruedLife_db = '0';
 $start_time = microtime(true);
-$LastVisitDate_db = '';
 
 //QUERY PX_MONTHLY FOR CARDNUMBER
 # NOT USING -- 	AND MOD(CardNumber, 200) = '0'
-$query1 = "SELECT CardNumber, LastVisitDate FROM Px_Monthly GROUP BY CardNumber ORDER BY CardNumber ASC";
+$query1 = "SELECT CardNumber, LastVisitDate FROM Px_Monthly WHERE CardNumber > '3900227900016771' GROUP BY CardNumber ORDER BY CardNumber ASC";
 $result1 = mysqli_query($dbc, $query1);
 ECHO MYSQLI_ERROR($dbc);
 while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	$CardNumber_db = $row1['CardNumber'];
+
+	$LastVisitDate_db = '';
 	$LastVisitDate_db = $row1['LastVisitDate'];
+
+	# RESET VISIT COUNT
+	$Visit_Count_Total = '0';
+
 
 	//QUERY PX_MONTHLY FOR CARDNUMBER
 	# NOT USING -- 	AND MOD(CardNumber, 200) = '0'
@@ -60,7 +62,10 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	$result1a = mysqli_query($dbc, $query1a);
 	ECHO MYSQLI_ERROR($dbc);
 	while($row1 = mysqli_fetch_array($result1a, MYSQLI_ASSOC)){
+		
+		$VisitsAccruedLife_db = '0';
 		$VisitsAccruedLife_db = $row1['VisitsAccruedLife'];
+		
 		$EnrollDate_db = $row1['EnrollDate'];
 	}
 	
@@ -76,11 +81,10 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	$counter++;
 	$printcount = fmod($counter, 25);
 	IF ($printcount == '0'){
-	ECHO PHP_EOL.$counter++.' '.;
+	ECHO PHP_EOL.$counter++.' ';
 	$run_time = microtime(true);
 
-	echo date_format($run_time-$start_time, "H:i:s");
-
+	
 	ECHO ' Last:'.$LastVisitDate_db.' Card:'.$CardNumber_db.' Enrolled:'.$EnrollDate_db.' LT Visits:'.$VisitsAccruedLife_db.' Total PX Visit: '.$Visit_Count_Total;
 	}
 
