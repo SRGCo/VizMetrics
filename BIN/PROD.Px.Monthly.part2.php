@@ -39,7 +39,7 @@ mysqli_select_db($dbc, DB_NAME)
 	OR die('Could not connect to the database:'.MYSQLI_ERROR($dbc));
 
 ### INIT Variables
-$counter = 0;
+$counter = '17625';
 $Visit_Count_Total = '0';
 $VisitsAccruedLife_db = '0';
 $start_time = microtime(true);
@@ -47,9 +47,7 @@ $LastVisitDate_db = '';
 
 //QUERY PX_MONTHLY FOR CARDNUMBER
 # NOT USING -- 	AND MOD(CardNumber, 200) = '0'
-$query1 = "SELECT CardNumber, LastVisitDate FROM Px_Monthly WHERE LastVisitDate > DATE_SUB(NOW(), INTERVAL 37 MONTH) 
-		AND CardNumber > '6000227902838246'
-		GROUP BY CardNumber ORDER BY CardNumber ASC";
+$query1 = "SELECT CardNumber, LastVisitDate FROM Px_Monthly WHERE CardNumber > '6000227901638102' GROUP BY CardNumber ORDER BY CardNumber ASC";
 $result1 = mysqli_query($dbc, $query1);
 ECHO MYSQLI_ERROR($dbc);
 while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){

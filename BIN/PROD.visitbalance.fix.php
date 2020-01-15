@@ -21,7 +21,8 @@ mysqli_select_db($dbc, DB_NAME)
 $counter = 0;
 $Fixed_counter = 0;
 
-//QUERY MASTER FOR CARDNUMBER
+// QUERY MASTER FOR CARDNUMBER THAT HAVE HAD TRANSACTIONS IN LAST 60 DAYS
+// ***** SHOULD RUN A UBER VERSION OF THIS FIX THAT CHECKS ALL CARDS *****
 $query1 = "SELECT DISTINCT(CardNumber), EnrollDate FROM Master WHERE CardNumber IS NOT NULL AND TransactionDate >= DATE_SUB(NOW(),INTERVAL 60 DAY)  ORDER BY CardNumber ASC";
 $result1 = mysqli_query($dbc, $query1);
 ECHO MYSQLI_ERROR($dbc);
@@ -29,6 +30,9 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	$CardNumber_db = $row1['CardNumber'];
 	$EnrollDate_db = $row1['EnrollDate'];
 	$counter ++;
+
+	### WE GET DATES OF VISITS MORE RECENT THAN ENROLLMENT DATE
+
 	$query2 = "SELECT TransactionDate as FocusDate from Master WHERE CardNumber = '$CardNumber_db' AND TransactionDate > '$EnrollDate_db' ORDER BY TransactionDate ASC";
 	$result2 = mysqli_query($dbc, $query2);
 	ECHO MYSQLI_ERROR($dbc);
@@ -36,6 +40,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 		$FocusDate_db = $row1['FocusDate'];
 		# ECHO $query2.PHP_EOL;
 		// WE WILL PROCESS ONE TRANSACTIONDATE AT A TIME UPDATING ALL (ESPECIALLY NULLS/O) TO MAX VISITBALANCE FOR THAT DATE
+		### FIRST WE THE LARGEST VM VISITBALANCE ON THE DATE WE ARE WORKING WITH FOR THAT ACCOUNT
 		$query3 = "SELECT MAX(Vm_VisitsBalance) as MaxBal FROM Master WHERE TransactionDate = '$FocusDate_db' AND CardNumber = '$CardNumber_db'";
 		$result3 = mysqli_query($dbc, $query3);
 		ECHO MYSQLI_ERROR($dbc);
@@ -44,7 +49,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 			// ERROR CHECK FOR 0 MAX VISITBALANCES
 			IF ($MaxBal_db < '1'){ 
 				# echo $CardNumber_db.' This card had a '.$MaxBal_db.' vm_visitsbalance as its max on '.$FocusDate_db.' we will try to update to last max'.PHP_EOL;
-				// SO WE GET THE LAST MAX AND USE THAT
+				## SINCE THIS CARD HAD VISITBALANCE LESS THAN 1 ON THIS DATE WE LOOK BACK THROUGH EARLIER TRANSACTIONS FOR THE HIGHEST/MAX (PREVIOUS) BALANCE
 				$query3a = "SELECT MAX(Vm_VisitsBalance) as MaxBalLast FROM Master WHERE TransactionDate < '$FocusDate_db' AND CardNumber = '$CardNumber_db'";
 				$result3a = mysqli_query($dbc, $query3a);
 				ECHO MYSQLI_ERROR($dbc);
@@ -60,6 +65,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 					ECHO MYSQLI_ERROR($dbc);
 				}
 			} ELSE {
+				## IN THIS CASE THE MAX VISITBALANCE WAS AT LEAST 1 FOR THIS DATE
 				// WE WILL UPDATE ALL ROWS ON THIS DATE TO MAX VISITBALANCE
 				$query4a = "UPDATE Master SET Vm_VisitsBalance = '$MaxBal_db' WHERE CardNumber = '$CardNumber_db' AND Transactiondate = '$FocusDate_db'";
 				$result4a = mysqli_query($dbc, $query4a);

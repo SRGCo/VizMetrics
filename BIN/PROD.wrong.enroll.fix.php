@@ -24,6 +24,7 @@ mysqli_select_db($dbc, DB_NAME)
 
 ### INIT Variables
 $counter = 0;
+ECHO $counter.PHP_EOL;
 
 $query1a = "DROP TABLE IF EXISTS Master_temp";
 $result1a = mysqli_query($dbc, $query1a);
@@ -51,8 +52,6 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	$AccountStatus_db = $row1['AccountStatus'];
 	$LocationID_db = '0';
 
-	ECHO $CardNumber_db.' '.$EnrollDate_db.' EDAlt:'.$EnrollDate_alt;			
-
 	$query2 = "SELECT MIN(TransactionDate) as MinDate, POSkey FROM Master WHERE CardNumber = '$CardNumber_db'";
 	$result2 = mysqli_query($dbc, $query2);
 	ECHO MYSQLI_ERROR($dbc);
@@ -62,7 +61,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 
 		IF($MinDate_db <> $EnrollDate_db){
 			$counter ++;
-			ECHO ' MD:'.$MinDate_db.' '.$POSkey_db;			
+			ECHO PHP_EOL.$counter.') '.$CardNumber_db.' MinDate Master:'.$MinDate_db.' EnrollDate Guests'.$EnrollDate_db.' POSkey '.$POSkey_db;			
 		
 			#### INSERT A NEW RECORD INTO MASTER WITH A NEW POSKEY
 			$query3 = "SELECT ID from Locations WHERE PXID = '$EnrollStoreCode_db'";
@@ -90,7 +89,6 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 
 		}
 	}
-echo PHP_EOL;
 }
 $query5 = "INSERT INTO Master SELECT * FROM Master_temp";
 $result5 = mysqli_query($dbc, $query5);
@@ -98,5 +96,5 @@ ECHO MYSQLI_ERROR($dbc);
 
 
 ECHO $counter.PHP_EOL;
-	
+ECHO 'Master updated from Master_temp with placeholder transaction with correct first visit using guests enrolldate';
 ?>
