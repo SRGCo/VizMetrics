@@ -311,9 +311,9 @@ trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'MASTER- VM visists processed-'
 
 ################# Fix visitbalances in Master
-( "/home/ubuntu/bin/PROD.visitbalance.fix.php" )
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER- VM visitbalances fixed-'
+# ( "/home/ubuntu/bin/PROD.visitbalance.fix.php" )
+# trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+# echo 'MASTER- VM visitbalances fixed-'
 
 
 
