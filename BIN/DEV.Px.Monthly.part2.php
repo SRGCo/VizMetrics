@@ -29,7 +29,7 @@ function yrseg ($pastvisitbal, $lifetimevisits)
 define ('DB_USER', 'root');
 define ('DB_PASSWORD','s3r3n1t33');
 define ('DB_HOST','localhost');
-define ('DB_NAME','SRG_Dev');
+define ('DB_NAME','SRG_Prod_Dev');
 
 # Make the connection and then select the database
 # display errors if fail
@@ -39,7 +39,7 @@ mysqli_select_db($dbc, DB_NAME)
 	OR die('Could not connect to the database:'.MYSQLI_ERROR($dbc));
 
 ### INIT Variables
-$counter = 0;
+$counter = '0';
 $Visit_Count_Total = '0';
 $VisitsAccruedLife_db = '0';
 $start_time = microtime(true);
@@ -47,12 +47,13 @@ $LastVisitDate_db = '';
 
 //QUERY PX_MONTHLY FOR CARDNUMBER
 # NOT USING -- 	AND MOD(CardNumber, 200) = '0'
-$query1 = "SELECT CardNumber, LastVisitDate FROM Px_Monthly GROUP BY CardNumber ORDER BY CardNumber ASC";
+$query1 = "SELECT CardNumber, LastVisitDate FROM Px_Monthly WHERE CardNumber > '6000227902591219' GROUP BY CardNumber ORDER BY CardNumber ASC";
 $result1 = mysqli_query($dbc, $query1);
 ECHO MYSQLI_ERROR($dbc);
 while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	$CardNumber_db = $row1['CardNumber'];
 	$LastVisitDate_db = $row1['LastVisitDate'];
+	#ECHO $CardNumber_db.PHP_EOL;
 
 	//QUERY PX_MONTHLY FOR CARDNUMBER
 	# NOT USING -- 	AND MOD(CardNumber, 200) = '0'
@@ -68,7 +69,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	$YrMoVisitBal_1MoBack_db = $YrMoVisitBal_3MoBack_db = $LapseMo_12MoBack_db = $YrMoVisitBal_12MoBack_db = '';
 	$YrMoVisitBal_24MoBack_db = $YrMoVisitBal_36MoBack_db = $YrMoFreqSeg_24MoBack_txt = $YrMoFreqSeg_36MoBack_txt = '';
 	$YrMoFreqSeg_12MoBack_txt = $YrMoFreqSeg_3MoBack_txt = $YrMoFreqSeg_1MoBack_txt = $YrMoFreq_1YrBack_txt = '';
-	$PrevYearVisitBal_db = $LapseDays_db = $RecentFreqDays_db = $ProgAge_db = '';	
+	 $PrevYearVisitBal_db = $LapseDays_db = $RecentFreqDays_db = $ProgAge_db = '';	
 	$Carryover_LastVisitDate = '';
 	$Visit_Count_Total = ($Visit_Count_Total + $VisitsAccruedLife_db);
 
@@ -76,11 +77,8 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	$counter++;
 	$printcount = fmod($counter, 25);
 	IF ($printcount == '0'){
-	ECHO PHP_EOL.$counter++.' '.;
-	$run_time = microtime(true);
-
-	echo date_format($run_time-$start_time, "H:i:s");
-
+	ECHO PHP_EOL.$counter++;
+	$run_time = microtime(true) - $start_time;
 	ECHO ' Last:'.$LastVisitDate_db.' Card:'.$CardNumber_db.' Enrolled:'.$EnrollDate_db.' LT Visits:'.$VisitsAccruedLife_db.' Total PX Visit: '.$Visit_Count_Total;
 	}
 
@@ -91,157 +89,126 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	$result2 = mysqli_query($dbc, $query2);
 	ECHO MYSQLI_ERROR($dbc);
 	while($row1 = mysqli_fetch_array($result2, MYSQLI_ASSOC)){
-		$FocusDate_db = $row1['FocusDate'];	
+		$FocusDate_db = $row1['FocusDate'];
+	
 	 	$segment_txt = '';
 
-
-
-
-
-
-	################ START SUB-QUERIES SELECT / UPDATE IN BLOCKS ######################
-
-	###### 12 MONTHS BACK #######
-
-
-		######## SELECT 12 MONTH VISIT BALANCE
-		$query5s= "SELECT 12MoVisitBalance as PrevYearVisitBal
+		#FIELDS = 12MOVISITBALANCE (PHP=PREVYEARVISITBALANCE)
+		$query5= "SELECT 12MoVisitBalance as PrevYearVisitBal
 				FROM Px_Monthly 
 				WHERE CardNumber = '$CardNumber_db'
 				AND FocusDate = '$FocusDate_db'";
-		$result5s = mysqli_query($dbc, $query5s);	
+		$result5 = mysqli_query($dbc, $query5);	
 		ECHO MYSQLI_ERROR($dbc);
-		while($row1 = mysqli_fetch_array($result5s, MYSQLI_ASSOC)){
+		while($row1 = mysqli_fetch_array($result5, MYSQLI_ASSOC)){
 			$PrevYearVisitBal_db = $row1['PrevYearVisitBal'];
 		}
 		IF ($PrevYearVisitBal_db == ''){$PrevYearVisitBal_db = '0';}
-		$YrMoFreq_1YrBack_txt = yrseg($PrevYearVisitBal_db, $VisitsAccruedLife_db);
 	
 
-		#### SELECT 12 MONTHS BACK
-		$query5s2 = "SELECT 12MoVisitBalance, LapseMonths FROM Px_Monthly 
+		##### RETRIEVE PRIOR VISITBALANCE VALUES
+		#### ONE MONTH BACK
+		$query13 = "SELECT 12MoVisitBalance FROM Px_Monthly 
+			WHERE CardNumber = '$CardNumber_db'
+			AND FocusDate = DATE_SUB('$FocusDate_db',INTERVAL 1 MONTH)";
+		$result13 = mysqli_query($dbc, $query13);	
+		ECHO MYSQLI_ERROR($dbc);
+		while($row1 = mysqli_fetch_array($result13, MYSQLI_ASSOC)){
+			$YrMoVisitBal_1MoBack_db = $row1['12MoVisitBalance'];	
+		#	ECHO 'DaysEnrolled_db='.$DaysEnrolled.PHP_EOL;	
+		}
+		IF ($YrMoVisitBal_1MoBack_db == ''){$YrMoVisitBal_1MoBack_db = '0';}
+
+		#### THREE MONTHS BACK
+		$query14 = "SELECT 12MoVisitBalance FROM Px_Monthly 
+			WHERE CardNumber = '$CardNumber_db'
+			AND FocusDate = DATE_SUB('$FocusDate_db', INTERVAL 3 MONTH)";
+		$result14 = mysqli_query($dbc, $query14);	
+		ECHO MYSQLI_ERROR($dbc);
+		while($row1 = mysqli_fetch_array($result14, MYSQLI_ASSOC)){
+			$YrMoVisitBal_3MoBack_db = $row1['12MoVisitBalance'];	
+			#	ECHO 'DaysEnrolled_db='.$DaysEnrolled.PHP_EOL;	
+		}
+		IF ($YrMoVisitBal_3MoBack_db == ''){$YrMoVisitBal_3MoBack_db = '0';}
+
+		#### TWELVE MONTHS BACK
+		$query15 = "SELECT 12MoVisitBalance, LapseMonths FROM Px_Monthly 
 			WHERE CardNumber = '$CardNumber_db'
 			AND FocusDate = DATE_SUB('$FocusDate_db', INTERVAL 1 YEAR)";
-		$result5s2 = mysqli_query($dbc, $query5s2);
+		$result15 = mysqli_query($dbc, $query15);
 		ECHO MYSQLI_ERROR($dbc);
-		while($row1 = mysqli_fetch_array($result5s2, MYSQLI_ASSOC)){
+		while($row1 = mysqli_fetch_array($result15, MYSQLI_ASSOC)){
 			$YrMoVisitBal_12MoBack_db = $row1['12MoVisitBalance'];	
 			$LapseMo_12MoBack_db = $row1['LapseMonths'];		
 		}
 		IF ($YrMoVisitBal_12MoBack_db == ''){$YrMoVisitBal_12MoBack_db = '0';}
-		$YrMoFreqSeg_12MoBack_txt = yrseg($YrMoVisitBal_12MoBack_db, $VisitsAccruedLife_db);
 		IF ($LapseMo_12MoBack_db == ''){$LapseMo_12MoBack_db = '0';}
+	
+		##### RETRIEVE PRIOR VISITBALANCE VALUES
+		#### TWENTY FOUR MONTHS BACK
+		$query13b = "SELECT 12MoVisitBalance FROM Px_Monthly 
+			WHERE CardNumber = '$CardNumber_db'
+			AND FocusDate = DATE_SUB('$FocusDate_db',INTERVAL 2 YEAR)";
+		$result13b = mysqli_query($dbc, $query13b);	
+		ECHO MYSQLI_ERROR($dbc);
+		while($row1 = mysqli_fetch_array($result13b, MYSQLI_ASSOC)){
+			$YrMoVisitBal_24MoBack_db = $row1['12MoVisitBalance'];	
+		}
+		IF ($YrMoVisitBal_24MoBack_db == ''){$YrMoVisitBal_24MoBack_db = '0';}
 
-		/////// INSERT 12 MONTH BACK VALUES 
-		$query5u= "UPDATE Px_Monthly SET
+		##### RETRIEVE PRIOR VISITBALANCE VALUES
+		#### THIRTY SIX MONTHS BACK
+		$query13c = "SELECT 12MoVisitBalance FROM Px_Monthly 
+			WHERE CardNumber = '$CardNumber_db'
+			AND FocusDate = DATE_SUB('$FocusDate_db',INTERVAL 3 YEAR)";
+		$result13c = mysqli_query($dbc, $query13c);	
+		ECHO MYSQLI_ERROR($dbc);
+		while($row1 = mysqli_fetch_array($result13c, MYSQLI_ASSOC)){
+			$YrMoVisitBal_36MoBack_db = $row1['12MoVisitBalance'];	
+		#	ECHO 'DaysEnrolled_db='.$DaysEnrolled.PHP_EOL;	
+		}
+		IF ($YrMoVisitBal_36MoBack_db == ''){$YrMoVisitBal_36MoBack_db = '0';}
+
+
+		# do this for $YrMoVisitBal_1MoBack_db - $YrMoFreqSeg_1MoBack_tx
+			$YrMoFreqSeg_1MoBack_txt = yrseg($YrMoVisitBal_1MoBack_db, $VisitsAccruedLife_db);
+
+		# do this for $YrMoVisitBal_3MoBack_db - $YrMoFreqSeg_3MoBack_txt
+			$YrMoFreqSeg_3MoBack_txt = yrseg($YrMoVisitBal_3MoBack_db, $VisitsAccruedLife_db);
+
+		# do this for $YrMoVisitBal_12MoBack_db - $YrMoFreqSeg_12MoBack_txt
+			$YrMoFreqSeg_12MoBack_txt = yrseg($YrMoVisitBal_12MoBack_db, $VisitsAccruedLife_db);
+
+		# do this for $YrMoVisitBal_24MoBack_db - $YrMoFreqSeg_24MoBack_txt
+			$YrMoFreqSeg_24MoBack_txt = yrseg($YrMoVisitBal_24MoBack_db, $VisitsAccruedLife_db);
+
+		# do this for $YrMoVisitBal_36MoBack_db - $YrMoFreqSeg_36MoBack_txt
+			$YrMoFreqSeg_36MoBack_txt = yrseg($YrMoVisitBal_36MoBack_db, $VisitsAccruedLife_db);
+
+		# do this for $YrMoVisitBal_1YrBack_db - $YrMoFreq_1YrBack_txt
+			$YrMoFreq_1YrBack_txt = yrseg($PrevYearVisitBal_db, $VisitsAccruedLife_db);
+
+
+		/////// INSERT VALUES INTO THE TABLE HERE
+		$query16= "UPDATE Px_Monthly SET
+			12MoVisitBal_1MoBack = '$YrMoVisitBal_1MoBack_db',
+			12MoVisitBal_3MoBack = '$YrMoVisitBal_3MoBack_db',
 			12MoVisitBal_12MoBack = '$YrMoVisitBal_12MoBack_db',
+			12MoVisitBal_24MoBack = '$YrMoVisitBal_24MoBack_db',
+			12MoVisitBal_36MoBack = '$YrMoVisitBal_36MoBack_db',
+			12MoFreqSeg_1MoBack = '$YrMoFreqSeg_1MoBack_txt',
+			12MoFreqSeg_3MoBack = '$YrMoFreqSeg_3MoBack_txt',
 			12MoFreqSeg_12MoBack = '$YrMoFreqSeg_12MoBack_txt',
+			12MoFreqSeg_24MoBack = '$YrMoFreqSeg_24MoBack_txt',
+			12MoFreqSeg_36MoBack = '$YrMoFreqSeg_36MoBack_txt',
 			12MoFreqSeg = '$YrMoFreq_1YrBack_txt',
 			LapseMo_12MoBack = '$LapseMo_12MoBack_db'
 		WHERE CardNumber = '$CardNumber_db'
 		AND FocusDate = '$FocusDate_db'";
-		$result5u = mysqli_query($dbc, $query5u);	
+		// ECHO $query8.PHP_EOL;
+		$result16 = mysqli_query($dbc, $query16);	
 		ECHO MYSQLI_ERROR($dbc);
 
-
-
-	###### 1 MONTH BACK #######
-
-		$query6s = "SELECT 12MoVisitBalance FROM Px_Monthly 
-			WHERE CardNumber = '$CardNumber_db'
-			AND FocusDate = DATE_SUB('$FocusDate_db',INTERVAL 1 MONTH)";
-		$result6s = mysqli_query($dbc, $query6s);	
-		ECHO MYSQLI_ERROR($dbc);
-		while($row1 = mysqli_fetch_array($result6s, MYSQLI_ASSOC)){
-			$YrMoVisitBal_1MoBack_db = $row1['12MoVisitBalance'];	
-		}
-		IF ($YrMoVisitBal_1MoBack_db == ''){$YrMoVisitBal_1MoBack_db = '0';}
-		$YrMoFreqSeg_1MoBack_txt = yrseg($YrMoVisitBal_1MoBack_db, $VisitsAccruedLife_db);
-
-
-		#### INSERT 1 MONTH BACK VALUES 
-		$query6u= "UPDATE Px_Monthly SET
-			12MoVisitBal_1MoBack = '$YrMoVisitBal_1MoBack_db',
-			12MoFreqSeg_1MoBack = '$YrMoFreqSeg_1MoBack_txt'
-		WHERE CardNumber = '$CardNumber_db'
-		AND FocusDate = '$FocusDate_db'";
-		$result6u = mysqli_query($dbc, $query6u);	
-		ECHO MYSQLI_ERROR($dbc);
-
-
-	#### 3 MONTHS BACK #####
-
-
-		#### 3 MONTHS BACK
-		$query7s = "SELECT 12MoVisitBalance FROM Px_Monthly 
-			WHERE CardNumber = '$CardNumber_db'
-			AND FocusDate = DATE_SUB('$FocusDate_db', INTERVAL 3 MONTH)";
-		$result7s = mysqli_query($dbc, $query7s);	
-		ECHO MYSQLI_ERROR($dbc);
-		while($row1 = mysqli_fetch_array($result7s, MYSQLI_ASSOC)){
-			$YrMoVisitBal_3MoBack_db = $row1['12MoVisitBalance'];	
-		}
-		IF ($YrMoVisitBal_3MoBack_db == ''){$YrMoVisitBal_3MoBack_db = '0';}	
-		$YrMoFreqSeg_3MoBack_txt = yrseg($YrMoVisitBal_3MoBack_db, $VisitsAccruedLife_db);
-
-		#### INSERT 3 MONTH BACK VALUES 
-		$query7u= "UPDATE Px_Monthly SET
-			12MoVisitBal_3MoBack = '$YrMoVisitBal_3MoBack_db',
-			12MoFreqSeg_3MoBack = '$YrMoFreqSeg_3MoBack_txt'
-		WHERE CardNumber = '$CardNumber_db'
-		AND FocusDate = '$FocusDate_db'";
-		$result7u = mysqli_query($dbc, $query7u);	
-		ECHO MYSQLI_ERROR($dbc);
-
-
-	###### 24 MONTHS BACK #############
-
-		#### 24 MONTHS BACK
-		$query8s = "SELECT 12MoVisitBalance FROM Px_Monthly 
-			WHERE CardNumber = '$CardNumber_db'
-			AND FocusDate = DATE_SUB('$FocusDate_db',INTERVAL 2 YEAR)";
-		$result8s = mysqli_query($dbc, $query8s);	
-		ECHO MYSQLI_ERROR($dbc);
-		while($row1 = mysqli_fetch_array($result8s, MYSQLI_ASSOC)){
-			$YrMoVisitBal_24MoBack_db = $row1['12MoVisitBalance'];	
-		}
-		IF ($YrMoVisitBal_24MoBack_db == ''){$YrMoVisitBal_24MoBack_db = '0';}
-		$YrMoFreqSeg_24MoBack_txt = yrseg($YrMoVisitBal_24MoBack_db, $VisitsAccruedLife_db);
-
-		#### INSERT 24 MONTH BACK VALUES 
-		$query8u= "UPDATE Px_Monthly SET
-			12MoVisitBal_24MoBack = '$YrMoVisitBal_24MoBack_db',
-			12MoFreqSeg_24MoBack = '$YrMoFreqSeg_24MoBack_txt'
-		WHERE CardNumber = '$CardNumber_db'
-		AND FocusDate = '$FocusDate_db'";
-		$result8u = mysqli_query($dbc, $query8u);	
-		ECHO MYSQLI_ERROR($dbc);
-
-
-	##### 3 YEAR BACK
-
-
-		##### 36 MONTHS BACK
-		$query9s = "SELECT 12MoVisitBalance FROM Px_Monthly 
-			WHERE CardNumber = '$CardNumber_db'
-			AND FocusDate = DATE_SUB('$FocusDate_db',INTERVAL 3 YEAR)";
-		$result9s = mysqli_query($dbc, $query9s);	
-		ECHO MYSQLI_ERROR($dbc);
-		while($row1 = mysqli_fetch_array($result9s, MYSQLI_ASSOC)){
-			$YrMoVisitBal_36MoBack_db = $row1['12MoVisitBalance'];	
-		}
-		IF ($YrMoVisitBal_36MoBack_db == ''){$YrMoVisitBal_36MoBack_db = '0';}
-		$YrMoFreqSeg_36MoBack_txt = yrseg($YrMoVisitBal_36MoBack_db, $VisitsAccruedLife_db);
-
-
-		#### INSERT 36 MONTH BACK VALUES 
-		$query9u = "UPDATE Px_Monthly SET
-			12MoVisitBal_36MoBack = '$YrMoVisitBal_36MoBack_db',
-			12MoFreqSeg_36MoBack = '$YrMoFreqSeg_36MoBack_txt'
-		WHERE CardNumber = '$CardNumber_db'
-		AND FocusDate = '$FocusDate_db'";
-		$result9u = mysqli_query($dbc, $query9u);	
-		ECHO MYSQLI_ERROR($dbc);
 
 	# ECHO 'Cardnumber: ',$CardNumber_db,' FocusDate: ',$FocusDate_db,PHP_EOL;
 	//END OF FOCUSMONTH LOOP
