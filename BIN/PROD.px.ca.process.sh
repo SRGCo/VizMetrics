@@ -310,7 +310,8 @@ echo "MaxDate in CA Squashed: {$Maxdate}"
 	FROM CardActivity_Live
 	WHERE TransactionDate >= '$Maxdate'
 	AND TransactionType IN ('Accrual / Redemption','Activate')
-	GROUP by POSKey, LocationID, CardNumber, CardTemplate, TransactionDate"
+	GROUP by POSKey, LocationID, CardNumber, CardTemplate, TransactionDate
+	ORDER BY MAX(VisitsBalance)"
 
 	echo 'SQUASH TABLE INCREMENTALLY UPDATED'
 
@@ -409,7 +410,9 @@ echo "MaxDate in CA Squashed: {$Maxdate}"
 
 	FROM CardActivity_squashed
 	WHERE TransactionDate >= '$Maxdate'
-	GROUP by POSKey, LocationID, CardNumber, CardTemplate"
+	GROUP by POSKey, LocationID, CardNumber, CardTemplate
+	ORDER BY MAX(VisitsBalance)"
+
 	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 	echo 'NEW SQUASHED DATA TABLE    2    POPULATED'
 

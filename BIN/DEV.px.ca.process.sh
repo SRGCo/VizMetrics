@@ -310,7 +310,8 @@ echo "MaxDate in CA Squashed: {$Maxdate}"
 	FROM CardActivity_Live
 	WHERE TransactionDate >= '$Maxdate'
 	AND TransactionType IN ('Accrual / Redemption','Activate')
-	GROUP by POSKey, LocationID, CardNumber, CardTemplate, TransactionDate"
+	GROUP by POSKey, LocationID, CardNumber, CardTemplate, TransactionDate
+	ORDER BY MAX(VisitsBalance)"
 
 	echo 'SQUASH TABLE INCREMENTALLY UPDATED'
 
