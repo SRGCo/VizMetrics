@@ -25,166 +25,18 @@ failfunction()
 }
 
 
-
-########### COPY DATA PRE-MANIPULATION INTO THE CARDACTIVITY_RAW TABLE
-mysql  --login-path=local --silent -DSRG_Prod -N -e "INSERT INTO CardActivity_Raw SELECT * FROM CardActivity_Temp"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'CardActivity_Raw TABLE UPDATED WITH CARD ACTIVITY FROM TEMP DATA TABLE (PRE_MANIPULATION)'
-
-
-### INDEX CARD TEMPLATE AND TRANSACTIONTYPE, CardNumber
-mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE CardActivity_Temp ADD INDEX(TransactionType)"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-
-mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE CardActivity_Temp ADD INDEX(CardNumber)"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-
-echo 'CARDACTIVITY -dev- TransactionType and CardNumber indexed'
-
-
-echo 'DELETING EXTRANEOUS RECORDS BY TRANSACTION TYPES'
-### REMOVE ANY/ALL RECORDS THAT ARE NOT WORTH PROCESSING ! ! ! !
-mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM CardActivity_Temp WHERE CardTemplate != 'Serenitee Loyalty'"
-echo '10% deleted'
-mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM CardActivity_Temp WHERE TransactionType = 'Identify Customer'"
-echo '25% deleted'
-mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM CardActivity_Temp WHERE TransactionType = 'Web Reward Purchase'"
-echo '30% deleted'
-mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM CardActivity_Temp WHERE TransactionType = 'Admin Adjustment'"
-echo '35% deleted'
-mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM CardActivity_Temp WHERE TransactionType = 'Denied Campaign Adjustment'"
-echo '40% deleted'
-mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM CardActivity_Temp WHERE TransactionType = 'Denied Accrual / Redemption'"
-echo '45% deleted'
-mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM CardActivity_Temp WHERE TransactionType = 'Denied Activate'"
-echo '50% deleted'
-mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM CardActivity_Temp WHERE TransactionType = 'Check-In'"
-echo '55% deleted'
-mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM CardActivity_Temp WHERE TransactionType = 'Campaign Adjustment'"
-echo '60% deleted'
-mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM CardActivity_Temp WHERE TransactionType = 'Balance Inquiry'"
-echo '65% deleted'
-mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM CardActivity_Temp WHERE TransactionType = 'Denied Balance Inquiry'"
-echo '70% deleted'
-mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM CardActivity_Temp WHERE TransactionType = 'Campaign Expiration'"
-echo '75% deleted'
-mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM CardActivity_Temp WHERE TransactionType IS NULL"
-echo '90% deleted'
-mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM CardActivity_Temp WHERE CardNumber = '0'"
-echo '100% deleted, ADDING LOCATIONID FIELD'
-
-# CREATE LOCATIONID FIELD
-mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE CardActivity_Temp ADD LocationID INT( 3 ) first"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'ADDED LOCATIONID FIELD TO TEMP TABLE, UPDATING LOCATIONS'
-
-##### UPDATE LOCATIONID
-mysql  --login-path=local --silent -DSRG_Prod -N -e "UPDATE CardActivity_Temp set LocationID = (SELECT ID from Locations WHERE Locations.PXID = CardActivity_Temp.StoreNumber)"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'UPDATED LOCATIONID FROM locations TABLE, FORMATTING TransactionDate FIELD'
-
-##### UPDATE RAW DOB TO VARCHAR
-# UPDATE THE DOB TO VARCHAR
-mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE CardActivity_Temp modify TransactionDate VARCHAR(40)"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-
-mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE CardActivity_Temp ADD COLUMN TransactionTime VARCHAR(10) AFTER TransactionDate"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-
-mysql  --login-path=local --silent -DSRG_Prod -N -e "UPDATE CardActivity_Temp SET TransactionTime = RIGHT(TransactionDate, 5)"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-
-mysql  --login-path=local --silent -DSRG_Prod -N -e "UPDATE CardActivity_Temp SET TransactionDate = LEFT(TransactionDate,10)"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-
-echo 'DOB NOW VARCHAR, UPDATING TO SQL'
-
-# PUT TransactionDate INTO SQL FORMAT
-mysql  --login-path=local --silent -DSRG_Prod -N -e "UPDATE CardActivity_Temp SET TransactionDate= STR_TO_DATE(TransactionDate, '%Y-%m-%d') WHERE STR_TO_DATE(TransactionDate, '%Y-%m-%d') IS NOT NULL"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'DOB NOW SQL FORMAT, UPDATING TO DATE FORMAT'
-
-# Change TransactionDate field to type date
-mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE CardActivity_Temp CHANGE TransactionDate TransactionDate DATE"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'DOB NOW DATE FORMAT, ADDING POSkey field'
-
-# Create POSkey field
-mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE CardActivity_Temp ADD POSkey VARCHAR(30) first"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'POSkey FIELD ADDED, ADDING Exceldate FIELD'
-
-# Create excel date field
-mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE CardActivity_Temp ADD Exceldate INT(100) AFTER LocationID"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'Exceldate FIELD ADDED, POPULATING ExcelDate FIELD'
-
-# Update excel date field
-mysql  --login-path=local --silent -DSRG_Prod -N -e "UPDATE CardActivity_Temp set Exceldate = (((unix_timestamp(TransactionDate) / 86400) + 25569) + (-5/24))"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'ExcelDate FIELD POPULATED, CREATING POSkey VALUES'
-
-
-# Update POSkey field (location + TransactionDate[excel format][no decimal] + checknumber)
-mysql  --login-path=local --silent -DSRG_Prod -N -e "UPDATE CardActivity_Temp set POSkey = CONCAT_WS('', LocationID, Exceldate, CheckNo)"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'POSkeys CREATED'
-
-
-### INDEX CARD TEMPLATE AND TRANSACTIONTYPE, CardNumber
-mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE CardActivity_Temp ADD INDEX(CheckNo)"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'CARDACTIVITY -dev- CheckNo indexed'
-
-
-#### !!!!!!!! 	WE COULD HAVE THE SELECT QUERY ONLY GO BACK x# OF DAYS   !!!!!! ####
-############ ************** CAN WE SPEED THIS UP ******************** ##############
-##################### ITERATE UPDATE TO CA CheckNumbers MISSING LEADIN "100"
-############################## THIS IS WHY CHECKDETAIL HAS TO RUN EARLIER THAN CA 
-
-mysql  --login-path=local --silent -DSRG_Prod -N -e "SELECT RIGHT(CheckNumber, 4), DOB, LocationID FROM CheckDetail_Live WHERE CheckDetail_Live.CheckNumber like '100%' AND DOB >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) ORDER BY DOB ASC" | while read -r CheckNumber DOB LocationID;
+mysql  --login-path=local --silent -DSRG_Prod-1-27-20 -N -e "SELECT DISTINCT(POSKey) FROM CardActivity_Live" | while read -r POSkey_db;
 do
-mysql  --login-path=local --silent -DSRG_Prod -N -e "UPDATE CardActivity_Temp SET CheckNo=CONCAT('100',CheckNo) WHERE CheckNo = '$CheckNumber' AND TransactionDate = '$DOB' AND LocationID = '$LocationID' AND char_length(CheckNo) < '6'"
-done
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'PX CHECKNUMBERS MISSING 100 FIXED, UPDATING POSKEYS IN TEMP TABLE'
-
-echo 'CORRELATING/FIXING PX CHECKNUMBERS MISSING 100'
-##### Update POSkey field (location + TransactionDate[excel format][no decimal] + checknumber)
-mysql  --login-path=local --silent -DSRG_Prod -N -e "UPDATE CardActivity_Temp set POSkey = CONCAT_WS('', LocationID, Exceldate, CheckNo)"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'UPDATED POSKEYS IN TEMP TABLE'
-
-######## DROP UNNEEDED TEMP FIELDS
-mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE CardActivity_Temp DROP Exceldate"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'DROPPED EXCEL DATE FIELD FROM CARDACTIVITY TEMP'
-
-
-########### UPDATE THE CardActivitylive table
-mysql  --login-path=local --silent -DSRG_Prod -N -e "INSERT INTO CardActivity_Live SELECT * FROM CardActivity_Temp"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'CARD ACTIVITY LIVE TABLE UPDATED WITH CARD ACTIVITY TEMP DATA'
-
-################ THE SQUASHES RUN ON ALL DATA COULD THEY JUST RUN ON MOST RECENT?
-
-mysql  --login-path=local --silent -DSRG_Prod -N -e "SELECT MAX(TransactionDate) FROM CardActivity_squashed" | while read -r Maxdate;
-do
-echo "MaxDate in CA Squashed: {$Maxdate}"
-
-	#### DELETE IN CASE THERE ARE ANY STRAGGLERS
-	mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM CardActivity_squashed WHERE TransactionDate = '$Maxdate'";
-	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-	echo 'MAX DATE DELETED FROM SQUASHED TABLE TO AVOID STRAGGLERS'
+echo "Squashing: {$POSkey_db}"
 
 
 	############################ THE SQUASH ####################################
 	############## SQUASH AND INSERT DATA FROM LIVE CardActivity ###############
 	####### ONLY FOR LAST DATE
 	####### should we do the FY and luna inserts here
-	mysql  --login-path=local --silent -DSRG_Prod -N -e "INSERT INTO CardActivity_squashed
+	mysql  --login-path=local --silent -DSRG_Prod-1-27-20 -N -e "INSERT INTO CardActivity_squashed
 	SELECT
-	DISTINCT(POSKey), LocationID, CardNumber, CardTemplate, TransactionDate, MIN(TransactionTime), MIN(checkno),
+	POSKey, LocationID, CardNumber, CardTemplate, TransactionDate, MIN(TransactionTime), MIN(checkno),
 	SUM(Dummy1),SUM(Dummy2),MAX(Dummy3),
 	SUM(Dummy4),SUM(Dummy5),MAX(Dummy6),
 	SUM(Dummy_Checkins_Accrued),SUM(Dummy_Checkins_Redeemed),MAX(Dummy_Checkins_Balance),
@@ -257,45 +109,47 @@ echo "MaxDate in CA Squashed: {$Maxdate}"
 	'0',
 	''
 	FROM CardActivity_Live
-	WHERE TransactionDate >= '$Maxdate'
+	WHERE POSkey = '$POSkey_db'
 	AND TransactionType IN ('Accrual / Redemption','Activate')
 	GROUP by POSKey, LocationID, CardNumber, CardTemplate, TransactionDate
 	ORDER BY MAX(VisitsBalance)"
 
-	echo 'SQUASH TABLE INCREMENTALLY UPDATED'
+done
+echo 'SQUASH TABLE POPULATED CLEANLY'
 
 
-	######## FIX CHECKS THAT WERE OPEN ACROSS MIDNIGHT
-	mysql  --login-path=local -DSRG_Prod -N -e "SELECT DISTINCT(CardNumber) FROM CardActivity_squashed WHERE CardNumber IS NOT NULL AND TransactionTime > '21:00:00' AND TransactionDate >= '$Maxdate'
-							ORDER BY CardNumber ASC" | while read -r CardNumber;
+
+######## FIX CHECKS THAT WERE OPEN ACROSS MIDNIGHT
+mysql  --login-path=local -DSRG_Prod-1-27-20 -N -e "SELECT DISTINCT(CardNumber) FROM CardActivity_squashed WHERE CardNumber IS NOT NULL AND TransactionTime > '21:00:00'
+						ORDER BY CardNumber ASC" | while read -r CardNumber;
+do
+	######### GET DATA IF CHECK FROM BETWEEN MIDNIGHT AND 4 AM 
+	mysql  --login-path=local -DSRG_Prod-1-27-20 -N -e "SELECT POSkey, TransactionDate, CheckNo FROM CardActivity_squashed where cardnumber like $CardNumber
+	AND TransactionTime > '00:00' and TransactionTime < '04:00'"| while read -r POSkey TransactionDate CheckNo;
 	do
-		######### GET DATA IF CHECK FROM BETWEEN MIDNIGHT AND 4 AM 
-		mysql  --login-path=local -DSRG_Prod -N -e "SELECT POSkey, TransactionDate, CheckNo FROM CardActivity_squashed where cardnumber like $CardNumber
-		AND TransactionTime > '00:00' and TransactionTime < '04:00' AND TransactionDate >= '$Maxdate'"| while read -r POSkey TransactionDate CheckNo;
-		do
-			########## GET THE POSkey FOR SAME CHECK FROM PREVIOUS DAY IF IT EXISTS
-			POSkey_prev=$(mysql  --login-path=local -DSRG_Prod -N -e "SELECT POSkey FROM CardActivity_squashed where cardnumber like '$CardNumber' 
-			AND TransactionDate = DATE_SUB('$TransactionDate', INTERVAL 1 DAY) AND CheckNo = '$CheckNo'")
+		########## GET THE POSkey FOR SAME CHECK FROM PREVIOUS DAY IF IT EXISTS
+		POSkey_prev=$(mysql  --login-path=local -DSRG_Prod-1-27-20 -N -e "SELECT POSkey FROM CardActivity_squashed where cardnumber like '$CardNumber' 
+		AND TransactionDate = DATE_SUB('$TransactionDate', INTERVAL 1 DAY) AND CheckNo = '$CheckNo'")
+
 			#### SET POSkey FOR LATER RECORD TO EARLIER DATES POSkey (IF PREVIOUS POSKEY EXISTS)
 			if [ -n "$POSkey_prev" ]
 			then		
-				mysql  --login-path=local -DSRG_Prod -N -e "UPDATE CardActivity_squashed SET POSkey = '$POSkey_prev' WHERE POSkey = '$POSkey'"
+				mysql  --login-path=local -DSRG_Prod-1-27-20 -N -e "UPDATE CardActivity_squashed SET POSkey = '$POSkey_prev' WHERE POSkey = '$POSkey'"
 			#	echo "CARD: "$CardNumber" Transdate1: "$TransactionDate" Check: "$CheckNo" Key1: "$POSkey" Key2: "$POSkey_prev 
 			fi
-		done
+	done
 
-	done || trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+done || trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
+mysql  --login-path=local --silent -DSRG_Prod-1-27-20 -N -e "SELECT DISTINCT(POSKey) FROM CardActivity_squashed" | while read -r POSkey_db;
+do
+	echo "Squashing: {$POSkey_db}"
 
-	#### DELETE FROM SQUASHED2 IN CASE THERE ARE ANY STRAGGLERS
-	mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM CardActivity_squashed_2 WHERE TransactionDate = '$Maxdate'";
-	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-	echo 'MAX DATE DELETED FROM SQUASHED TABLE TO AVOID STRAGGLERS'
 
 	###################################### SQUASH2 #########################################
-	mysql  --login-path=local --silent -DSRG_Prod -N -e "INSERT INTO CardActivity_squashed_2
+	mysql  --login-path=local --silent -DSRG_Prod-1-27-20 -N -e "INSERT INTO CardActivity_squashed_2
 	SELECT
-	DISTINCT(POSKey), LocationID, CardNumber, CardTemplate, MIN(TransactionDate), MIN(TransactionTime), MIN(checkno),
+	POSKey, LocationID, CardNumber, CardTemplate, MIN(TransactionDate), MIN(TransactionTime), MIN(checkno),
 	SUM(Dummy1),SUM(Dummy2),MAX(Dummy3),
 	SUM(Dummy4),SUM(Dummy5),MAX(Dummy6),
 	SUM(Dummy_Checkins_Accrued),SUM(Dummy_Checkins_Redeemed),MAX(Dummy_Checkins_Balance),
@@ -358,19 +212,20 @@ echo "MaxDate in CA Squashed: {$Maxdate}"
 	'0','0','0','0','0','0','0','0','0','0','0',''
 
 	FROM CardActivity_squashed
-	WHERE TransactionDate >= '$Maxdate'
+	WHERE POSkey = '$POSkey_db'
 	GROUP by POSKey, LocationID, CardNumber, CardTemplate
 	ORDER BY MAX(VisitsBalance)"
+done
 
 	trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 	echo 'NEW SQUASHED DATA TABLE    2    POPULATED'
 
-done
+
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 echo 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
 
-echo 'DEV.PX.CA.PROCESS.SH COMPLETED'
+echo 'FIX SQUASH BALANCES'
 
 
 
