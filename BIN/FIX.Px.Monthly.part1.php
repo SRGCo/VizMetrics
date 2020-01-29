@@ -13,7 +13,7 @@
 define ('DB_USER', 'root');
 define ('DB_PASSWORD','s3r3n1t33');
 define ('DB_HOST','localhost');
-define ('DB_NAME','SRG_Prod');
+define ('DB_NAME','SRG_Prod-1-27-20');
 
 # Make the connection and then select the database
 # display errors if fail
@@ -31,15 +31,15 @@ $result_table = mysqli_query($dbc, $query_table);
 ECHO MYSQLI_ERROR($dbc);
 ECHO 'Px_Monthly TRUNCATED FOR FULL RUN!!!!!!'.PHP_EOL;
 
-
-
 //QUERY MASTER FOR CARDNUMBER (MAIN QUERY1)
 $query1 = "SELECT DISTINCT(CardNumber) as CardNumber FROM Guests_Master WHERE CardNumber IS NOT NULL 	
-					AND EnrollDate IS NOT NULL AND EnrollDate >= '2014-01-01' ORDER BY CardNumber ASC";
+					AND EnrollDate IS NOT NULL ORDER BY CardNumber ASC";
 $result1 = mysqli_query($dbc, $query1);
 ECHO MYSQLI_ERROR($dbc);
 while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	$CardNumber_db = $row1['CardNumber'];
+
+#echo $CardNumber_db.PHP_EOL;
 
 	#INIT THE VARS
 	$MinDateMonth_db = $MinDateYear_db = $FocusDate = $FocusDateEnd = '';
@@ -61,7 +61,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	$Firstrun = 'Yes';
 	// PRINT COUNTER ENTRY EVERY 1000 CARDNUMBERS
 	$counter++;
-	$printcount = fmod($counter, 50);
+	$printcount = fmod($counter, 1000);
 	IF ($printcount == '0'){
 		ECHO PHP_EOL.$counter++.'  card:';
 		ECHO $CardNumber_db;
@@ -83,7 +83,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	# GET FIRSTNAME, LASTNAME, ENROLLDATE, ZIP
 	$query3 = "SELECT FirstName, LastName, EnrollDate, Zip, Tier,
 				YEAR(EnrollDate) as MinDateYear,
-				MONTH(EnrollDate) as MinDateMonth
+				DATE_FORMAT(EnrollDate, '%m') as MinDateMonth
 				FROM Guests_Master WHERE CardNumber = '$CardNumber_db'";
 	$result3 = mysqli_query($dbc, $query3);	
 	ECHO MYSQLI_ERROR($dbc);
@@ -102,11 +102,9 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	$FocusDateEnd = date("Y-m-d",strtotime($FocusDate."+1 month -1 day"));
 	$FocusDate_php = strtotime($FocusDate);
 	$EnrollDate_db_php = strtotime($EnrollDate_db);
-	# IF ENROLLMENT OCCURED DURING FOCUSMONTH SKIP TO NEXT MONTH
-	IF ($FocusDate_php <= $EnrollDate_db_php){
-		$FocusDate = date("Y-m-d",strtotime($FocusDate."+1 month"));
-		$FocusDateEnd = date("Y-m-d",strtotime($FocusDateEnd."+1 month"));
-	}
+
+#ECHO 'Curdate'.$CurrentDate_db.' FD:'.$FocusDate.' FDE'.$FocusDateEnd.PHP_EOL;	
+
 
 	// WHILE FOCUSDATE IS LESS THAN TODAYS DATE REPEAT QUERIES
 	WHILE ($FocusDate <= $CurrentDate_db){
@@ -139,7 +137,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 			SUM(Vm_VisitsAccrued) as VisitsAccruedMonth                   
 			FROM Master WHERE  CardNumber = '$CardNumber_db'
 			AND DollarsSpentAccrued IS NOT NULL
-			AND Vm_VisitsAccrued > '0'
+			AND DollarsSpentAccrued > '0'
 			AND TransactionDate >= '$FocusDate'
 			AND TransactionDate <= '$FocusDateEnd'";
 		$result4 = mysqli_query($dbc, $query4);	
@@ -158,8 +156,6 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 		IF (EMPTY($DiscountsMonth_db)){
 			$DiscountsMonth_db = '0.00';
 		}
-
-
 
 		$YearFreqSeg = $RecentFreqMonths_db = $TwoVisitsBack_php = $YrAgoFreq = $LastVisitBalance_db = '';
 				#echo ' DolSpentMo'.$DollarsSpentMonth_db.' PtsRedeemMo'.$PointsRedeemedMonth_db;
@@ -185,7 +181,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 				FROM Master 
 				WHERE CardNumber = '$CardNumber_db'
 				AND TransactionDate <= '$FocusDate'				
-				AND Vm_VisitsAccrued = '1'";
+				AND VisitsAccrued = '1'";
 		$result5a = mysqli_query($dbc, $query5a);	
 		ECHO MYSQLI_ERROR($dbc);
 		while($row1 = mysqli_fetch_array($result5a, MYSQLI_ASSOC)){
@@ -294,7 +290,6 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 			$Card_status_db = $row1['Card_status'];
 		}
 
-mysqli_begin_transaction($dbc, MYSQLI_TRANS_START_READ_WRITE);
 
 		/////// INSERT VALUES INTO THE TABLE HERE
 		$query8= "INSERT INTO Px_Monthly SET CardNumber = '$CardNumber_db',
@@ -325,14 +320,11 @@ mysqli_begin_transaction($dbc, MYSQLI_TRANS_START_READ_WRITE);
 				LifetimeVisitBalance = '$VisitsAccruedLife_db'";
 				// ECHO $query8.PHP_EOL;
 		$result8 = mysqli_query($dbc, $query8);	
-		if(!$result8){ECHO $query8.' ';} ELSE {
-						mysqli_commit($dbc);
-						}
-
+		if(!$result8){ECHO $query8.' ';}
 		ECHO MYSQLI_ERROR($dbc);
 
 		$FocusDate = date("Y-m-d",strtotime($FocusDate." +1 month "));
-		$FocusDateEnd = date("Y-m-d",strtotime($FocusDate." +2 month - 1 day "));
+		$FocusDateEnd = date("Y-m-d",strtotime($FocusDate." +1 month - 1 day "));
 		$Carryover_LastVisitDate = $LastVisitDate_db;
 
 	// END OF WHILE FOCUSDATE LESS THAN TODAY (MAIN QUERY2)
@@ -340,14 +332,15 @@ mysqli_begin_transaction($dbc, MYSQLI_TRANS_START_READ_WRITE);
 
 	### WE'LL PRINT EXTENDED INFO FOR COUNTER ACCOUNTS, JUST TO SEE IF ANYTHING LOOKS WONKY
 	IF ($printcount == '0'){
-			ECHO ' FirstName: '.$FirstName_db.' LastName: '.$LastName_db.' FirstRun:'.$Firstrun;
+		ECHO ' FirstName: '.$FirstName_db.' LastName: '.$LastName_db.' FirstRun:'.$Firstrun;
 		ECHO PHP_EOL.'             Zip:'.$Zip_db.' Tier:'.$Tier_db.' Enrolled: '.$EnrollDate_db;
 		ECHO PHP_EOL.'             FocusDate:'.$FocusDate.' Last Visit Date: '.$LastVisitDate_db;
 		ECHO PHP_EOL.'             LifetimeSpend:'.$DollarsSpentLife_db.' LapseMonths: '.$LapseMonths_db;
 		ECHO PHP_EOL.'             Lifetime Visits: '.$VisitsAccruedLife_db;
 	}
 
-###### TEMP WHILE STATEMENT
+
+// END OF CARD NUMBER WHILE LOOP (MAIN QUERY1)
 }
 
 
@@ -357,10 +350,9 @@ $Query18 = "DELETE FROM Px_Monthly WHERE LastName = 'Test' or LastName = 'test' 
 $result18 = mysqli_query($dbc, $Query18);
 ECHO MYSQLI_ERROR($dbc);
 ################ WE COULE BREAK THE SCRIPT HERE AND POSSIBLY GET IT TO RUN FASTER
-ECHO PHP_EOL.'Count of accounts processed: '.$counter;
+ECHO PHP_EOL.'Count of accounts processed: '.$counter
 
 
 ?>
-
 
 
