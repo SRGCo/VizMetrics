@@ -35,8 +35,7 @@ failfunction()
 ### IF THE FOLLOWING FTPS FAIL WE KEEP GOING
 set +e
 
-###### CALL THE FTP CRON JOBS
-###### FIRST WE GET THE FILES FROM PX
+###### CALL THE FTP / FILE HANDLING SCRIPT
 ( "/home/ubuntu/bin/2020_px.file.handling.sh" )
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 sleep 5s
@@ -99,7 +98,7 @@ mysql  --login-path=local --silent -DSRG_2020 -N -e "DELETE FROM cardactivity_te
 echo '45% deleted'
 mysql  --login-path=local --silent -DSRG_2020 -N -e "DELETE FROM cardactivity_temp WHERE TransactionType = 'Denied Activate'"
 echo '50% deleted'
-# NEXT QUERY ACCOUNTS FOR IOS/ANDROID IN CHECKNO FIELD
+# NEXT QUERY ACCOUNTS FOR IOS/ANDROID IN CHECKNO FIELD - OMITTED
 mysql  --login-path=local --silent -DSRG_2020 -N -e "DELETE FROM cardactivity_temp WHERE TransactionType = 'Check-In'"
 echo '55% deleted'
 mysql  --login-path=local --silent -DSRG_2020 -N -e "DELETE FROM cardactivity_temp WHERE TransactionType = 'Campaign Adjustment'"
