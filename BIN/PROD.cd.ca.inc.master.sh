@@ -278,7 +278,7 @@ echo '(PROMOS OR COMPS COULD NOT BE ADDED, LOWBALL FIGURES)'
 ###### -e is the 'read statement and quit'
 ######## WE ARE ###
 
-mysql  --login-path=local -DSRG_Prod -N -e "SELECT Master.DOB FROM Master WHERE Master.DOB IS NOT NULL AND DOB >= DATE_SUB(NOW(),INTERVAL 45 DAY) 
+mysql  --login-path=local -DSRG_Prod -N -e "SELECT Master.DOB FROM Master WHERE Master.DOB IS NOT NULL AND DOB >= DATE_SUB(NOW(),INTERVAL 180 DAY) 
 				GROUP BY Master.DOB ORDER BY Master.DOB DESC" | while read -r DOB;
 do
 
