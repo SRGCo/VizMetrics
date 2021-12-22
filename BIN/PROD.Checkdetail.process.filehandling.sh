@@ -35,7 +35,7 @@ mysqldump -uroot -ps3r3n1t33 SRG_Prod CheckDetail_Live Employees_Live TableTurns
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 
-###### FIRST WE GET THE FILES FROM PX
+###### FIRST WE GET THE FILES FROM CTUIT
 ( "/home/ubuntu/bin/CRON.lftp.ctuit.daily.sh" )
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'CTUIT FILES RETRIEVED FROM BERTHA FTP SITE'
