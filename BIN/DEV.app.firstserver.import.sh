@@ -176,9 +176,9 @@ echo 'DEV.PX.CA.PROCESS.SH COMPLETED'
 
 
 ###### PROCESS THE CA_Live TABLE INTO FIRST USE TABLE
-( "/home/ubuntu/bin/DEV.app.use.firstserver.php" )
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'DEV App_use1 Table populated with new data'
+## ( "/home/ubuntu/bin/DEV.app.use.firstserver.php" )
+## trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+## echo 'DEV App_use1 Table populated with new data'
 
 
 
