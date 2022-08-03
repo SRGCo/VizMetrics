@@ -29,7 +29,7 @@ function yrseg ($pastvisitbal, $lifetimevisits)
 define ('DB_USER', 'root');
 define ('DB_PASSWORD','s3r3n1t33');
 define ('DB_HOST','localhost');
-define ('DB_NAME','SRG_Prod-1-27-20');
+define ('DB_NAME','SRG_Prod');
 
 # Make the connection and then select the database
 # display errors if fail
@@ -47,7 +47,7 @@ $LastVisitDate_db = '';
 
 //QUERY PX_MONTHLY FOR CARDNUMBER
 # NOT USING -- 	AND MOD(CardNumber, 200) = '0'
-$query1 = "SELECT CardNumber, LastVisitDate FROM Px_Monthly WHERE CardNumber > '6000227902591219' GROUP BY CardNumber ORDER BY CardNumber ASC";
+$query1 = "SELECT CardNumber, LastVisitDate FROM Px_Monthly GROUP BY CardNumber ORDER BY CardNumber ASC";
 $result1 = mysqli_query($dbc, $query1);
 ECHO MYSQLI_ERROR($dbc);
 while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){

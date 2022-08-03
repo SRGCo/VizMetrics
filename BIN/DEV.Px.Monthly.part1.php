@@ -31,9 +31,14 @@ $result_table = mysqli_query($dbc, $query_table);
 ECHO MYSQLI_ERROR($dbc);
 ECHO 'Px_Monthly TRUNCATED FOR FULL RUN!!!!!!'.PHP_EOL;
 
-//QUERY MASTER FOR CARDNUMBER (MAIN QUERY1)
+// QUERY MASTER FOR CARDNUMBER (MAIN QUERY1)
+
+// ********** EDITED TO START AT MORE RECENT ENROLLDATE FOR TESTING ******************
+
+// ON Aug 1 2022 ******************************************
+
 $query1 = "SELECT DISTINCT(CardNumber) as CardNumber FROM Guests_Master WHERE CardNumber IS NOT NULL 	
-					AND EnrollDate IS NOT NULL ORDER BY CardNumber ASC";
+					AND EnrollDate > '2018-01-01' ORDER BY CardNumber ASC";
 $result1 = mysqli_query($dbc, $query1);
 ECHO MYSQLI_ERROR($dbc);
 while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){

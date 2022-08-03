@@ -32,9 +32,8 @@ ECHO MYSQLI_ERROR($dbc);
 ECHO 'Px_Monthly TRUNCATED FOR FULL RUN!!!!!!'.PHP_EOL;
 
 //QUERY MASTER FOR CARDNUMBER (MAIN QUERY1)
-// ******************************** just using post 2018 cards as a date ***************************
 $query1 = "SELECT DISTINCT(CardNumber) as CardNumber FROM Guests_Master WHERE CardNumber IS NOT NULL 	
-					AND EnrollDate > '2018-01-01' ORDER BY CardNumber ASC";
+					AND EnrollDate IS NOT NULL ORDER BY CardNumber ASC";
 $result1 = mysqli_query($dbc, $query1);
 ECHO MYSQLI_ERROR($dbc);
 while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
@@ -61,7 +60,6 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	#firstrun is for debugging
 	$Firstrun = 'Yes';
 	// PRINT COUNTER ENTRY EVERY 1000 CARDNUMBERS
-	// ************ THIS IS NOT WORKING, COUNT - CARD NUMBERS NOT PRINTING *************
 	$counter++;
 	$printcount = fmod($counter, 1000);
 	IF ($printcount == '0'){

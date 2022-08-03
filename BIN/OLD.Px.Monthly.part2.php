@@ -29,7 +29,7 @@ function yrseg ($pastvisitbal, $lifetimevisits)
 define ('DB_USER', 'root');
 define ('DB_PASSWORD','s3r3n1t33');
 define ('DB_HOST','localhost');
-define ('DB_NAME','SRG_Prod_Dev');
+define ('DB_NAME','SRG_Prod');
 
 # Make the connection and then select the database
 # display errors if fail
@@ -44,9 +44,6 @@ $Visit_Count_Total = '0';
 $VisitsAccruedLife_db = '0';
 $start_time = microtime(true);
 $LastVisitDate_db = '';
-
-
-// *********** STARTING WITH THIS CARDNUMBER EXCLUDES ALL THE APP USAGE ************
 
 //QUERY PX_MONTHLY FOR CARDNUMBER
 # NOT USING -- 	AND MOD(CardNumber, 200) = '0'
