@@ -24,6 +24,7 @@ mysqli_select_db($dbc, DB_NAME)
 
 ### INIT Variables
 $counter = 0;
+$printcount = 0;
 
 // TRUNCATE table Px_Monthly"
 $query_table= "TRUNCATE table Px_Monthly";
@@ -40,7 +41,8 @@ ECHO MYSQLI_ERROR($dbc);
 while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	$CardNumber_db = $row1['CardNumber'];
 
-#echo $CardNumber_db.PHP_EOL;
+
+#echo 'Cardnumber:'.$CardNumber_db.' Counter:'.$counter.' Printcount:'.$printcount.PHP_EOL;
 
 	#INIT THE VARS
 	$MinDateMonth_db = $MinDateYear_db = $FocusDate = $FocusDateEnd = '';
@@ -63,7 +65,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	// PRINT COUNTER ENTRY EVERY 1000 CARDNUMBERS
 	// ************ THIS IS NOT WORKING, COUNT - CARD NUMBERS NOT PRINTING *************
 	$counter++;
-	$printcount = fmod($counter, 1000);
+	$printcount = fmod($counter, 100);
 	IF ($printcount == '0'){
 		ECHO PHP_EOL.$counter++.'  card:';
 		ECHO $CardNumber_db;
@@ -136,7 +138,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 			ROUND(SUM(DollarsSpentAccrued), 2) as DollarsSpentMonth,
 			SUM(SereniteePointsRedeemed) as PointsRedeemedMonth,
 			SUM(SereniteePointsAccrued) as PointsAccruedMonth,
-			SUM(Vm_VisitsAccrued) as VisitsAccruedMonth                   
+			SUM(VisitsAccrued) as VisitsAccruedMonth                   
 			FROM Master WHERE  CardNumber = '$CardNumber_db'
 			AND DollarsSpentAccrued IS NOT NULL
 			AND DollarsSpentAccrued > '0'
@@ -170,7 +172,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 				AND TransactionDate <> EnrollDate  
 				AND TransactionDate >= DATE_SUB('$FocusDate',INTERVAL 1 YEAR) 
 				AND TransactionDate < '$FocusDate'				
-				AND Vm_VisitsAccrued = '1'";
+				AND VisitsAccrued = '1'";
 		$result5 = mysqli_query($dbc, $query5);	
 		ECHO MYSQLI_ERROR($dbc);
 		while($row1 = mysqli_fetch_array($result5, MYSQLI_ASSOC)){
@@ -257,7 +259,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 		while($row1 = mysqli_fetch_array($result7x, MYSQLI_ASSOC)){
 			$MonthsEnrolled_db = $row1['MonthsEnrolled'];		
 		}
-		# ECHO 'DaysEnrolled_db='.$DaysEnrolled_db.PHP_EOL;	
+#ECHO 'MonthsEnrolled_db='.$MonthsEnrolled_db.PHP_EOL;	
 		IF (($MonthsEnrolled_db == '0') OR ($MonthsEnrolled_db == '')){
 			$LifetimeFreq = '';
 		} ELSE {
