@@ -1,7 +1,9 @@
 #!/usr/bin/php
 <?php 
 
-
+##########################################################################################################
+################## THIS SCRIPT IS A CATCHALL FOR ACCOUNTS ENROLLED AFTER JAN 2 2019  #####################
+##########################################################################################################
 
 ###### could we check to see when the last real transaction is and then just replicate entries for everyone 
 ### between that date and the focusmonth ? ? 
@@ -13,7 +15,7 @@
 define ('DB_USER', 'root');
 define ('DB_PASSWORD','s3r3n1t33');
 define ('DB_HOST','localhost');
-define ('DB_NAME','SRG_Prod_Dev');
+define ('DB_NAME','SRG_Prod');
 
 # Make the connection and then select the database
 # display errors if fail
@@ -24,27 +26,22 @@ mysqli_select_db($dbc, DB_NAME)
 
 ### INIT Variables
 $counter = 0;
+$printcount = 0;
 
-// TRUNCATE table Px_Monthly"
-$query_table= "TRUNCATE table Px_Monthly";
-$result_table = mysqli_query($dbc, $query_table);	
-ECHO MYSQLI_ERROR($dbc);
-ECHO 'Px_Monthly TRUNCATED FOR FULL RUN!!!!!!'.PHP_EOL;
+### WE ONLY TRUNCATE THE TABLE BEFORE RUNNING THE FIRST GROUP #################
 
-// QUERY MASTER FOR CARDNUMBER (MAIN QUERY1)
-
-// ********** EDITED TO START AT MORE RECENT ENROLLDATE FOR TESTING ******************
-
-// ON Aug 1 2022 ******************************************
-
+//QUERY MASTER FOR CARDNUMBER (MAIN QUERY1)
+// ******************************** 2019 - 2030 ***************************
 $query1 = "SELECT DISTINCT(CardNumber) as CardNumber FROM Guests_Master WHERE CardNumber IS NOT NULL 	
-					AND EnrollDate > '2018-01-01' ORDER BY CardNumber ASC";
+					AND EnrollDate > '2019-01-02' AND EnrollDate < '2030-01-01'
+					AND AccountStatus = 'ACTIVE' ORDER BY CardNumber ASC";
 $result1 = mysqli_query($dbc, $query1);
 ECHO MYSQLI_ERROR($dbc);
 while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	$CardNumber_db = $row1['CardNumber'];
 
-#echo $CardNumber_db.PHP_EOL;
+
+#echo 'Cardnumber:'.$CardNumber_db.' Counter:'.$counter.' Printcount:'.$printcount.PHP_EOL;
 
 	#INIT THE VARS
 	$MinDateMonth_db = $MinDateYear_db = $FocusDate = $FocusDateEnd = '';
@@ -65,8 +62,9 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	#firstrun is for debugging
 	$Firstrun = 'Yes';
 	// PRINT COUNTER ENTRY EVERY 1000 CARDNUMBERS
+	// ************ THIS IS NOT WORKING, COUNT - CARD NUMBERS NOT PRINTING *************
 	$counter++;
-	$printcount = fmod($counter, 1000);
+	$printcount = fmod($counter, 100);
 	IF ($printcount == '0'){
 		ECHO PHP_EOL.$counter++.'  card:';
 		ECHO $CardNumber_db;
@@ -139,7 +137,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 			ROUND(SUM(DollarsSpentAccrued), 2) as DollarsSpentMonth,
 			SUM(SereniteePointsRedeemed) as PointsRedeemedMonth,
 			SUM(SereniteePointsAccrued) as PointsAccruedMonth,
-			SUM(Vm_VisitsAccrued) as VisitsAccruedMonth                   
+			SUM(VisitsAccrued) as VisitsAccruedMonth                   
 			FROM Master WHERE  CardNumber = '$CardNumber_db'
 			AND DollarsSpentAccrued IS NOT NULL
 			AND DollarsSpentAccrued > '0'
@@ -173,7 +171,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 				AND TransactionDate <> EnrollDate  
 				AND TransactionDate >= DATE_SUB('$FocusDate',INTERVAL 1 YEAR) 
 				AND TransactionDate < '$FocusDate'				
-				AND Vm_VisitsAccrued = '1'";
+				AND VisitsAccrued = '1'";
 		$result5 = mysqli_query($dbc, $query5);	
 		ECHO MYSQLI_ERROR($dbc);
 		while($row1 = mysqli_fetch_array($result5, MYSQLI_ASSOC)){
@@ -260,7 +258,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 		while($row1 = mysqli_fetch_array($result7x, MYSQLI_ASSOC)){
 			$MonthsEnrolled_db = $row1['MonthsEnrolled'];		
 		}
-		# ECHO 'DaysEnrolled_db='.$DaysEnrolled_db.PHP_EOL;	
+#ECHO 'MonthsEnrolled_db='.$MonthsEnrolled_db.PHP_EOL;	
 		IF (($MonthsEnrolled_db == '0') OR ($MonthsEnrolled_db == '')){
 			$LifetimeFreq = '';
 		} ELSE {

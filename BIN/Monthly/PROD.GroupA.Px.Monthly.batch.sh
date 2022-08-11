@@ -28,12 +28,12 @@ failfunction()
 
 
 ####### PX MONTHLY PART 1
-( "/home/ubuntu/bin/FIX.Px.Monthly.part1.php" )
+( "/home/ubuntu/bin/Monthly/PROD.GroupA.Px.Monthly.part1.php" )
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'Part 1 of Px Monthly completed'
 
 ####### PX MONTHLY PART 2
-( "/home/ubuntu/bin/FIX.Px.Monthly.part2.php" )
+( "/home/ubuntu/bin/Monthly/PROD.GroupA.Px.Monthly.part2.php" )
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'Part 2 of Px Monthly completed'
 

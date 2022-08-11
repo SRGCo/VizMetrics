@@ -26,6 +26,8 @@ mysqli_select_db($dbc, DB_NAME)
 $counter = 0;
 $printcount = 0;
 
+######## WE ONLY TRUNCATE ON THE FIRST GROUP ################
+
 // TRUNCATE table Px_Monthly"
 $query_table= "TRUNCATE table Px_Monthly";
 $result_table = mysqli_query($dbc, $query_table);	
@@ -33,9 +35,10 @@ ECHO MYSQLI_ERROR($dbc);
 ECHO 'Px_Monthly TRUNCATED FOR FULL RUN!!!!!!'.PHP_EOL;
 
 //QUERY MASTER FOR CARDNUMBER (MAIN QUERY1)
-// ******************************** just using post 2018 cards as a date ***************************
+// ******************************** 2012 - 2015 ***************************
 $query1 = "SELECT DISTINCT(CardNumber) as CardNumber FROM Guests_Master WHERE CardNumber IS NOT NULL 	
-					AND EnrollDate > '2018-01-01' ORDER BY CardNumber ASC";
+					AND EnrollDate > '2012-01-01' AND EnrollDate < '2015-01-01'
+					AND AccountStatus = 'ACTIVE' ORDER BY CardNumber ASC";
 $result1 = mysqli_query($dbc, $query1);
 ECHO MYSQLI_ERROR($dbc);
 while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
