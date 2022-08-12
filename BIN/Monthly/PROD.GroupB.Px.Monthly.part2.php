@@ -47,7 +47,7 @@ $LastVisitDate_db = '';
 
 //QUERY PX_MONTHLY FOR CARDNUMBER
 # NOT USING -- 	AND MOD(CardNumber, 200) = '0'
-$query1 = "SELECT CardNumber, LastVisitDate FROM Px_Monthly WHERE AND EnrollDate > '2015-01-02' AND EnrollDate < '2017-01-01' 
+$query1 = "SELECT CardNumber, LastVisitDate FROM Px_Monthly WHERE EnrollDate > '2015-01-02' AND EnrollDate < '2017-01-01' 
 									GROUP BY CardNumber ORDER BY CardNumber ASC";
 $result1 = mysqli_query($dbc, $query1);
 ECHO MYSQLI_ERROR($dbc);
