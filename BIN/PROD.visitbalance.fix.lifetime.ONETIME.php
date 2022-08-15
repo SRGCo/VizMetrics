@@ -23,22 +23,23 @@ $Fixed_counter = 0;
 
 // QUERY MASTER FOR ALL CARDNUMBERS
 // ***** SHOULD RUN A UBER VERSION OF THIS FIX THAT CHECKS ALL CARDS *****
-$query1 = "SELECT DISTINCT(CardNumber), EnrollDate FROM Master WHERE CardNumber IS NOT NULL AND CardNumber > '6000227905852386' ORDER BY CardNumber ASC";
+$query1 = "SELECT DISTINCT(CardNumber), EnrollDate FROM Master WHERE CardNumber IS NOT NULL AND CardNumber > '6000227905852386' AND TransactionDate <> '' ORDER BY CardNumber ASC";
 $result1 = mysqli_query($dbc, $query1);
 ECHO MYSQLI_ERROR($dbc);
 while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
+	ECHO '-----------------------'.$query1.PHP_EOL;
 	$CardNumber_db = $row1['CardNumber'];
 	$EnrollDate_db = $row1['EnrollDate'];
 	$counter ++;
 
 	### WE GET DATES OF VISITS MORE RECENT THAN ENROLLMENT DATE
 
-	$query2 = "SELECT TransactionDate as FocusDate from Master WHERE CardNumber = '$CardNumber_db' AND TransactionDate > '$EnrollDate_db' ORDER BY TransactionDate ASC";
+	$query2 = "SELECT DISTINCT(TransactionDate) as FocusDate from Master WHERE CardNumber = '$CardNumber_db' AND TransactionDate > '$EnrollDate_db'  ORDER BY TransactionDate ASC";
 	$result2 = mysqli_query($dbc, $query2);
 	ECHO MYSQLI_ERROR($dbc);
 	while($row1 = mysqli_fetch_array($result2, MYSQLI_ASSOC)){
 		$FocusDate_db = $row1['FocusDate'];
-		# ECHO $query2.PHP_EOL;
+		ECHO $query2.PHP_EOL;
 		// WE WILL PROCESS ONE TRANSACTIONDATE AT A TIME UPDATING ALL (ESPECIALLY NULLS/O) TO MAX VISITBALANCE FOR THAT DATE
 		### FIRST WE THE LARGEST VM VISITBALANCE ON THE DATE WE ARE WORKING WITH FOR THAT ACCOUNT
 		$query3 = "SELECT MAX(Vm_VisitsBalance) as MaxBal FROM Master WHERE TransactionDate = '$FocusDate_db' AND CardNumber = '$CardNumber_db'";
@@ -46,6 +47,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 		ECHO MYSQLI_ERROR($dbc);
 		while($row1 = mysqli_fetch_array($result3, MYSQLI_ASSOC)){
 			$MaxBal_db = $row1['MaxBal'];
+			# ECHO $query3.PHP_EOL;
 			// ERROR CHECK FOR 0 MAX VISITBALANCES
 			IF ($MaxBal_db < '1'){ 
 				# echo $CardNumber_db.' This card had a '.$MaxBal_db.' vm_visitsbalance as its max on '.$FocusDate_db.' we will try to update to last max'.PHP_EOL;

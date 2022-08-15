@@ -33,7 +33,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 
 	### WE GET DATES OF VISITS MORE RECENT THAN ENROLLMENT DATE
 
-	$query2 = "SELECT TransactionDate as FocusDate from Master WHERE CardNumber = '$CardNumber_db' AND TransactionDate > '$EnrollDate_db' ORDER BY TransactionDate ASC";
+	$query2 = "SELECT DISTINCT(TransactionDate) as FocusDate from Master WHERE CardNumber = '$CardNumber_db' AND TransactionDate > '$EnrollDate_db' ORDER BY TransactionDate ASC";
 	$result2 = mysqli_query($dbc, $query2);
 	ECHO MYSQLI_ERROR($dbc);
 	while($row1 = mysqli_fetch_array($result2, MYSQLI_ASSOC)){
