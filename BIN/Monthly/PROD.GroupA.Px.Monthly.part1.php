@@ -141,7 +141,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 			ROUND(SUM(DollarsSpentAccrued), 2) as DollarsSpentMonth,
 			SUM(SereniteePointsRedeemed) as PointsRedeemedMonth,
 			SUM(SereniteePointsAccrued) as PointsAccruedMonth,
-			SUM(VisitsAccrued) as VisitsAccruedMonth                   
+			SUM(Vm_VisitsAccrued) as VisitsAccruedMonth                   
 			FROM Master WHERE  CardNumber = '$CardNumber_db'
 			AND DollarsSpentAccrued IS NOT NULL
 			AND DollarsSpentAccrued > '0'
@@ -175,7 +175,7 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 				AND TransactionDate <> EnrollDate  
 				AND TransactionDate >= DATE_SUB('$FocusDate',INTERVAL 1 YEAR) 
 				AND TransactionDate < '$FocusDate'				
-				AND VisitsAccrued = '1'";
+				AND Vm_VisitsAccrued = '1'";
 		$result5 = mysqli_query($dbc, $query5);	
 		ECHO MYSQLI_ERROR($dbc);
 		while($row1 = mysqli_fetch_array($result5, MYSQLI_ASSOC)){
