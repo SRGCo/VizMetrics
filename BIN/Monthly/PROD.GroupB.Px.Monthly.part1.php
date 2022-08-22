@@ -31,7 +31,7 @@ $printcount = 0;
 // ******************************** 2015 - 2017 ***************************
 $query1 = "SELECT DISTINCT(CardNumber) as CardNumber FROM Guests_Master WHERE CardNumber IS NOT NULL 	
 					AND EnrollDate > '2015-01-02' AND EnrollDate < '2017-01-01'
-					AND AccountStatus = 'ACTIVE' ORDER BY CardNumber ASC";
+					AND EnrollDate <> LastGuestActivityDate ORDER BY CardNumber ASC";
 $result1 = mysqli_query($dbc, $query1);
 ECHO MYSQLI_ERROR($dbc);
 while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
