@@ -92,11 +92,24 @@ while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
 	$result5 = mysqli_query($dbc, $query5);
 	ECHO MYSQLI_ERROR($dbc);
 
+	##### WE CAN ALSO DUMP ANY ROWS WITH NO DATE
+	$query7 = "DELETE from CheckDetail_Live WHERE DOB IS NULL";
+	$result7 = mysqli_query($dbc, $query7);
+	ECHO MYSQLI_ERROR($dbc);
+
 	##### NOW WE CAN DUMP THE ORIGINAL DUPLICATE ENTRIES.. .. LEAVING JUST ONE ENTRY WITH THE NEW POSKEY
 	$query6 = "DELETE from CardActivity_squashed_2 WHERE POSkey = '$POSkey_db'";
 	$result6 = mysqli_query($dbc, $query6);
 	ECHO MYSQLI_ERROR($dbc);
+
+
 }
+
+##### WE CAN ALSO DUMP ANY ROWS WITH NO DATE
+$query7 = "DELETE from CheckDetail_Live WHERE DOB IS NULL";
+$result7 = mysqli_query($dbc, $query7);
+ECHO MYSQLI_ERROR($dbc);
+
 echo 'DONE'.PHP_EOL;;
 ?>
 

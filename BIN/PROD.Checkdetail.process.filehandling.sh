@@ -31,7 +31,7 @@ failfunction()
 
 ################################### BACK UP THE 3 LIVE TABLES FOR SAFTEY #####################################
 rm -f /home/ubuntu/db_files/Checkdetail.3tables.bu.sql
-mysqldump -uroot -ps3r3n1t33 SRG_Prod CheckDetail_Live Employees_Live TableTurns_Live >  /home/ubuntu/db_files/Checkdetail.3tables.bu.sql
+mysqldump -uroot -ps3r3n1t33 SRG_Prod CheckDetail_Live TableTurns_Live >  /home/ubuntu/db_files/Checkdetail.2tables.bu.sql
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 
@@ -119,45 +119,6 @@ mysql  --login-path=local --silent -DSRG_Prod -N -e "INSERT INTO TableTurns_Live
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'TABLETURNS DATA INSERTED INTO LIVE TABLE GROUPED BY POSKEY TO AVOID DUPLICATE ENTRIES'
 
-################ EMPLOYEES SECTION #########################################
-
-for file in /home/ubuntu/db_files/incoming/ctuit/*Employees*.csv
-  do
-	#### MAKE A COPY OF THE FILE IN BACKUP DIR
-	cp "$file" //home/ubuntu/db_files/incoming/backup/ctuit/
-	tail -n+2 "$file"  >> /home/ubuntu/db_files/incoming/ctuit/Infile.Employee.csv
-	rm "$file"
-  done
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-
-
-########################## CHECK THE WHOLE EMPLOYEE FLOW ####################
-## EMPLOYEES ##### Load the data from the latest file into the (LIVE) employees table
-
-
-
-
-## EMPLOYEES ##### REMOVE DUPLICATE ROWS FROM EMPLOYEES LIVE TABLE
-mysql  --login-path=local --silent -DSRG_Prod -N -e "DROP TABLE IF EXISTS Employees_Live_temp"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-mysql  --login-path=local --silent -DSRG_Prod -N -e "CREATE table Employees_Live_temp LIKE Employees_Live_structure"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-
-
-mysql  --login-path=local --silent -DSRG_Prod -N -e "Load data local infile '/home/ubuntu/db_files/incoming/ctuit/Infile.Employee.csv' into table Employees_Live_temp fields terminated by ',' lines terminated by '\n'"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-## EMPLOYEES ##### DELETE OLD EMPLOYEES FILE TO MAKE READY FOR NEXT TIME
-rm /home/ubuntu/db_files/incoming/ctuit/Infile.Employee.csv
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-
-mysql  --login-path=local --silent -DSRG_Prod -N -e "DROP table Employees_Live"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-mysql  --login-path=local --silent -DSRG_Prod -N -e "RENAME table Employees_Live_temp TO Employees_Live"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-
-echo 'PROCESSED EMPLOYEES'
-
-
 ################ CHECKDETAIL SECTION #########################################
 ## REMOVE (1) HEADER ROW AND MERGE (IF NECCESSARY) INCOMING CARD ACTIVITY CSVs
 ## INTO SINGLE CARD ACTIVITY FILE IN DB_FILES/CTUIT
@@ -232,20 +193,8 @@ trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE CheckDetail_Temp DROP COLUMN Exceldate"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
-#### NAMES QUERIES/UPDATES 
-mysql  --login-path=local --silent -DSRG_Prod -N -e "UPDATE CheckDetail_Temp CDT 
-	INNER JOIN Employees_Live EL ON (CDT.LocationID = EL.LocationID AND CDT.Base_EmployeeID = EL.EmployeeID) 
-	SET CDT.lastname = EL.LastName, CDT.firstname = EL.FirstName, CDT.PayrollID = EL.PayrollID 
-	WHERE CDT.lastname IS NULL AND CDT.firstname IS NULL"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 
-#### LEGACY BAR NAMES
-mysql  --login-path=local --silent -DSRG_Prod -N -e "UPDATE CheckDetail_Temp CDT
-	INNER JOIN Employees_Legacy EL ON (CDT.LocationID = EL.LocationID AND CDT.Base_EmployeeID = EL.EmployeeID) 
-	SET CDT.lastname = EL.LastName, CDT.firstname = EL.FirstName
-	WHERE CDT.lastname IS NULL AND CDT.firstname IS NULL"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 
 #### ADD THE TABLETURNS FIELDS SO MATCHES 'LIVE' TABLE
