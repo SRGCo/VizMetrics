@@ -31,11 +31,11 @@ failfunction()
 
 ################################### BACK UP THE 3 LIVE TABLES FOR SAFTEY #####################################
 rm -f /home/ubuntu/db_files/Checkdetail.3tables.bu.sql
-mysqldump -uroot -ps3r3n1t33 SRG_Prod CheckDetail_Live TableTurns_Live >  /home/ubuntu/db_files/Checkdetail.2tables.bu.sql
+mysqldump -uroot -ps3r3n1t33 SRG_Prod CheckDetail_Live Employees_Live TableTurns_Live >  /home/ubuntu/db_files/Checkdetail.3tables.bu.sql
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 
-###### FIRST WE GET THE FILES FROM CTUIT
+###### FIRST WE GET THE FILES FROM PX
 ( "/home/ubuntu/bin/CRON.lftp.ctuit.daily.sh" )
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'CTUIT FILES RETRIEVED FROM BERTHA FTP SITE'
@@ -119,7 +119,6 @@ mysql  --login-path=local --silent -DSRG_Prod -N -e "INSERT INTO TableTurns_Live
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'TABLETURNS DATA INSERTED INTO LIVE TABLE GROUPED BY POSKEY TO AVOID DUPLICATE ENTRIES'
 
-
 ################ EMPLOYEES SECTION #########################################
 
 for file in /home/ubuntu/db_files/incoming/ctuit/*Employees*.csv
@@ -157,6 +156,7 @@ mysql  --login-path=local --silent -DSRG_Prod -N -e "RENAME table Employees_Live
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 echo 'PROCESSED EMPLOYEES'
+
 
 ################ CHECKDETAIL SECTION #########################################
 ## REMOVE (1) HEADER ROW AND MERGE (IF NECCESSARY) INCOMING CARD ACTIVITY CSVs
@@ -239,13 +239,13 @@ mysql  --login-path=local --silent -DSRG_Prod -N -e "UPDATE CheckDetail_Temp CDT
 	WHERE CDT.lastname IS NULL AND CDT.firstname IS NULL"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
+
 #### LEGACY BAR NAMES
 mysql  --login-path=local --silent -DSRG_Prod -N -e "UPDATE CheckDetail_Temp CDT
 	INNER JOIN Employees_Legacy EL ON (CDT.LocationID = EL.LocationID AND CDT.Base_EmployeeID = EL.EmployeeID) 
 	SET CDT.lastname = EL.LastName, CDT.firstname = EL.FirstName
 	WHERE CDT.lastname IS NULL AND CDT.firstname IS NULL"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-
 
 
 #### ADD THE TABLETURNS FIELDS SO MATCHES 'LIVE' TABLE
