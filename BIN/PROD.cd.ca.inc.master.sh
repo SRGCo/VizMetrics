@@ -140,10 +140,10 @@ mysql  --login-path=local -DSRG_Prod -N -e "INSERT INTO Master_temp SELECT CD.*,
 						WHERE CD.DOB >= DATE_SUB(CURDATE(), INTERVAL 90 DAY) 
 						UNION SELECT CD.*, CA.* FROM .CheckDetail_Live as CD 
 						RIGHT JOIN CardActivity_squashed_2 AS CA ON CD.POSkey = CA.POSkey 
-						WHERE CA.TransactionDate >= DATE_SUB(CURDATE(), INTERVAL 90 DAY)"
+						WHERE CA.TransactionDate >= DATE_SUB(CURDATE(), INTERVAL 120 DAY)"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 # echo 'UBER JOIN COMPLETED'
-echo 'MASTER TEMP UPDATED WITH UBER CARD ACTIVITY AND CHECK DETAIL FROM PAST 90days'
+echo 'MASTER TEMP UPDATED WITH UBER CARD ACTIVITY AND CHECK DETAIL FROM PAST 120 days'
 
 # Create enroll_date and Account_status fields
 mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE Master_temp ADD EnrollDate VARCHAR(11)"
@@ -164,12 +164,12 @@ trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 
 # AVOID DUPES DELETE SAME INTERVAL BACK
-mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM Master WHERE DOB >= DATE_SUB(CURDATE(), INTERVAL 90 DAY) "
+mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM Master WHERE DOB >= DATE_SUB(CURDATE(), INTERVAL 120 DAY) "
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'MASTER TRUNCATED - USING DOB'
 
 # AVOID DUPES DELETE SAME INTERVAL BACK
-mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM Master WHERE TransactionDate >= DATE_SUB(CURDATE(), INTERVAL 90 DAY) "
+mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE FROM Master WHERE TransactionDate >= DATE_SUB(CURDATE(), INTERVAL 120 DAY) "
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 echo 'MASTER TRUNCATED - USING TRANSACTIONDATE'
 
