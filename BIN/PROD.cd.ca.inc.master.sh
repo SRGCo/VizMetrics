@@ -308,7 +308,17 @@ echo 'MASTER FY YLUNA FIELDS UPATED WITH DATA FROM LUNA TABLE'
 ################# PROCESS visits to VM_visits
 ( "/home/ubuntu/bin/PROD.VM_visits.master.process.sh" )
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-echo 'MASTER- VM visists processed-'
+echo 'MASTER- VM visits processed-'
+
+#### KEEP NAMES IN MASTER UP TO DATE FROM LIVE TABLE -60 DAYS-
+mysql  --login-path=local --silent -DSRG_Prod -N -e "UPDATE Master MAS 
+	INNER JOIN Employees_Live EL ON (MAS.LocationID = EL.LocationID AND MAS.Base_EmployeeID = EL.EmployeeID) 
+	SET MAS.lastname = EL.LastName, MAS.firstname = EL.FirstName, MAS.PayrollID = EL.PayrollID 
+	WHERE MAS.lastname IS NULL AND MAS.firstname IS NULL AND MAS.dob >= DATE_SUB(CURDATE(), INTERVAL 60 DAY)"
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+
+
+
 
 ################# Fix visitbalances in Master
 # ( "/home/ubuntu/bin/PROD.visitbalance.fix.php" )
