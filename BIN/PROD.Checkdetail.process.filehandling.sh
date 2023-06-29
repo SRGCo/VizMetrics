@@ -78,6 +78,13 @@ trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE TableTurns_Temp CHANGE DOB DOB DATE"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
+
+#### ACCOUNT FOR TOAST POS WEIRD ENTRIES
+mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE from TableTurns_Temp WHERE OpenTime = '1' "
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+
+
+
 #### Change OpenTime & CloseTime to SQL format
 mysql  --login-path=local --silent -DSRG_Prod -N -e "UPDATE TableTurns_Temp SET CloseTime= STR_TO_DATE(CloseTime, '%m/%e/%Y %l:%i:%s %p') WHERE STR_TO_DATE(CloseTime, '%m/%e/%Y %l:%i:%s %p')"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR

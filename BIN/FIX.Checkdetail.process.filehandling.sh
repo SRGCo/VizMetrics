@@ -29,10 +29,9 @@ failfunction()
 	fi
 }
 
-
-
 mysql  --login-path=local --silent -DSRG_Prod -N -e "UPDATE TableTurns_Temp SET OpenTime= STR_TO_DATE(OpenTime, '%m/%e/%Y %l:%i:%s %p') WHERE STR_TO_DATE(OpenTime,  '%m/%e/%Y %l:%i:%s %p')"
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+
 
 ##### CHANGE CLOSETIME FIELD TO DATETIME #################
 mysql  --login-path=local --silent -DSRG_Prod -N -e "ALTER TABLE TableTurns_Temp CHANGE CloseTime CloseTime DATETIME NOT NULL"
@@ -86,22 +85,23 @@ trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 
 ## EMPLOYEES ##### REMOVE DUPLICATE ROWS FROM EMPLOYEES LIVE TABLE
-mysql  --login-path=local --silent -DSRG_Prod -N -e "DROP TABLE IF EXISTS Employees_Live_temp"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-mysql  --login-path=local --silent -DSRG_Prod -N -e "CREATE table Employees_Live_temp LIKE Employees_Live_structure"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+#mysql  --login-path=local --silent -DSRG_Prod -N -e "DROP TABLE IF EXISTS Employees_Live_temp"
+#trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+#mysql  --login-path=local --silent -DSRG_Prod -N -e "CREATE table Employees_Live_temp LIKE Employees_Live_structure"
+#trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 
-mysql  --login-path=local --silent -DSRG_Prod -N -e "Load data local infile '/home/ubuntu/db_files/incoming/ctuit/Infile.Employee.csv' into table Employees_Live_temp fields terminated by ',' lines terminated by '\n'"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+#mysql  --login-path=local --silent -DSRG_Prod -N -e "Load data local infile '/home/ubuntu/db_files/incoming/ctuit/Infile.Employee.csv' into table Employees_Live_temp fields terminated by ',' lines terminated by '\n'"
+#trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+
 ## EMPLOYEES ##### DELETE OLD EMPLOYEES FILE TO MAKE READY FOR NEXT TIME
 rm /home/ubuntu/db_files/incoming/ctuit/Infile.Employee.csv
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
-mysql  --login-path=local --silent -DSRG_Prod -N -e "DROP table Employees_Live"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
-mysql  --login-path=local --silent -DSRG_Prod -N -e "RENAME table Employees_Live_temp TO Employees_Live"
-trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+#mysql  --login-path=local --silent -DSRG_Prod -N -e "DROP table Employees_Live"
+#trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
+#mysql  --login-path=local --silent -DSRG_Prod -N -e "RENAME table Employees_Live_temp TO Employees_Live"
+#trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 echo 'PROCESSED EMPLOYEES'
 
