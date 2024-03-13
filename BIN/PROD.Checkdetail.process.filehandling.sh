@@ -83,6 +83,9 @@ trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE from TableTurns_Temp WHERE OpenTime = '1' "
 trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
+#### ACCOUNT FOR TOAST POS WEIRD ENTRIES
+mysql  --login-path=local --silent -DSRG_Prod -N -e "DELETE from TableTurns_Temp WHERE CloseTime = '1' "
+trap 'failfunction ${?} ${LINENO} "$BASH_COMMAND"' ERR
 
 
 #### Change OpenTime & CloseTime to SQL format
