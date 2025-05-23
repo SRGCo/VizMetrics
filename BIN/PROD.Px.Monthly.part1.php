@@ -1,358 +1,263 @@
 #!/usr/bin/php
 <?php 
 
+// Use environment variables for database credentials
+define('DB_USER', $_ENV['DB_USER'] ?? 'root');
+define('DB_PASSWORD', $_ENV['DB_PASSWORD'] ?? 's3r3n1t33');
+define('DB_HOST', $_ENV['DB_HOST'] ?? 'localhost');
+define('DB_NAME', $_ENV['DB_NAME'] ?? 'SRG_Prod');
 
-
-###### could we check to see when the last real transaction is and then just replicate entries for everyone 
-### between that date and the focusmonth ? ? 
-
-# Start database interaction with
-# localhost
-# Sets the database access information as constants
-
-define ('DB_USER', 'root');
-define ('DB_PASSWORD','s3r3n1t33');
-define ('DB_HOST','localhost');
-define ('DB_NAME','SRG_Prod');
-
-# Make the connection and then select the database
-# display errors if fail
-$dbc = mysqli_connect(DB_HOST, DB_USER, DB_PASSWORD)
-	or die('Could not connect to mysql:'.MYSQLI_ERROR($dbc) );
-mysqli_select_db($dbc, DB_NAME)
-	OR die('Could not connect to the database:'.MYSQLI_ERROR($dbc));
-
-### INIT Variables
-$counter = 0;
-
-// TRUNCATE table Px_Monthly"
-$query_table= "TRUNCATE table Px_Monthly";
-$result_table = mysqli_query($dbc, $query_table);	
-ECHO MYSQLI_ERROR($dbc);
-ECHO 'Px_Monthly TRUNCATED FOR FULL RUN!!!!!!'.PHP_EOL;
-
-//QUERY MASTER FOR CARDNUMBER (MAIN QUERY1)
-$query1 = "SELECT DISTINCT(CardNumber) as CardNumber FROM Guests_Master WHERE CardNumber IS NOT NULL 	
-					AND EnrollDate IS NOT NULL ORDER BY CardNumber ASC";
-$result1 = mysqli_query($dbc, $query1);
-ECHO MYSQLI_ERROR($dbc);
-while($row1 = mysqli_fetch_array($result1, MYSQLI_ASSOC)){
-	$CardNumber_db = $row1['CardNumber'];
-
-#echo $CardNumber_db.PHP_EOL;
-
-	#INIT THE VARS
-	$MinDateMonth_db = $MinDateYear_db = $FocusDate = $FocusDateEnd = '';
-	$CurrentDate_db = $FirstName_db = $LastName_db = $EnrollDate_db = $Zip_db = '';	
-
-	$DollarsSpentLife_db = $PointsRedeemedLife_db = $PointsAccruedLife_db = $VisitsAccruedLife_db = '0';
-	$DollarsSpentMonth_db = $PointsRedeemedMonth_db = $PointsAccruedMonth_db = $VisitsAccruedMonth_db = '0';
-
-	$LastVisitDate_db = $PrevYearVisitBal_db = $LapseDays_db = $RecentFreqDays_db = $ProgAge_db = '';	
-	$TwoVisitsBack_db = $FocusDate_php = $TwoVisitsBack_php = $MonthsEnrolled_db = $LifetimeFreq = '';
-	$YearFreqSeg = $RecentFreqMonths_db = $TwoVisitsBack_php = $YrAgoFreq = $LastVisitBalance_db = '';
-	$Discounts_db = $Account_status_db = $Card_status_db = '';
-
-	
-	$Carryover_LastVisitDate = '';
-	
-	
-	#firstrun is for debugging
-	$Firstrun = 'Yes';
-	// PRINT COUNTER ENTRY EVERY 1000 CARDNUMBERS
-	$counter++;
-	$printcount = fmod($counter, 1000);
-	IF ($printcount == '0'){
-		ECHO PHP_EOL.$counter++.'  card:';
-		ECHO $CardNumber_db;
-	}
-
-	#### GET THE MIN AND MAX TRANSACTIONDATE AND THE MAX VISIT BALANCE
-##### WE AREN'T USING MAXDATE / END AS A MEANS OF ITERATING ANYMORE, SHOULD WE REMOVE IT?
-	$query2 = "SELECT MAX(VM_VisitsBalance) as VisitsAccruedLife, 
-				CURDATE() as TodayDate 
-				FROM Master WHERE CardNumber = '$CardNumber_db'";
-	$result2 = mysqli_query($dbc, $query2);	
-	ECHO MYSQLI_ERROR($dbc);
-	while($row1 = mysqli_fetch_array($result2, MYSQLI_ASSOC)){
-		$VisitsAccruedLife_db = $row1['VisitsAccruedLife'];
-		$CurrentDate_db = $row1['TodayDate'];
-	}
-	IF ($VisitsAccruedLife_db == ''){$VisitsAccruedLife_db = '0';}
-	
-	# GET FIRSTNAME, LASTNAME, ENROLLDATE, ZIP
-	$query3 = "SELECT FirstName, LastName, EnrollDate, Zip, Tier,
-				YEAR(EnrollDate) as MinDateYear,
-				DATE_FORMAT(EnrollDate, '%m') as MinDateMonth
-				FROM Guests_Master WHERE CardNumber = '$CardNumber_db'";
-	$result3 = mysqli_query($dbc, $query3);	
-	ECHO MYSQLI_ERROR($dbc);
-	while($row1 = mysqli_fetch_array($result3, MYSQLI_ASSOC)){
-		$MinDateMonth_db = $row1['MinDateMonth'];
-		$MinDateYear_db = $row1['MinDateYear'];
-		$FirstName_db = addslashes($row1['FirstName']);
-		$LastName_db = addslashes($row1['LastName']);
-		$EnrollDate_db = $row1['EnrollDate'];		
-		$Zip_db = $row1['Zip'];		
-		$Tier_db = $row1['Tier'];
-	}
-	
-	// FORMAT FOCUSDATE
-	$FocusDate = $MinDateYear_db."-".$MinDateMonth_db."-01"; 
-	$FocusDateEnd = date("Y-m-d",strtotime($FocusDate."+1 month -1 day"));
-	$FocusDate_php = strtotime($FocusDate);
-	$EnrollDate_db_php = strtotime($EnrollDate_db);
-
-#ECHO 'Curdate'.$CurrentDate_db.' FD:'.$FocusDate.' FDE'.$FocusDateEnd.PHP_EOL;	
-
-
-	// WHILE FOCUSDATE IS LESS THAN TODAYS DATE REPEAT QUERIES
-	WHILE ($FocusDate <= $CurrentDate_db){
-	
-		#FIELDS = LIFETIMESPENDBALANCE, LIFETIMEPOINTSREDEEMED, LIFETIMEPOINTSBALANCE, LIFETIMEVISITBALANCE
-		$query3a ="SELECT ROUND(SUM(DollarsSpentAccrued), 2) as DollarsSpentLife, 
-			SUM(SereniteePointsRedeemed) as PointsRedeemedLife, 
-			SUM(SereniteePointsAccrued) as PointsAccruedLife
-			FROM Master WHERE CardNumber = '$CardNumber_db'
-			AND TransactionDate < '$FocusDate'";
-		$result3a = mysqli_query($dbc, $query3a);	
-		ECHO MYSQLI_ERROR($dbc);
-		while($row1 = mysqli_fetch_array($result3a, MYSQLI_ASSOC)){
-			$DollarsSpentLife_db = $row1['DollarsSpentLife'];
-			$PointsRedeemedLife_db = $row1['PointsRedeemedLife'];
-			$PointsAccruedLife_db = $row1['PointsAccruedLife']; 
-		}
-
-		IF (EMPTY($DollarsSpentLife_db)){
-			$DollarsSpentLife_db = '0.00';
-		}
-
-		#####GET NUMBERS FOR FOCUSMONTH
-		#FIELDS = DISCOUNTS(CALCD), DOLLARSSPENTMONTH, POINTSREDEEMEDMONTH, POINTSACCRUEDMONTH, VISITSACCRUEDMONTH
-		$query4 = "SELECT
-			ROUND((GrossSalesCoDefined - NetSalesCoDefined), 2) as DiscountsMonth,
-			ROUND(SUM(DollarsSpentAccrued), 2) as DollarsSpentMonth,
-			SUM(SereniteePointsRedeemed) as PointsRedeemedMonth,
-			SUM(SereniteePointsAccrued) as PointsAccruedMonth,
-			SUM(Vm_VisitsAccrued) as VisitsAccruedMonth                   
-			FROM Master WHERE  CardNumber = '$CardNumber_db'
-			AND DollarsSpentAccrued IS NOT NULL
-			AND DollarsSpentAccrued > '0'
-			AND TransactionDate >= '$FocusDate'
-			AND TransactionDate <= '$FocusDateEnd'";
-		$result4 = mysqli_query($dbc, $query4);	
-		ECHO MYSQLI_ERROR($dbc);
-		while($row1 = mysqli_fetch_array($result4, MYSQLI_ASSOC)){
-			$DiscountsMonth_db = $row1['DiscountsMonth'];
-			$DollarsSpentMonth_db = $row1['DollarsSpentMonth'];
-			$PointsRedeemedMonth_db = $row1['PointsRedeemedMonth'];
-			$PointsAccruedMonth_db = $row1['PointsAccruedMonth'];
-			$VisitsAccruedMonth_db = $row1['VisitsAccruedMonth'];
-		}
-
-		IF (EMPTY($DollarsSpentMonth_db)){
-			$DollarsSpentMonth_db = '0.00';
-		}
-		IF (EMPTY($DiscountsMonth_db)){
-			$DiscountsMonth_db = '0.00';
-		}
-
-		$YearFreqSeg = $RecentFreqMonths_db = $TwoVisitsBack_php = $YrAgoFreq = $LastVisitBalance_db = '';
-				#echo ' DolSpentMo'.$DollarsSpentMonth_db.' PtsRedeemMo'.$PointsRedeemedMonth_db;
-				#echo ' PtsAccrMo'.$PointsAccruedMonth_db.' TranMo'.$TransMonth_db.PHP_EOL;
-
-		#FIELDS = 12MOVISITBALANCE (PHP=PREVYEARVISITBALANCE)
-		$query5= "SELECT COUNT(TransactionDate) as PrevYearVisitBal
-				FROM Master 
-				WHERE CardNumber = '$CardNumber_db'
-				AND TransactionDate <> EnrollDate  
-				AND TransactionDate >= DATE_SUB('$FocusDate',INTERVAL 1 YEAR) 
-				AND TransactionDate < '$FocusDate'				
-				AND Vm_VisitsAccrued = '1'";
-		$result5 = mysqli_query($dbc, $query5);	
-		ECHO MYSQLI_ERROR($dbc);
-		while($row1 = mysqli_fetch_array($result5, MYSQLI_ASSOC)){
-			$PrevYearVisitBal_db = $row1['PrevYearVisitBal'];
-		}
-		IF ($PrevYearVisitBal_db == ''){$PrevYearVisitBal_db = '0';}
-		
-		#FIELD = LASTVISITDATE
-		$query5a= "SELECT MAX(TransactionDate) as LastVisitDate 
-				FROM Master 
-				WHERE CardNumber = '$CardNumber_db'
-				AND TransactionDate <= '$FocusDate'				
-				AND VisitsAccrued = '1'";
-		$result5a = mysqli_query($dbc, $query5a);	
-		ECHO MYSQLI_ERROR($dbc);
-		while($row1 = mysqli_fetch_array($result5a, MYSQLI_ASSOC)){
-			$LastVisitDate_db = $row1['LastVisitDate'];
-		}
-		### IF THERE IS NO LAST VISIT DATE SKIP THIS RECORD
-		IF (EMPTY($LastVisitDate_db)){
-			IF ($Firstrun == 'Yes'){
-				$LastVisitDate_db = $EnrollDate_db;
-				$Firstrun = 'No';
-			} ELSE {
-				$LastVisitDate_db = $Carryover_LastVisitDate;
-				$Firstrun = 'No';
-			}
-		} ELSE { $Firstrun = 'No';}
-
-		##################### NEED TO VERIFY BOTH LAPSEDAYS AND FREQRECENTDAYS (RECENTLAPSE)
-		#FIELD = LAPSEDAYS
-		$query6= "SELECT DATEDIFF('$FocusDate', '$LastVisitDate_db') as LapseDays";
-		$result6 = mysqli_query($dbc, $query6);	
-		ECHO MYSQLI_ERROR($dbc);
-		while($row1 = mysqli_fetch_array($result6, MYSQLI_ASSOC)){
-			$LapseDays_db = $row1['LapseDays'];	
-		}
-		IF (EMPTY($LapseDays_db)){
-			$LapseDays_db = '0';
-		}
-
-		####### IF LAPSE WASN'T CORRECT THIS IS MOST LIKELY WRONG
-			##### GET RECENT FREQ (2 visits back) AS OF FOCUS DATE
-			#FIELD = FREQRECENTDAYS
-		$query7a = "SELECT TransactionDate FROM Master
-				WHERE TransactionDate < '$FocusDate' 
-				AND CardNumber = '$CardNumber_db' 
-				AND Vm_VisitsAccrued > '0'
-				ORDER BY TransactionDate DESC LIMIT 1 , 1";
-		$result7a = mysqli_query($dbc, $query7a);	
-		ECHO MYSQLI_ERROR($dbc);
-		while($row1 = mysqli_fetch_array($result7a, MYSQLI_ASSOC)){
-			$TwoVisitsBack_db = $row1['TransactionDate'];		
-		}
-		##### HANDLE IF NO TwoVisitsBack TRANSACTION
-		IF (EMPTY($TwoVisitsBack_db)){
-			$RecentFreqDays_db = '';
-			# ECHO 'NO 2 VISITS BACK'.PHP_EOL;
-		}ELSE{
-			##### GET COUNT OF DAYS BETWEEN FOCUS DATE AND TWO VISITS BACK
-			$query7b = "SELECT DATEDIFF('$FocusDate', '$TwoVisitsBack_db') AS FreqRecentDays";
-			$result7b = mysqli_query($dbc, $query7b);	
-			ECHO MYSQLI_ERROR($dbc);
-			while($row1 = mysqli_fetch_array($result7b, MYSQLI_ASSOC)){
-				$RecentFreqDays_db = $row1['FreqRecentDays'];	
-				
-			}
-		}
-
-		##### GET NUMBER OF MONTHS BETWEEN ENROLLDATE AND FOCUSDATE  (+1 for marks numbers)
-		#PROGRAMAGE
-		$query7= "SELECT (TIMESTAMPDIFF(MONTH, '$EnrollDate_db', '$FocusDate') + 1) AS ProgAge";
-		$result7 = mysqli_query($dbc, $query7);	
-		ECHO MYSQLI_ERROR($dbc);
-		while($row1 = mysqli_fetch_array($result7, MYSQLI_ASSOC)){
-			$ProgAge_db = $row1['ProgAge'];		
-		}
-
-		##### GET NUMBER OF MONTHS BETWEEN ENROLLDATE AND FOCUSDATE 
-		#FIELD = LIFETIMEFREQ
-		$query7x= "SELECT TIMESTAMPDIFF(MONTH, '$EnrollDate_db', '$FocusDate') AS MonthsEnrolled";
-		$result7x = mysqli_query($dbc, $query7x);	
-		ECHO MYSQLI_ERROR($dbc);
-		while($row1 = mysqli_fetch_array($result7x, MYSQLI_ASSOC)){
-			$MonthsEnrolled_db = $row1['MonthsEnrolled'];		
-		}
-		# ECHO 'DaysEnrolled_db='.$DaysEnrolled_db.PHP_EOL;	
-		IF (($MonthsEnrolled_db == '0') OR ($MonthsEnrolled_db == '')){
-			$LifetimeFreq = '';
-		} ELSE {
-			$LifetimeFreq = ($VisitsAccruedLife_db / $MonthsEnrolled_db);			
-		}
-
-
-		#FIELD RECENTFREQMONTHS
-		$query7e= "SELECT TIMESTAMPDIFF(MONTH, '$TwoVisitsBack_db', '$FocusDate') AS RecentFreqMonths";
-		$result7e = mysqli_query($dbc, $query7e);	
-		ECHO MYSQLI_ERROR($dbc);
-		while($row1 = mysqli_fetch_array($result7e, MYSQLI_ASSOC)){
-			$RecentFreqMonths_db = $row1['RecentFreqMonths'];
-			# ECHO 'RecentFreqMonths_db'.$RecentFreqMonths_db.PHP_EOL;
-		}
-
-		#FIELD LAPSEMONTHS
-		$query7e= "SELECT TIMESTAMPDIFF(MONTH, '$LastVisitDate_db', '$FocusDate') AS LapseMonths";
-		$result7e = mysqli_query($dbc, $query7e);	
-		ECHO MYSQLI_ERROR($dbc);
-		while($row1 = mysqli_fetch_array($result7e, MYSQLI_ASSOC)){
-			$LapseMonths_db = $row1['LapseMonths'];
-			# ECHO 'LapseMonths_db'.$LapseMonths_db.PHP_EOL;
-		}
-
-		#ACCOUNT AND STATUS
-		$query7f= "SELECT Account_status, Card_status FROM Master WHERE CardNumber = '$CardNumber_db' LIMIT 1";
-		$result7f = mysqli_query($dbc, $query7f);	
-		ECHO MYSQLI_ERROR($dbc);
-		while($row1 = mysqli_fetch_array($result7f, MYSQLI_ASSOC)){
-			$Account_status_db = $row1['Account_status'];
-			$Card_status_db = $row1['Card_status'];
-		}
-
-
-		/////// INSERT VALUES INTO THE TABLE HERE
-		$query8= "INSERT INTO Px_Monthly SET CardNumber = '$CardNumber_db',
-				FocusDate = '$FocusDate',
-				FirstName = '$FirstName_db',
-				LastName = '$LastName_db',
-				EnrollDate = '$EnrollDate_db',
-				Zip = '$Zip_db',
-				Tier = '$Tier_db',
-				Discounts = '$DiscountsMonth_db',
-				DollarsSpentMonth = '$DollarsSpentMonth_db',
-				PointsRedeemedMonth = '$PointsRedeemedMonth_db',
-				PointsAccruedMonth = '$PointsAccruedMonth_db',
-				VisitsAccruedMonth = '$VisitsAccruedMonth_db',
-				LifetimeSpendBalance = '$DollarsSpentLife_db',
-				LifetimePointsBalance = '$PointsAccruedLife_db',
-				LifetimePointsRedeemed = '$PointsRedeemedLife_db',
-				LastVisitDate = '$LastVisitDate_db',
-				LapseDays = '$LapseDays_db',
-				FreqRecentDays = '$RecentFreqDays_db',
-				12MoVisitBalance = '$PrevYearVisitBal_db',
-				ProgramAge = '$ProgAge_db',
-				LifetimeFreq = ROUND('$LifetimeFreq',8),
-				RecentFreqMonths = '$RecentFreqMonths_db',
-				LapseMonths = '$LapseMonths_db',
-				Account_status = '$Account_status_db',
-				Card_status = '$Card_status_db',
-				LifetimeVisitBalance = '$VisitsAccruedLife_db'";
-				// ECHO $query8.PHP_EOL;
-		$result8 = mysqli_query($dbc, $query8);	
-		if(!$result8){ECHO $query8.' ';}
-		ECHO MYSQLI_ERROR($dbc);
-
-		$FocusDate = date("Y-m-d",strtotime($FocusDate." +1 month "));
-		$FocusDateEnd = date("Y-m-d",strtotime($FocusDate." +1 month - 1 day "));
-		$Carryover_LastVisitDate = $LastVisitDate_db;
-
-	// END OF WHILE FOCUSDATE LESS THAN TODAY (MAIN QUERY2)
-	}
-
-	### WE'LL PRINT EXTENDED INFO FOR COUNTER ACCOUNTS, JUST TO SEE IF ANYTHING LOOKS WONKY
-	IF ($printcount == '0'){
-		ECHO ' FirstName: '.$FirstName_db.' LastName: '.$LastName_db.' FirstRun:'.$Firstrun;
-		ECHO PHP_EOL.'             Zip:'.$Zip_db.' Tier:'.$Tier_db.' Enrolled: '.$EnrollDate_db;
-		ECHO PHP_EOL.'             FocusDate:'.$FocusDate.' Last Visit Date: '.$LastVisitDate_db;
-		ECHO PHP_EOL.'             LifetimeSpend:'.$DollarsSpentLife_db.' LapseMonths: '.$LapseMonths_db;
-		ECHO PHP_EOL.'             Lifetime Visits: '.$VisitsAccruedLife_db;
-	}
-
-
-// END OF CARD NUMBER WHILE LOOP (MAIN QUERY1)
+// Enhanced database connection with error handling
+function connectDatabase() {
+    $dbc = mysqli_connect(DB_HOST, DB_USER, DB_PASSWORD, DB_NAME);
+    if (!$dbc) {
+        die('Could not connect to database: ' . mysqli_connect_error());
+    }
+    
+    // Set character set and enable buffering
+    mysqli_set_charset($dbc, 'utf8');
+    mysqli_query($dbc, "SET SESSION sql_mode = 'TRADITIONAL'");
+    
+    return $dbc;
 }
 
+$dbc = connectDatabase();
 
+// Truncate table with transaction
+mysqli_query($dbc, "START TRANSACTION");
+mysqli_query($dbc, "TRUNCATE table Px_Monthly");
+mysqli_query($dbc, "COMMIT");
+echo "Px_Monthly TRUNCATED\n";
 
-// CLEAN UP THE ENTRIES THAT COULD NOT HAVE BEEN CALC'D CORRECTLY
-$Query18 = "DELETE FROM Px_Monthly WHERE LastName = 'Test' or LastName = 'test' or FirstName = 'Serenitee'";
-$result18 = mysqli_query($dbc, $Query18);
-ECHO MYSQLI_ERROR($dbc);
-################ WE COULE BREAK THE SCRIPT HERE AND POSSIBLY GET IT TO RUN FASTER
-ECHO PHP_EOL.'Count of accounts processed: '.$counter
+// MAJOR OPTIMIZATION: Single query to get all data at once
+$mainQuery = "
+SELECT 
+    gm.CardNumber,
+    gm.FirstName,
+    gm.LastName,
+    gm.EnrollDate,
+    gm.Zip,
+    gm.Tier,
+    YEAR(gm.EnrollDate) as MinDateYear,
+    DATE_FORMAT(gm.EnrollDate, '%m') as MinDateMonth,
+    
+    -- Lifetime totals (calculated once)
+    COALESCE(SUM(m.DollarsSpentAccrued), 0) as DollarsSpentLife,
+    COALESCE(SUM(m.SereniteePointsRedeemed), 0) as PointsRedeemedLife,
+    COALESCE(SUM(m.SereniteePointsAccrued), 0) as PointsAccruedLife,
+    COALESCE(MAX(m.VM_VisitsBalance), 0) as VisitsAccruedLife,
+    
+    -- Account status (fetch once)
+    MAX(m.Account_status) as Account_status,
+    MAX(m.Card_status) as Card_status
+    
+FROM Guests_Master gm
+LEFT JOIN Master m ON gm.CardNumber = m.CardNumber
+WHERE gm.CardNumber IS NOT NULL 
+  AND gm.EnrollDate IS NOT NULL
+GROUP BY gm.CardNumber, gm.FirstName, gm.LastName, gm.EnrollDate, gm.Zip, gm.Tier
+ORDER BY gm.CardNumber ASC
+";
 
+$result = mysqli_query($dbc, $mainQuery);
+if (!$result) {
+    die("Main query failed: " . mysqli_error($dbc));
+}
+
+$counter = 0;
+$batchInserts = [];
+$batchSize = 1000;
+
+while ($customerData = mysqli_fetch_assoc($result)) {
+    $counter++;
+    
+    if ($counter % 1000 == 0) {
+        echo "\nProcessed $counter customers: " . $customerData['CardNumber'];
+    }
+    
+    $cardNumber = mysqli_real_escape_string($dbc, $customerData['CardNumber']);
+    $firstName = mysqli_real_escape_string($dbc, $customerData['FirstName']);
+    $lastName = mysqli_real_escape_string($dbc, $customerData['LastName']);
+    
+    // Skip test accounts early
+    if (strtolower($lastName) == 'test' || strtolower($firstName) == 'serenitee') {
+        continue;
+    }
+    
+    $enrollDate = $customerData['EnrollDate'];
+    $focusDate = $customerData['MinDateYear'] . '-' . str_pad($customerData['MinDateMonth'], 2, '0', STR_PAD_LEFT) . '-01';
+    $currentDate = date('Y-m-d');
+    
+    // Generate monthly records using a single query with date generation
+    $monthlyQuery = "
+    WITH RECURSIVE date_series AS (
+        SELECT '$focusDate' as focus_date
+        UNION ALL
+        SELECT DATE_ADD(focus_date, INTERVAL 1 MONTH)
+        FROM date_series 
+        WHERE focus_date < '$currentDate'
+    ),
+    monthly_stats AS (
+        SELECT 
+            ds.focus_date,
+            
+            -- Monthly totals
+            COALESCE(ROUND(SUM(CASE 
+                WHEN m.TransactionDate >= ds.focus_date 
+                AND m.TransactionDate < DATE_ADD(ds.focus_date, INTERVAL 1 MONTH)
+                AND m.DollarsSpentAccrued > 0
+                THEN m.DollarsSpentAccrued END), 2), 0) as DollarsSpentMonth,
+                
+            COALESCE(SUM(CASE 
+                WHEN m.TransactionDate >= ds.focus_date 
+                AND m.TransactionDate < DATE_ADD(ds.focus_date, INTERVAL 1 MONTH)
+                THEN m.SereniteePointsRedeemed END), 0) as PointsRedeemedMonth,
+                
+            COALESCE(SUM(CASE 
+                WHEN m.TransactionDate >= ds.focus_date 
+                AND m.TransactionDate < DATE_ADD(ds.focus_date, INTERVAL 1 MONTH)
+                THEN m.SereniteePointsAccrued END), 0) as PointsAccruedMonth,
+                
+            COALESCE(SUM(CASE 
+                WHEN m.TransactionDate >= ds.focus_date 
+                AND m.TransactionDate < DATE_ADD(ds.focus_date, INTERVAL 1 MONTH)
+                THEN m.Vm_VisitsAccrued END), 0) as VisitsAccruedMonth,
+                
+            -- Discounts calculation
+            COALESCE(ROUND(SUM(CASE 
+                WHEN m.TransactionDate >= ds.focus_date 
+                AND m.TransactionDate < DATE_ADD(ds.focus_date, INTERVAL 1 MONTH)
+                THEN (m.GrossSalesCoDefined - m.NetSalesCoDefined) END), 2), 0) as DiscountsMonth,
+            
+            -- Lifetime totals up to focus date
+            COALESCE(ROUND(SUM(CASE 
+                WHEN m.TransactionDate < ds.focus_date 
+                THEN m.DollarsSpentAccrued END), 2), 0) as DollarsSpentLife,
+                
+            COALESCE(SUM(CASE 
+                WHEN m.TransactionDate < ds.focus_date 
+                THEN m.SereniteePointsRedeemed END), 0) as PointsRedeemedLife,
+                
+            COALESCE(SUM(CASE 
+                WHEN m.TransactionDate < ds.focus_date 
+                THEN m.SereniteePointsAccrued END), 0) as PointsAccruedLife,
+            
+            -- Visit metrics
+            COUNT(CASE 
+                WHEN m.TransactionDate >= DATE_SUB(ds.focus_date, INTERVAL 1 YEAR)
+                AND m.TransactionDate < ds.focus_date
+                AND m.TransactionDate != '$enrollDate'
+                AND m.Vm_VisitsAccrued = 1
+                THEN 1 END) as PrevYearVisitBal,
+                
+            MAX(CASE 
+                WHEN m.TransactionDate <= ds.focus_date 
+                AND m.VisitsAccrued = 1 
+                THEN m.TransactionDate END) as LastVisitDate,
+            
+            -- Calculate program age and other metrics
+            (TIMESTAMPDIFF(MONTH, '$enrollDate', ds.focus_date) + 1) as ProgAge,
+            TIMESTAMPDIFF(MONTH, '$enrollDate', ds.focus_date) as MonthsEnrolled
+            
+        FROM date_series ds
+        LEFT JOIN Master m ON m.CardNumber = '$cardNumber'
+        GROUP BY ds.focus_date
+    )
+    SELECT 
+        focus_date,
+        DollarsSpentMonth,
+        PointsRedeemedMonth,
+        PointsAccruedMonth,
+        VisitsAccruedMonth,
+        DiscountsMonth,
+        DollarsSpentLife,
+        PointsRedeemedLife,
+        PointsAccruedLife,
+        PrevYearVisitBal,
+        COALESCE(LastVisitDate, '$enrollDate') as LastVisitDate,
+        DATEDIFF(focus_date, COALESCE(LastVisitDate, '$enrollDate')) as LapseDays,
+        TIMESTAMPDIFF(MONTH, COALESCE(LastVisitDate, '$enrollDate'), focus_date) as LapseMonths,
+        ProgAge,
+        CASE 
+            WHEN MonthsEnrolled > 0 AND MonthsEnrolled IS NOT NULL 
+            THEN ROUND({$customerData['VisitsAccruedLife']} / MonthsEnrolled, 8)
+            ELSE NULL 
+        END as LifetimeFreq
+    FROM monthly_stats
+    ORDER BY focus_date
+    ";
+    
+    $monthlyResult = mysqli_query($dbc, $monthlyQuery);
+    if (!$monthlyResult) {
+        echo "Monthly query failed for card $cardNumber: " . mysqli_error($dbc) . "\n";
+        continue;
+    }
+    
+    // Collect batch inserts
+    while ($monthlyData = mysqli_fetch_assoc($monthlyResult)) {
+        $batchInserts[] = "(
+            '$cardNumber',
+            '{$monthlyData['focus_date']}',
+            '$firstName',
+            '$lastName',
+            '$enrollDate',
+            '{$customerData['Zip']}',
+            '{$customerData['Tier']}',
+            '{$monthlyData['DiscountsMonth']}',
+            '{$monthlyData['DollarsSpentMonth']}',
+            '{$monthlyData['PointsRedeemedMonth']}',
+            '{$monthlyData['PointsAccruedMonth']}',
+            '{$monthlyData['VisitsAccruedMonth']}',
+            '{$monthlyData['DollarsSpentLife']}',
+            '{$monthlyData['PointsAccruedLife']}',
+            '{$monthlyData['PointsRedeemedLife']}',
+            '{$monthlyData['LastVisitDate']}',
+            '{$monthlyData['LapseDays']}',
+            NULL,
+            '{$monthlyData['PrevYearVisitBal']}',
+            '{$monthlyData['ProgAge']}',
+            " . ($monthlyData['LifetimeFreq'] ? "'{$monthlyData['LifetimeFreq']}'" : 'NULL') . ",
+            NULL,
+            '{$monthlyData['LapseMonths']}',
+            '{$customerData['Account_status']}',
+            '{$customerData['Card_status']}',
+            '{$customerData['VisitsAccruedLife']}'
+        )";
+        
+        // Execute batch insert when we hit batch size
+        if (count($batchInserts) >= $batchSize) {
+            executeBatchInsert($dbc, $batchInserts);
+            $batchInserts = [];
+        }
+    }
+}
+
+// Execute remaining batch inserts
+if (!empty($batchInserts)) {
+    executeBatchInsert($dbc, $batchInserts);
+}
+
+function executeBatchInsert($dbc, $values) {
+    $insertQuery = "
+    INSERT INTO Px_Monthly (
+        CardNumber, FocusDate, FirstName, LastName, EnrollDate, Zip, Tier,
+        Discounts, DollarsSpentMonth, PointsRedeemedMonth, PointsAccruedMonth,
+        VisitsAccruedMonth, LifetimeSpendBalance, LifetimePointsBalance,
+        LifetimePointsRedeemed, LastVisitDate, LapseDays, FreqRecentDays,
+        `12MoVisitBalance`, ProgramAge, LifetimeFreq, RecentFreqMonths,
+        LapseMonths, Account_status, Card_status, LifetimeVisitBalance
+    ) VALUES " . implode(',', $values);
+    
+    $result = mysqli_query($dbc, $insertQuery);
+    if (!$result) {
+        echo "Batch insert failed: " . mysqli_error($dbc) . "\n";
+    }
+}
+
+echo "\nProcessed $counter customers total\n";
+
+// Close connection
+mysqli_close($dbc);
 
 ?>
-
 
